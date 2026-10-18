@@ -2,6 +2,7 @@ import {primary,first,run,statement,throttle} from './db.mjs';
 import {syncAvatar} from './inventory.mjs';
 import {uuid} from './collection.mjs';
 import {profileImage} from '../public/profile.js';
+import {emailReady} from './email-config.mjs';
 const encode=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const decode=text=>Uint8Array.from(atob(text.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 async function key(secret){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret)),{name:'AES-GCM'},false,['encrypt','decrypt']);}
@@ -9,7 +10,7 @@ export async function seal(value,secret){const iv=crypto.getRandomValues(new Uin
 export async function unseal(value,secret){try{const [iv,encrypted]=value.split('.');return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(iv)},await key(secret),decode(encrypted))));}catch{return null;}}
 export const configured=env=>Boolean(env.DB&&env.AUTH_COOKIE_SECRET?.length>=32);
 export const providers=env=>configured(env)?(env.AUTH_PROVIDERS||'').split(',').filter(p=>['google','github'].includes(p)&&env[p.toUpperCase()+'_CLIENT_ID']&&env[p.toUpperCase()+'_CLIENT_SECRET']):[];
-function cookie(name,value,env,age=2592000){return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${new URL(env.APP_URL).protocol==='https:'?'; Secure':''}`;}
+export function cookie(name,value,env,age=2592000){return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${new URL(env.APP_URL).protocol==='https:'?'; Secure':''}`;}
 function readCookie(request,name){return request.headers.get('Cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(name+'='))?.slice(name.length+1);}
 function privateHeaders(headers={}){return {'Cache-Control':'no-store','Vary':'Cookie',...headers};}
 export function privateJson(value,status=200,cookies=[]){const response=Response.json(value,{status,headers:privateHeaders()});for(const c of cookies)response.headers.append('Set-Cookie',c);return response;}
@@ -40,7 +41,7 @@ async function providerProfile(provider,code,flow,env){
 }
 export async function authRoute(request,env){
  const url=new URL(request.url),path=url.pathname;
- if(path==='/api/auth/config'&&request.method==='GET')return privateJson({providers:providers(env),turnstileSiteKey:env.TURNSTILE_SITE_KEY||null});
+ if(path==='/api/auth/config'&&request.method==='GET')return privateJson({providers:providers(env),emailAvailable:emailReady(env),turnstileSiteKey:env.TURNSTILE_SITE_KEY||null});
  if(path==='/api/auth/me'&&request.method==='GET'){
   const auth=await identity(request,env),raw=readCookie(request,'bw_return');let navigation=null;
   if(raw&&env.AUTH_COOKIE_SECRET?.length>=32){const value=await unseal(raw,env.AUTH_COOKIE_SECRET);if(value?.expires>Date.now())navigation={locale:value.locale==='en'?'en':'es',checkout:value.checkout};}

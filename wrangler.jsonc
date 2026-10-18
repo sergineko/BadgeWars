@@ -2,6 +2,17 @@
   "name": "badgewars",
   "main": "src/worker.mjs",
   "compatibility_date": "2026-10-18",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": [
+        "no-reply@badgewars.com"
+      ]
+    }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -12,14 +23,16 @@
     ]
   },
   "vars": {
-    "APP_URL": "https://badgewars.example.com",
+    "APP_URL": "https://badgewars.com",
+    "EMAIL_AUTH_ENABLED": "false",
+    "EMAIL_FROM": "no-reply@badgewars.com",
     "AUTH_PROVIDERS": "google,github",
     "POLAR_ENVIRONMENT": "sandbox"
   },
   "kv_namespaces": [
     {
       "binding": "BADGES",
-      "id": "REPLACE_WITH_BADGEWARS_KV_ID"
+      "id": "f452a6607f9b4ce0a4050ef689873cb8"
     }
   ],
   "triggers": {
@@ -31,12 +44,13 @@
     {
       "binding": "DB",
       "database_name": "badgewars",
-      "database_id": "REPLACE_WITH_BADGEWARS_D1_ID",
+      "database_id": "6fb4d88f-8d52-432d-968e-0832b481eb81",
       "migrations_dir": "migrations"
     }
   ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.05
-  }
+  },
+  "account_id": "93d96c1211328e81e46cb2bc8af30d47"
 }

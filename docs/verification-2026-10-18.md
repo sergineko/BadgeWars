@@ -40,3 +40,12 @@ node scripts/qa-rank-refresh.mjs
 Las claves oficiales de prueba de Turnstile se admiten únicamente con entorno `sandbox` explícito y `APP_URL` de loopback. No habilitan pagos en un dominio desplegado ni en producción. Véase [Cloudflare: claves de prueba](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
 
 Los informes, capturas, bases, documentos de referencia y exportaciones privadas se conservan localmente y están excluidos del repositorio. Los relays/túneles se han detenido y el endpoint de Sandbox está desactivado. Su reactivación necesita un destino vigente y autorizado. No son la infraestructura de producción.
+
+## Ampliación 0.8 del 18 de octubre
+
+- 53 pruebas automáticas: nueva reserva atómica para revisar recargas no entregadas y autenticación por correo, incluidas carreras y enlaces obsoletos. Las pruebas financieras conservan la conciliación de devoluciones obligatorias del MoR sin saldo gastable negativo.
+- Ocho migraciones aplicadas en D1 local. Scrypt nativo probado en workerd; registro, verificación de un uso, login, recuperación y revocación de la sesión anterior comprobados con email simulado. Script reproducible: `scripts/qa-email-auth.mjs`; resultado privado `artifacts/email-native-qa.json`. No se ha enviado correo de registro real a usuarios.
+- Condiciones r6 y privacidad ES/EN actualizadas para cuentas propias y restricciones de la solicitud comercial de revisión. Las condiciones aceptadas previamente se mantienen en sus justificantes.
+- Namecheap guarda la delegación a Cloudflare. D1 dedicada en UE y KV público creados; configuración de despliegue con IDs reales. Email Routing tiene destino verificado y alias support activo. Aún no se ha comprobado la recepción final de ese alias, ni aplicado migraciones remotas/desplegado el Worker.
+- GitHub OAuth creado con callback de producción y secreto guardado fuera de Git; no se ha usado todavía en una sesión real. Proyecto Google separado creado, pendiente de la cuenta profesional, consentimiento y cliente.
+- Workers Free se mantiene durante la preparación; correo/contraseña público permanece desactivado hasta Paid y Email Sending. Evidencias de paneles/formularios solo locales; ninguna credencial, email privado, documento o base de pruebas se sube al repositorio.

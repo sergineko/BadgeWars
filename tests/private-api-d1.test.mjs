@@ -79,3 +79,13 @@ test('billing portal uses the configured Polar organization and keeps invoice ac
   ctx.env.POLAR_ORGANIZATION_SLUG='../another';assert.equal((await call(ctx,'/api/me/billing-portal','POST')).status,503);
  }finally{ctx.env.DB.close();}
 });
+
+test('refund review requires a private session, correct origin and ownership without exposing payment references',async()=>{
+ const ctx=await setup();try{
+  assert.equal((await worker.fetch(new Request(origin+'/api/me/refund-request',{method:'POST',headers:{Origin:origin},body:'{}'}),ctx.env,{})).status,401);
+  assert.equal((await call(ctx,'/api/me/refund-request','POST',{topupId:crypto.randomUUID()},{Origin:'https://evil.example'})).status,403);
+  assert.equal((await call(ctx,'/api/me/refund-request','POST',{topupId:'invalid'})).status,400);
+  assert.equal((await call(ctx,'/api/me/refund-request','POST',{topupId:crypto.randomUUID()})).status,404);
+  assert.equal((await call(ctx,'/api/me/refund-request')).status,404);
+ }finally{ctx.env.DB.close();}
+});

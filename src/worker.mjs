@@ -11,6 +11,8 @@ import {trustState} from './trust-state.mjs';
 import {publish,publishDirty} from './projection.mjs';
 import {createTopup,receiveEvent,processEvents,recoverTopups,TERMS_VERSION,paymentsReady,billingPortalUrl} from './polar.mjs';
 import {termsDocument,operatorDetails,paymentSeller} from '../public/terms.js';
+import {requestDeliveryRefund} from './refunds.mjs';
+import {emailRoute} from './email-auth.mjs';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 async function readBody(request,limit){
  if(Number(request.headers.get('Content-Length')||0)>limit)throw Error('body_too_large');
@@ -57,6 +59,10 @@ async function privateRoute(request,env,ctx){
  if(request.method==='POST'&&request.headers.get('Origin')!==new URL(env.APP_URL).origin)return reply({error:'origin_forbidden'},403);
  if(url.pathname==='/api/me/badges')return reply(await collectionPage(db,userId));
  if(url.pathname==='/api/me/wallet')return reply({...await first(db,'SELECT balance,frozen,debt FROM bw_wallets WHERE user_id=?',[userId]),termsVersion:TERMS_VERSION,paymentsAvailable:paymentsReady(env),environment:env.POLAR_ENVIRONMENT||'sandbox'});
+ if(url.pathname==='/api/me/refund-request'&&request.method==='POST'){
+  if(!await throttle(db,'refund:'+userId,5,3600))return reply({error:'rate_limited'},429);
+  const input=await readInput(request);return reply(await requestDeliveryRefund(db,env,userId,input.topupId));
+ }
  if(url.pathname==='/api/me/billing-portal'&&request.method==='POST'){
   const portal=billingPortalUrl(env);return reply(portal?{url:portal}:{error:'billing_unavailable'},portal?200:503);
  }
@@ -111,7 +117,7 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url),path=url.pathname;
   try{
-   if(path.startsWith('/api/auth/')){const response=await authRoute(request,env);if(response)return response;}
+   if(path.startsWith('/api/auth/')){const response=await emailRoute(request,env)||await authRoute(request,env);if(response)return response;}
    if(path==='/api/legal'&&request.method==='GET')return json({version:TERMS_VERSION,operator:operatorDetails(env),merchantOfRecord:paymentSeller});
    if(['/api/legal/terms/es.txt','/api/legal/terms/en.txt'].includes(path)&&request.method==='GET'){
     const locale=path.endsWith('/en.txt')?'en':'es',doc=termsDocument(env,locale),text=[`BadgeWars — ${doc.version}`,JSON.stringify({operator:doc.operator,merchantOfRecord:doc.merchantOfRecord},null,2),...doc.sections.flatMap(s=>[s.title,s.text,''])].join('\n');
@@ -127,7 +133,7 @@ export default {
     if(request.headers.get('webhook-api-version')&&request.headers.get('webhook-api-version')!=='2026-10')return json({error:'unsupported_webhook_version'},400);
     const db=primary(env),event=JSON.parse(body);await receiveEvent(db,env,event,request.headers.get('webhook-id'));ctx.waitUntil(processEvents(db,env).catch(()=>{}));return json({received:true},202);
    }
-   if((path.startsWith('/api/me/')&&request.method==='GET')||(['/api/me/visibility','/api/me/billing-portal','/api/wallet/topup','/api/wallet/spend','/api/checkout'].includes(path)&&request.method==='POST')){
+   if((path.startsWith('/api/me/')&&request.method==='GET')||(['/api/me/visibility','/api/me/refund-request','/api/me/billing-portal','/api/wallet/topup','/api/wallet/spend','/api/checkout'].includes(path)&&request.method==='POST')){
     if(!env.DB)return json({error:'database_unavailable'},503);return await privateRoute(request,env,ctx);
    }
    if(path==='/api/support/target'&&request.method==='GET'){
@@ -145,6 +151,8 @@ export default {
    if(path.startsWith('/api/')||path.startsWith('/badges/'))return json({error:'not_found'},404);
    return env.ASSETS.fetch(request);
   }catch(error){
+   if(error.message==='refund_not_found')return privateJson({error:error.message},404);
+   if(/^refund_/.test(error.message))return privateJson({error:error.message},409);
    if(error.message==='body_too_large')return privateJson({error:'body_too_large'},413);
    const code=['insufficient_credits','price_changed','genesis_sold_out','already_owned_or_invalid_price','invalid_support','wallet_frozen_or_invalid','idempotency_conflict','invalid_topup','invalid_request','checkout_recovering','checkout_open','checkout_accepted','checkout_review','checkout_expired','wallet_frozen','payments_unavailable'].find(code=>String(error.message).includes(code));
    if(code)return privateJson({error:code},code==='payments_unavailable'?503:code.startsWith('invalid')?400:409,error.cookies||[]);
@@ -154,6 +162,6 @@ export default {
  },
  async scheduled(event,env,ctx){ctx.waitUntil((async()=>{
   const db=primary(env);await processEvents(db,env);await recoverTopups(db,env);await publishDirty(db,env);
-  const time=new Date(event.scheduledTime||Date.now());if(time.getUTCHours()%6===0&&time.getUTCMinutes()<5){await run(db,'DELETE FROM bw_sessions WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_oauth_states WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_throttle WHERE window<?',[Math.floor(Date.now()/60000)-1440]);}
+  const time=new Date(event.scheduledTime||Date.now());if(time.getUTCHours()%6===0&&time.getUTCMinutes()<5){await run(db,'DELETE FROM bw_sessions WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_oauth_states WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_throttle WHERE expires<?',[Math.floor(Date.now()/1000)-86400]);await run(db,'DELETE FROM bw_email_codes WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_email_accounts WHERE verified=0 AND created_at<?',[Date.now()-604800000]);}
  })());}
 };

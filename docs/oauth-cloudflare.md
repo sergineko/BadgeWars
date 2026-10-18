@@ -8,7 +8,7 @@ Se usa OAuth directo con Google/GitHub. No configurar Supabase Auth ni modificar
 
 Registrar exactamente estos callbacks, sustituyendo el origen:
 
-- `https://DOMINIO/api/auth/callback/google`
+- `https://badgewars.com/api/auth/callback/google`
 - `https://DOMINIO/api/auth/callback/github`
 
 Crear credenciales independientes de desarrollo para `http://127.0.0.1:8787` cuando el proveedor lo permita; no añadir comodines de redirect. Google requiere pantalla de consentimiento y alcance `openid profile`. GitHub usa `read:user`. No se piden emails, contactos ni repositorios.
@@ -18,3 +18,6 @@ Se utilizan PKCE S256, estado cifrado de diez minutos y un hash de estado de un 
 La sesión es un token aleatorio; D1 almacena su hash y caducidad de treinta días. Cookie HttpOnly, SameSite=Lax y Secure en HTTPS. Logout verifica el origen y elimina la sesión. No se guardan access/refresh tokens sociales. Un enlace técnico de callback puede llevar parámetros, pero redirige a `/collection`, `/badge/...` o `/support/...` sin parámetros, con contexto cifrado de retorno.
 
 Antes de publicar: probar ambos consentimientos, logout, estado repetido/inválido, callback ante caída de red y acceso propietario a colección y SVG. Revisar documentación y acuerdos de los proveedores si se cambian los datos solicitados.
+
+
+Para correo/contraseña nativos, estado de las aplicaciones y configuración de dominio/Email Service, consultar [email-auth-and-domain.md](email-auth-and-domain.md). No usar las credenciales OAuth definitivas con un callback de loopback; mantener clientes de desarrollo separados.

@@ -2,9 +2,9 @@ import {TERMS_VERSION} from './terms.js';
 import {escapeXml as e} from './badges.js';
 import {request,checkoutKey,forgetCheckout,paymentError} from './flow.js';
 export const demoWallet={balance:15,frozen:false,debt:0,termsVersion:TERMS_VERSION,environment:'sandbox',paymentsAvailable:false};
-export const walletStrip=(wallet,t,demo=false)=>`<div class="wallet-strip"><div><small>${t('walletTitle')}${demo?' · DEMO':''}</small><strong>${Number(wallet?.balance||0).toLocaleString()} BC</strong><p>${t(wallet?.frozen?'walletFrozen':'walletRate')}</p></div><div class="wallet-tools"><button class="outline" data-action="billing-portal">${t('billingPortal')} ↗</button><button class="primary" data-action="wallet">${t('topup')} ↗</button></div></div>`;
+export const walletStrip=(wallet,t,demo=false)=>`<div class="wallet-strip"><div><small>${t('walletTitle')}${demo?' · DEMO':''}</small><strong>${Number(wallet?.balance||0).toLocaleString()} BC</strong><p>${t(wallet?.frozen?'walletFrozen':'walletRate')}</p></div><div class="wallet-tools">${demo?'':`<button class="text-link" data-action="refund-request">${t('refundRequestTitle')}</button>`}<button class="outline" data-action="billing-portal">${t('billingPortal')} ↗</button><button class="primary" data-action="wallet">${t('topup')} ↗</button></div></div>`;
 let turnstileScript;
-async function turnstile(){
+export async function turnstile(){
  if(window.turnstile)return window.turnstile;
  if(!turnstileScript)turnstileScript=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.onload=()=>resolve(window.turnstile);script.onerror=()=>{turnstileScript=null;reject(Error('challenge_unavailable'));};document.head.appendChild(script);});
  return turnstileScript;

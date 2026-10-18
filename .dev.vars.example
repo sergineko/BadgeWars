@@ -2,6 +2,10 @@
 APP_URL=http://127.0.0.1:8787
 AUTH_COOKIE_SECRET=replace_with_random_value_of_at_least_32_characters
 AUTH_PROVIDERS=google,github
+# Enable only after Workers Paid, Email Sending DNS verification and end-to-end QA.
+EMAIL_AUTH_ENABLED=false
+EMAIL_FROM=no-reply@badgewars.com
+PASSWORD_PEPPER=replace_with_a_separate_random_secret_of_at_least_32_characters
 GOOGLE_CLIENT_ID=replace
 GOOGLE_CLIENT_SECRET=replace
 GITHUB_CLIENT_ID=replace

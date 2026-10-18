@@ -512,8 +512,8 @@ const copy={
   "Your collection is waiting."
  ],
  "signInText": [
-  "Entra con Google o GitHub para encontrar tus badges sin buscar recibos ni recordar enlaces.",
-  "Sign in with Google or GitHub to find your badges without chasing receipts or remembering links."
+  "Entra con Google, GitHub o correo para encontrar tus badges sin buscar recibos ni recordar enlaces.",
+  "Sign in with Google, GitHub or email to find your badges without chasing receipts or remembering links."
  ],
  "loginEyebrow": [
   "MENOS FRICCIÓN. MÁS FLEX.",
@@ -532,8 +532,8 @@ const copy={
   "Continue with {provider}"
  ],
  "oauthPending": [
-  "Configura Google/GitHub y los secretos OAuth del Worker para iniciar sesiones reales.",
-  "Configure Google/GitHub and the Worker OAuth secrets to enable real sign-in."
+  "Algunos proveedores de acceso todavía no están disponibles.",
+  "Some sign-in providers are not available yet."
  ],
  "demoCollection": [
   "Explorar una colección demo",
@@ -1462,6 +1462,154 @@ const copy={
  "withdrawalTemplate": [
   "Modelo de desistimiento: comunica al contacto del titular tu nombre, email de cuenta, referencia de recarga y fecha de compra, e indica «Deseo desistir de la contratación de esta recarga». No es obligatorio usar este modelo.",
   "Withdrawal template: send the operator your name, account email, top-up reference and purchase date, and state “I wish to withdraw from this top-up contract”. Using this template is optional."
+ ],
+ "emailLogin": [
+  "Entrar con correo",
+  "Sign in with email"
+ ],
+ "emailRegister": [
+  "Crear cuenta",
+  "Create account"
+ ],
+ "emailReset": [
+  "Enviar recuperación",
+  "Send password reset"
+ ],
+ "emailConfirm": [
+  "Confirmar correo",
+  "Verify email"
+ ],
+ "emailNewPassword": [
+  "Guardar nueva contraseña",
+  "Save new password"
+ ],
+ "emailLabel": [
+  "Correo electrónico",
+  "Email address"
+ ],
+ "passwordLabel": [
+  "Contraseña",
+  "Password"
+ ],
+ "passwordHint": [
+  "Usa entre 15 y 128 caracteres. Puedes usar espacios y una frase larga.",
+  "Use 15–128 characters. Spaces and a long passphrase are welcome."
+ ],
+ "emailPrivacy": [
+  "Tu correo es privado. Debes verificarlo antes de acceder al saldo y los badges.",
+  "Your email is private. Verify it before accessing credits and badges."
+ ],
+ "emailSetup": [
+  "El acceso por correo está pendiente de configurar.",
+  "Email sign-in is awaiting configuration."
+ ],
+ "emailForgot": [
+  "He olvidado mi contraseña",
+  "Forgot password"
+ ],
+ "emailResend": [
+  "Reenviar verificación",
+  "Resend verification"
+ ],
+ "emailResendHint": [
+  "Escribe tu correo y contraseña para solicitar otro mensaje de verificación.",
+  "Enter your email to request another verification email."
+ ],
+ "emailSignedIn": [
+  "Sesión iniciada. Abriendo tu colección…",
+  "Signed in. Opening your collection…"
+ ],
+ "emailConfirmed": [
+  "Correo confirmado. Ya puedes entrar con tu contraseña.",
+  "Email verified. You can now sign in with your password."
+ ],
+ "emailPasswordChanged": [
+  "Contraseña actualizada. Se han cerrado las sesiones anteriores; vuelve a entrar.",
+  "Password updated. Earlier sessions have been closed; sign in again."
+ ],
+ "emailSent": [
+  "Si la solicitud puede completarse, recibirás un email con los siguientes pasos. Revisa también spam.",
+  "If the request can be completed, you will receive an email with the next steps. Check spam too."
+ ],
+ "emailInvalid": [
+  "Introduce un correo válido.",
+  "Enter a valid email address."
+ ],
+ "emailInvalidCredentials": [
+  "Revisa correo y contraseña y confirma tu email antes de entrar.",
+  "Check your email and password, and verify your email before signing in."
+ ],
+ "emailInvalidCode": [
+  "El enlace ha caducado o ya se ha utilizado. Solicita uno nuevo.",
+  "The link has expired or has already been used. Request a new one."
+ ],
+ "emailFailed": [
+  "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.",
+  "The request could not be completed. Try again later."
+ ],
+ "accountConsent": [
+  "Tengo al menos 18 años y acepto las condiciones de BadgeWars.",
+  "I am at least 18 and accept the BadgeWars terms."
+ ],
+ "accountConsentRequired": [
+  "Debes aceptar las condiciones vigentes y confirmar que tienes al menos 18 años.",
+  "Accept the current terms and confirm that you are at least 18."
+ ],
+ "privacyLink": [
+  "Privacidad",
+  "Privacy"
+ ],
+ "accountSeparate": [
+  "Cada método de acceso identifica una cuenta distinta. Usar el mismo correo no fusiona badges ni saldos.",
+  "Each sign-in method identifies a separate account. Matching emails do not merge badges or balances."
+ ],
+ "refundRequestTitle": [
+  "Problema con una recarga",
+  "Top-up delivery issue"
+ ],
+ "refundRequestPolicy": [
+  "Solo se revisan devoluciones comerciales por pagos confirmados sin BC abonados. Se bloquean si hubo consumo posterior, deuda o saldo insuficiente. Si se admite la solicitud, el monedero se pausa durante la revisión; esto no confirma una devolución. Se mantienen los derechos obligatorios y las decisiones de Polar.",
+  "Commercial refund reviews cover confirmed payments with no BC delivered. Later spending, debt or insufficient balance blocks a request. An accepted request pauses the wallet for review and does not confirm a refund. Mandatory rights and Polar’s decisions remain applicable."
+ ],
+ "refundReference": [
+  "Referencia de la recarga",
+  "Top-up reference"
+ ],
+ "refundRequestSubmit": [
+  "Solicitar revisión",
+  "Request review"
+ ],
+ "refundRequestQueued": [
+  "Solicitud registrada para revisión. Referencia:",
+  "Request recorded for review. Reference:"
+ ],
+ "refundUsed": [
+  "Hubo consumo de BC después de iniciar esta recarga. No se admite esta devolución comercial.",
+  "BC were spent after this top-up was started. This commercial refund is not available."
+ ],
+ "refundCredited": [
+  "Los BC ya se abonaron correctamente. No se admite una devolución comercial por falta de entrega.",
+  "The BC were already delivered. A commercial non-delivery refund is not available."
+ ],
+ "refundInsufficient": [
+  "El saldo disponible no permite esta devolución sin generar un descubierto.",
+  "Available credits cannot cover this refund without a shortfall."
+ ],
+ "refundNotFound": [
+  "No se encuentra esa recarga en tu cuenta.",
+  "This top-up was not found in your account."
+ ],
+ "refundUnverified": [
+  "Todavía no se ha podido verificar un pago válido sin devolución previa en Polar. Contacta con soporte si el cobro aparece confirmado.",
+  "A valid payment without a previous refund could not yet be verified with Polar. Contact support if the charge is confirmed."
+ ],
+ "refundRequestFailed": [
+  "No se pudo registrar la revisión. Conserva tu referencia y contacta con soporte.",
+  "The review could not be recorded. Keep your reference and contact support."
+ ],
+ "emailConfirmPassword": [
+  "Introduce la contraseña que elegiste al registrarte para verificar que esta cuenta es tuya.",
+  "Enter the password you chose during registration to confirm this account is yours."
  ]
 };
 export const messages=Object.fromEntries(["es","en"].map((locale,i)=>[locale,Object.fromEntries(Object.entries(copy).map(([k,v])=>[k,v[i]]))]));

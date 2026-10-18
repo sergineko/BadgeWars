@@ -27,14 +27,15 @@ export async function createTopup(db,env,input,userId,id){
  }catch{await run(db,"UPDATE bw_topups SET state='review' WHERE id=? AND state='creating'",[row.id]);await incident(db,'checkout_creation_uncertain',row.id);throw Error('checkout_recovering');}
 }
 export async function incident(db,kind,reference){await run(db,'INSERT INTO bw_operations(id,kind,reference) VALUES(?,?,?) ON CONFLICT(kind,reference) DO NOTHING',[crypto.randomUUID(),kind,reference]);}
+export function orderMatches(order,attempt,env){return Boolean(attempt&&Number.isSafeInteger(order.refunded_amount)&&order.refunded_amount>=0&&order.metadata?.app==='badgewars'&&order.metadata?.topup_id===attempt.id&&order.metadata.user_id===attempt.user_id&&Number(order.metadata.credits)===attempt.credits&&order.metadata.terms_version===attempt.terms_version&&order.product_id===attempt.product_id&&order.product?.organization_id===env.POLAR_ORGANIZATION_ID&&order.currency===attempt.currency&&order.net_amount===attempt.credits*100&&order.discount_amount===0&&!order.subscription_id&&order.applied_balance_amount===0&&order.customer?.external_id==='bw:'+attempt.user_id&&(!attempt.checkout_id||attempt.checkout_id===order.checkout_id)&&uuid(order.id)&&uuid(order.checkout_id));}
 export async function reconcileOrder(db,env,orderId){
  const order=await polar(env,'orders/'+encodeURIComponent(orderId));
  if(order.metadata?.app!=='badgewars')return;
  const id=order.metadata.topup_id,attempt=uuid(id)?await first(db,'SELECT * FROM bw_topups WHERE id=?',[id]):null;
- if(!attempt||order.id!==orderId||!Number.isSafeInteger(order.refunded_amount)||order.refunded_amount<0||order.metadata.user_id!==attempt.user_id||Number(order.metadata.credits)!==attempt.credits||order.metadata.terms_version!==attempt.terms_version||order.product_id!==attempt.product_id||order.product?.organization_id!==env.POLAR_ORGANIZATION_ID||order.currency!==attempt.currency||order.net_amount!==attempt.credits*100||order.discount_amount!==0||order.subscription_id||order.applied_balance_amount!==0||order.customer?.external_id!=='bw:'+attempt.user_id||(attempt.checkout_id&&attempt.checkout_id!==order.checkout_id)||!uuid(order.id)||!uuid(order.checkout_id)){
+ if(order.id!==orderId||!orderMatches(order,attempt,env)){
   await incident(db,'payment_mismatch',orderId);throw Error('payment_mismatch');
  }
- if(order.paid!==true&&!await first(db,'SELECT id FROM bw_orders WHERE id=?',[order.id])){
+ if(!await first(db,'SELECT id FROM bw_orders WHERE id=?',[order.id])&&(order.paid!==true||order.refunded_amount>0)){
   if(order.refunded_amount>0){await run(db,"UPDATE bw_topups SET state='review',checkout_url=NULL WHERE id=?",[attempt.id]);await incident(db,'uncredited_refund',orderId);}return;
  }
  const reversed=Math.min(attempt.credits,Math.floor(order.refunded_amount/100));

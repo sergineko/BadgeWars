@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {emailAction} from '../public/account.js';
 import assert from 'node:assert/strict';
 import {routeState,cleanHref,rankingPath} from '../public/routes.js';
 import {badgeUrl,normalizedBadgeUrl} from '../src/badge-url.mjs';
@@ -40,3 +41,5 @@ test('payment returns land on a clean route and consume encrypted receipt contex
  const cancelled=await worker.fetch(new Request(origin+'/api/checkout/return?status=cancel&support='+id),env,{});assert.equal(cancelled.headers.get('Location'),origin+'/');
  assert.equal((await worker.fetch(new Request(origin+'/api/checkout/return?session=evil&redirect=https://evil.example'),env,{})).status,400);
 });
+
+test('email action codes are read into memory while the public URL becomes clean',()=>{const value="https://badges.example/account/email?mode=verifyEmail&oobCode=one-use-code&apiKey=untrusted";assert.deepEqual(emailAction(value),{mode:"confirm",code:"one-use-code"});assert.equal(routeState(value).path,"/account/email");assert.equal(routeState(value).page,"/collection");assert.deepEqual(emailAction('https://badges.example/account/email#resetPassword/one-use-code'),{mode:'password',code:'one-use-code'});assert.equal(routeState('https://badges.example/account/email#verifyEmail/one-use-code').path,'/account/email');assert.equal(emailAction("https://badges.example/?mode=verifyEmail&oobCode=code"),null);assert.equal(emailAction("https://badges.example/account/email?mode=other&oobCode=code"),null);});

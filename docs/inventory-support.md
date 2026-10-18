@@ -1,6 +1,6 @@
 # Inventario y Trust Bag en D1
 
-Aplicar únicamente las migraciones actuales `0001` a `0006` a la D1 dedicada. Las tablas son `bw_*`; las migraciones de PostgreSQL conservadas en `legacy/` no pertenecen al despliegue actual.
+Aplicar únicamente las migraciones actuales `0001` a `0008` a la D1 dedicada. Las tablas son `bw_*`; las migraciones de PostgreSQL conservadas en `legacy/` no pertenecen al despliegue actual.
 
 `bw_user_badges` tiene `UNIQUE(user_id,badge)` e ID estable. Renovar un badge competitivo sube su nivel y conserva URL, sin generar una segunda ficha. La colección privada muestra la situación vigente, incluida una suspensión con motivo y contacto; no lista badges históricos. El libro de operaciones conserva evidencia financiera interna.
 

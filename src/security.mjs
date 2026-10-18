@@ -14,12 +14,12 @@ export async function verifyPolar(body,headers,secret,now=Date.now()){
   for(const item of signatures.split(' ')){const [version,value]=item.split(',');if(version!=='v1'||!value)continue;try{if(await crypto.subtle.verify('HMAC',key,Uint8Array.from(atob(value),c=>c.charCodeAt(0)),new TextEncoder().encode(`${id}.${stamp}.${body}`)))return true;}catch{}}
  }catch{}return false;
 }
-export async function verifyChallenge(request,env,token,userId){
+export async function verifyChallenge(request,env,token,userId,action='wallet-topup'){
  if(!env.TURNSTILE_SECRET_KEY||typeof token!=='string'||token.length<10||token.length>2048)return false;
  const response=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',signal:AbortSignal.timeout(6000),body:new URLSearchParams({secret:env.TURNSTILE_SECRET_KEY,response:token,remoteip:request.headers.get('CF-Connecting-IP')||''})});
  const result=await response.json();
  // Official dummy keys return fixed test metadata, not the widget's action/cData.
  // Permit that documented behavior only on loopback in the explicit Sandbox.
  const localTest=env.POLAR_ENVIRONMENT==='sandbox'&&['localhost','127.0.0.1','[::1]'].includes(new URL(env.APP_URL).hostname)&&new URL(request.url).origin===new URL(env.APP_URL).origin&&env.TURNSTILE_SITE_KEY==='1x00000000000000000000AA'&&env.TURNSTILE_SECRET_KEY==='1x0000000000000000000000000000000AA'&&token==='XXXX.DUMMY.TOKEN.XXXX';
- return result.success===true&&(localTest||result.hostname===new URL(env.APP_URL).hostname&&result.action==='wallet-topup'&&result.cdata===userId);
+ return result.success===true&&(localTest||result.hostname===new URL(env.APP_URL).hostname&&result.action===action&&result.cdata===userId);
 }

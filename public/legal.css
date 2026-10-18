@@ -7,3 +7,5 @@
 .wallet-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.terms-mor{border-color:#35525c;background:#68d4d805}@media(max-width:700px){.wallet-tools{width:100%}.wallet-tools button{width:100%}}
 
 .terms-content p{white-space:pre-line}
+
+.account-form{display:grid;gap:12px;margin-top:24px}.account-form>label{font-size:12px;color:#c4b9d5}.account-form>input{width:100%;min-width:0;padding:13px;background:#141019;border:1px solid #514064;border-radius:8px;color:#f3ebff;font:inherit}.account-form small{font-size:11px;color:#a79ab6;line-height:1.6}.account-form .primary{width:100%;margin-top:8px}.account-links{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0}.account-trap{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.account-form [role=status]{font-size:12px;line-height:1.7}

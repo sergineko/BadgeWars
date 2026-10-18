@@ -60,3 +60,13 @@ SELECT day,writes FROM bw_kv_budget ORDER BY day DESC LIMIT 7;
 Para una devolución/cierre lícito, determinar qué derechos y saldo quedan, qué acciones se consumieron y qué apoyos afectan a terceros. No reactivar automáticamente bolsas con puntos impugnados ni considerar fraudulenta una reclamación por el mero hecho de existir. `bw_operations` es una cola interna de incidencias sin sistema externo de notificación todavía; el titular debe revisarla y observar las alertas del proveedor.
 
 La política comercial del punto 14 se ha adaptado de la cobertura de [Outbid](https://outbid.lol/terms) al modelo de BadgeWars: no hay reembolsos voluntarios por ser superado o por resultados esperados, pero no se incorpora su ranking diario, un supuesto de compra directa de posición al recargar ni una exclusión de derechos obligatorios. Polar conserva sus facultades propias de devolución.
+
+## Solicitudes por recarga no entregada
+
+`POST /api/me/refund-request` exige sesión propietaria, Origin correcto y una referencia de recarga válida. Consulta el pedido autoritativo de Polar y comprueba aplicación, usuario, producto, moneda, importe y ausencia de reembolso previo. La SQL revalida dentro de la reserva: una recarga ya abonada, un gasto desde su inicio o deuda impiden la solicitud. La reserva congela el monedero y frena el abono de esa recarga mientras el expediente siga en review/submitted.
+
+No hay endpoint público que ejecute dinero, cierre expedientes o descongele saldos. Revisar `bw_refund_requests` junto con `bw_operations`. Una devolución comercial se tramita manualmente en Polar solo tras verificar elegibilidad inmediatamente antes de ejecutarla; no basta la aprobación antigua de una solicitud. Guardar la referencia del resultado y conciliar su estado real. Mantener congelado hasta descartar otras deudas, reversiones, expedientes o apoyos impugnados.
+
+Si se rechaza la solicitud por un fallo de entrega subsanable, documentar la decisión, cerrar el expediente y reanudar la conciliación del pedido correcto. Nunca editar/borrar el ledger ni añadir un segundo crédito manual. La reactivación requiere revisión administrativa de todas las incidencias y publicación de proyecciones. Esta revisión es manual; no hay todavía consola administrativa ni alertas externas automatizadas.
+
+Una devolución obligatoria o impuesta por Polar debe conciliarse incluso si el usuario gastó BC: el saldo gastable no baja de cero, se registra deuda por el faltante y se suspende la cuenta para revisión. El control comercial de la app no puede impedir un chargeback o una decisión del MoR.

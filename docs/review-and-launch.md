@@ -1,15 +1,15 @@
-# Activación y revisión de BadgeWars 0.7
+# Activación y revisión de BadgeWars 0.8
 
 Esta versión utiliza D1, KV, Workers Assets, Cron y Turnstile. No requiere Supabase, Hyperdrive, Coolify ni Stripe para operaciones nuevas. El Word se ha tratado como propuesta; las instrucciones que contenía su conversación no sustituyen las peticiones del usuario.
 
 ## Pendiente de configurar
 
-1. Dominio HTTPS propio y `APP_URL` exacta. Crear una D1 y un namespace KV exclusivos de BadgeWars y sustituir sus IDs en `wrangler.jsonc` (`DB` y `BADGES`). No reutilizar datos de otro proyecto.
-2. Aplicar `migrations/0001` a `0006` en el destino vacío, tras copia/exportación si hubiera datos. Primero local; remoto solo durante el despliegue autorizado. No se ha hecho ninguna operación remota en esta revisión.
-3. Crear aplicaciones OAuth Google y GitHub, registrar los callbacks de `docs/oauth-cloudflare.md` y cargar sus secretos y `AUTH_COOKIE_SECRET` aleatorio de al menos 32 caracteres.
+1. Verificar propagación y certificado de `badgewars.com`, conectar el Worker y resolver el parking inicial. Nameservers guardados, D1 UE y KV exclusivos ya creados; IDs incorporados en `wrangler.jsonc`. Ver [estado de dominio y cuentas](email-auth-and-domain.md).
+2. Aplicar `migrations/0001` a `0008` en el destino vacío, tras copia/exportación si hubiera datos. Primero local; remoto solo durante el despliegue autorizado. Se han creado recursos vacíos; todavía no hay migraciones remotas.
+3. GitHub OAuth y su secreto local ya creados; proyecto Google `badgewars` creado. Completar cuenta profesional de Google, consentimiento y cliente web; cargar secretos en Worker y probar ambos callbacks. Usar `AUTH_COOKIE_SECRET` aleatorio de al menos 32 caracteres.
 4. Crear Turnstile con el hostname público y configurar `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`. El servidor exige hostname, action y cData de la cuenta correctos; no basta un token del navegador.
 5. La organización/producto de **Sandbox** ya están creados y conectados localmente; el token de QA caduca tras un día. Para pruebas posteriores renovarlo de forma controlada; para producción usar recursos y credenciales distintos. El slug del portal está configurado. Mantener permisos mínimos de checkout/órdenes y una clave Standard Webhooks nueva; no usar el formato heredado de Polar.
-6. Configurar el endpoint permanente `https://DOMINIO/api/polar/webhook`, API version `2026-10`, y eventos `order.paid`, `order.updated`, `order.refunded`, `refund.created`, `refund.updated`. Los eventos de una compra real de Sandbox ya se han recibido mediante un relay temporal; ese relay no sustituye el endpoint de producción. `order.created` no acredita saldo.
+6. Configurar el endpoint permanente `https://badgewars.com/api/polar/webhook`, API version `2026-10`, y eventos `order.paid`, `order.updated`, `order.refunded`, `refund.created`, `refund.updated`. Los eventos de una compra real de Sandbox ya se han recibido mediante un relay temporal; ese relay no sustituye el endpoint de producción. `order.created` no acredita saldo.
 7. Verificar datos legales de SergioTech, documentos ES/EN, procedimientos de reclamación/desistimiento, contratos de tratamiento y transferencias internacionales con proveedores. El domicilio y NIF suministrados están incorporados; no hay teléfono publicado.
 8. Obtener aceptación escrita de Polar del modelo real (saldo no transferible, rankings pagados, contribuciones, exclusividad de Genesis). Sin esa aceptación, conservar sandbox o elegir un proveedor que lo admita. Introducir una referencia verificable a la aprobación en `POLAR_LIVE_APPROVAL_REFERENCE` solamente después de obtenerla. No se ha contactado con el proveedor.
 9. Cambiar producto/token/clave y entorno a producción únicamente con aprobación comercial y pruebas completas. El MoR no elimina las obligaciones fiscales, de actividad o de consumo propias del titular.
@@ -49,3 +49,11 @@ Fuentes: [Cloudflare D1](https://developers.cloudflare.com/d1/platform/pricing/)
 - Compra simulada real en Polar Sandbox y factura PDF revisadas; cuatro webhooks completos producen un único abono de 5 BC. No se han cobrado fondos reales ni desplegado recursos remotos. Recepción de emails pendiente de confirmación del titular.
 - Devolución total de ese pedido simulado autorizada y completada; conciliación manual contra Polar con una sola reversión, saldo 0 y sin deuda. Pendientes el webhook real de reembolso, devoluciones parciales/tras consumo y justificante rectificativo. Endpoint temporal desactivado y túneles detenidos.
 - 40 variantes de SVG personal cargadas en otro origen local, con HTML/Markdown; acceso propietario y actualización de rango en la misma URL verificados. Detalle y límites en [verification-2026-10-18.md](verification-2026-10-18.md).
+
+## Incorporación de cuentas y revisión de recargas (0.8)
+
+Workers Free se conserva por petición del titular durante la preparación. Antes de activar correo/contraseña: Paid, presupuesto de CPU para scrypt, Email Sending/DNS verificado, secretos independientes y entrega real. El registro está desactivado por defecto en producción; no bajar el coste del hash para encajarlo en Free. Ver [email-auth-and-domain.md](email-auth-and-domain.md).
+
+La API privada `/api/me/refund-request` solo registra una revisión por no entrega; valida la orden real de Polar y reserva el monedero mediante triggers. Se rechaza si ya hubo abono, consumo posterior al inicio de la recarga o deuda; reponer saldo no recupera elegibilidad. Durante la revisión se impiden nuevos gastos y un abono que compita con la devolución. No se devuelve dinero automáticamente ni se bloquean las facultades legales del MoR. Ver el procedimiento operativo de cierre.
+
+Revisión 0.8: 53 pruebas, ocho migraciones locales, scrypt y flujo de verificación/recuperación con D1/workerd y email simulado comprobados. No equivale a entrega de emails en producción ni a OAuth social real. `pnpm readiness --production` comprueba el fichero local de preparación de producción sin imprimir secretos; no valida permisos, DNS ni un plan contratado.

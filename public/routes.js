@@ -23,6 +23,6 @@ export function routeState(value){
  if(support&&uuid.test(support[1]))params.set('support',support[1]);
  if(path==='/collection/demo')params.set('demo','1');
  if(path==='/collection/sign-in-error')params.set('auth','error');
- const page=['/leaderboard','/leaderboard/trust','/leaderboard/genesis'].includes(path)?'/leaderboard':['/collection','/collection/demo','/collection/sign-in-error'].includes(path)?'/collection':(badge&&badges.includes(badge[1])||support&&uuid.test(support[1]))?'/':path;
+ const page=['/leaderboard','/leaderboard/trust','/leaderboard/genesis'].includes(path)?'/leaderboard':['/collection','/collection/demo','/collection/sign-in-error','/account/email'].includes(path)?'/collection':(badge&&badges.includes(badge[1])||support&&uuid.test(support[1]))?'/':path;
  return {path,page,params,scroll,metric:path==='/leaderboard/trust'?'trust':'bids'};
 }
