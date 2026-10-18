@@ -2,7 +2,7 @@
 
 Web ES/EN de badges SVG dinámicos, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.9.
 
-**Lanzamiento:** [tabla de pendientes y criterios de cierre](docs/review-and-launch.md#tabla-de-pendientes) · [resultado de Polar](docs/polar-model-review.md) · [consulta enviada a Freemius](docs/freemius-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
+**Lanzamiento:** [tabla de pendientes y criterios de cierre](docs/review-and-launch.md#tabla-de-pendientes) · [resultado de Polar](docs/polar-model-review.md) · [consulta enviada a Freemius](docs/freemius-model-review.md) · [revisión de Dodo y precedente de Outbid](docs/dodo-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
 
 ## Desarrollo
 
