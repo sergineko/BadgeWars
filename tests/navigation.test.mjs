@@ -1,11 +1,17 @@
 import test from 'node:test';
 import {emailAction} from '../public/account.js';
 import assert from 'node:assert/strict';
-import {routeState,cleanHref,rankingPath} from '../public/routes.js';
+import {routeState,cleanHref,rankingPath,internalRoute} from '../public/routes.js';
 import {badgeUrl,normalizedBadgeUrl} from '../src/badge-url.mjs';
 import {authRoute,unseal} from '../src/auth.mjs';
 import worker from '../src/worker.mjs';
 const origin='https://badges.example',id='90000000-0000-4000-8000-000000000001';
+
+test('client navigation only accepts application pages and leaves auth, payment and image URLs to the browser',()=>{
+ for(const path of ['/','/leaderboard','/leaderboard/funded','/leaderboard/trust','/collection','/collection/demo','/terms','/privacy','/legal','/cookies','/support/'+id])assert.ok(internalRoute(path,origin));
+ assert.equal(internalRoute('/leaderboard?badge=bait&lang=en',origin).path,'/leaderboard/bait');
+ for(const path of ['https://other.example/collection','//other.example/terms','javascript:alert(1)','mailto:support@example.test','/api/auth/start?provider=google','/api/auth/callback/github?code=private','/api/checkout/return?status=cancel','/api/me/confirmation/'+id,'/badges/flex.svg','/account/email#verifyEmail/private','/account/email/','/leaderboard/missing'])assert.equal(internalRoute(path,origin),null,path);
+});
 
 test('clean navigation keeps legacy filters, language and section intent without query strings or fragments',()=>{
  const old=routeState(origin+'/leaderboard?lang=es&metric=trust&q=pixelpilot&page=2#arena');

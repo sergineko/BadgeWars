@@ -28,3 +28,14 @@ export function routeState(value){
  const page=rankingBadge?'/leaderboard':['/collection','/collection/demo','/collection/sign-in-error','/account/email'].includes(path)?'/collection':(badge&&badges.includes(badge[1])||support&&uuid.test(support[1]))?'/':path;
  return {path,page,params,scroll,rankingBadge,metric:rankingBadge==='quality'?'trust':'bids'};
 }
+
+// Only ordinary application pages use client navigation. Auth, payments and
+// downloads keep their normal browser/server flow.
+export function internalRoute(value,origin){
+ try{
+  const url=new URL(value,origin);
+  if(url.origin!==new URL(origin).origin||!['https:','http:'].includes(url.protocol)||url.pathname.replace(/\/+$/,'')==='/account/email')return null;
+  const route=routeState(url.href);
+  return ['/','/leaderboard','/collection','/terms','/privacy','/legal','/cookies'].includes(route.page)?route:null;
+ }catch{return null;}
+}

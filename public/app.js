@@ -3,7 +3,7 @@ import {emailDialog,emailAction,refundDialog,clearEmailChallenge} from './accoun
 import {termsSections,TERMS_VERSION} from './terms.js';
 import {legalRoutes,legalSections} from './legal.js';
 import {walletStrip,walletDialog,spendCredits,demoWallet} from './wallet.js';
-import {routeState,cleanHref,rankingPath} from './routes.js';
+import {routeState,cleanHref,rankingPath,internalRoute} from './routes.js';
 import {catalog,badgeSvg,money,escapeXml as e} from './badges.js';
 import {translate,language} from './i18n.js';
 import {queryRanking} from './ranking.js';
@@ -13,22 +13,25 @@ import {supportDialog,contributorsDialog} from './support.js';
 import {pointsOf,formatPoints} from './points.js';
 import {personalDialog} from './personal.js';
 import {stored,request,checkoutKey,forgetCheckout,receiptMessage,paymentError} from './flow.js';
-const $=s=>document.querySelector(s),initialRoute=routeState(location.href),params=initialRoute.params,pendingEmailAction=emailAction(location.href);
+const $=s=>document.querySelector(s),initialRoute=routeState(location.href),pendingEmailAction=emailAction(location.href);
+let params=initialRoute.params;
 const sessionState=(key,value)=>{try{if(value===undefined)return sessionStorage.getItem(key);sessionStorage.setItem(key,value);}catch{return null;}};
 if(params.has('lang'))stored('badgewars-language',language(params.get('lang')));
 if(params.has('checkout'))sessionState('badgewars-receipt',params.get('checkout'));
 if(initialRoute.page==='/collection'&&!params.has('checkout')&&sessionState('badgewars-receipt'))params.set('checkout',sessionState('badgewars-receipt'));
-const rankingStorageKey='badgewars-ranking-'+(initialRoute.rankingBadge||'flex');
-let savedRanking={};try{savedRanking=JSON.parse(sessionState(rankingStorageKey)||'{}')||{};}catch{}
-history.replaceState(null,'',initialRoute.path);
+let rankingStorageKey='badgewars-ranking-'+(initialRoute.rankingBadge||'flex');
+function rankingFor(route){let saved={};try{saved=JSON.parse(sessionState('badgewars-ranking-'+(route.rankingBadge||'flex'))||'{}')||{};}catch{}return {metric:route.metric,currency:'credits',badge:route.rankingBadge||'flex',search:String(route.params.get('q')??saved.search??'').slice(0,40),sort:(route.params.get('sort')||saved.sort)==='latest'?'latest':'highest',page:Number(route.params.get('page')||saved.page)||1};}
+let currentEntry=history.state?.bwEntry||crypto.randomUUID();
+history.replaceState({...history.state,bwEntry:currentEntry},'',initialRoute.path);
+history.scrollRestoration='manual';
 let locale=language(params.get('lang')||stored('badgewars-language')||(navigator.language.startsWith('es')?'es':'en'));
 let emailEnabled=false;
 let wallet=null,turnstileSiteKey=null,legalInfo={operator:{},version:TERMS_VERSION};
 let data={demo:false,states:{},rankings:[]},user=null,authProviders=[],collectionItems=[],collectionError=false,filter='all';
-let arenaLoaded=false,arenaError=false,collectionBusy=false,pendingAttempts=[],loginBadge=null,loginSupport=null;
+let arenaLoaded=false,arenaError=false,collectionTask=null,collectionTaskOwner=null,pendingAttempts=[],loginBadge=null,loginSupport=null;
 let receipt=null,receiptPolls=0;
-const page=initialRoute.page;
-let rankingQuery={metric:initialRoute.metric,currency:'credits',badge:initialRoute.rankingBadge||'flex',search:String(params.get('q')??savedRanking.search??'').slice(0,40),sort:(params.get('sort')||savedRanking.sort)==='latest'?'latest':'highest',page:Number(params.get('page')||savedRanking.page)||1};
+let page=initialRoute.page;
+let rankingQuery=rankingFor(initialRoute);
 if(page==='/leaderboard')sessionState(rankingStorageKey,JSON.stringify(rankingQuery));
 const t=(key,values)=>translate(locale,key,values),price=(amount,currency='usd')=>money(amount,currency,locale),svg=(id,state,compact=false)=>badgeSvg(id,state,compact,locale);
 function href(path='/',extra={}){return cleanHref(path,extra);}
@@ -74,17 +77,17 @@ function collection(){const isDemo=data.demo&&params.get('demo')==='1'&&!user;co
 }
 function render(){document.documentElement.lang=locale;document.title=`BadgeWars — ${legalRoutes.includes(page)?t(legalKeys[page][1]):page==='/leaderboard'?t('ranking'):page==='/collection'?t('collection'):'Small badge. Big ego.'}`;document.querySelector('meta[name="description"]').content=t(legalRoutes.includes(page)?legalKeys[page][2]:page==='/leaderboard'?'rankingIntro':page==='/collection'?'collectionIntro':'arenaIntro');header();$('main').innerHTML=legalRoutes.includes(page)?termsPage():page==='/leaderboard'?ranking():page==='/collection'?collection():home();$('footer').innerHTML=`<a class="brand" href="${href('/')}">✣ badge<span>wars</span></a><span>${t('footer')}</span><span>${t('paymentNote')}</span><button class="text-link" data-action="rules">${t('rules')} ↗</button><span class="legal-footer">${legalRoutes.map(path=>`<a class="text-link" href="${path}">${t(legalKeys[path][1])}</a>`).join('')}</span>`;$('.close').setAttribute('aria-label',t('close'));if(!['/','/leaderboard','/collection',...legalRoutes].includes(page))$('main').innerHTML=`<section class="empty-state"><h1>${t('notFound')}</h1><a class="primary" href="${href('/')}">${t('backArena')} ↗</a></section>`;if(arenaError&&!legalRoutes.includes(page)){const banner=document.createElement('div');banner.className='error-banner connection-banner';banner.innerHTML=`${t('offline')} <button class="outline" data-action="retry-arena">${t('retryArena')} ↻</button>`;$('main').prepend(banner);}if(page==='/leaderboard'){drawRanking();bindRanking();}}
 function bindRanking(){const update=(key,value)=>{rankingQuery[key]=value;rankingQuery.page=1;drawRanking();saveRankingQuery();};$('#rank-search').oninput=ev=>update('search',ev.target.value);if($('#rank-sort'))$('#rank-sort').onchange=ev=>update('sort',ev.target.value);}
-function saveRankingQuery(){sessionState(rankingStorageKey,JSON.stringify(rankingQuery));history.replaceState(null,'',rankingPath(rankingQuery.metric,rankingQuery.badge));}
+function saveRankingQuery(){sessionState(rankingStorageKey,JSON.stringify(rankingQuery));history.replaceState(history.state,'',rankingPath(rankingQuery.metric,rankingQuery.badge));}
 function open(content){clearEmailChallenge();$('#modal-content').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),2500);}
 function emailContext(){return {t,locale,open,enabled:emailEnabled,siteKey:turnstileSiteKey,destination:loginSupport?'/support/'+loginSupport:loginBadge?'/badge/'+loginBadge:'/collection'};}
 function login(badge,support){loginBadge=badge||null;loginSupport=support||null;open(`<div class="eyebrow">${t('loginEyebrow')}</div><div class="login-emblem">✣</div><h2>${t('loginTitle')}</h2><p>${t('loginText')}</p><div class="social-buttons">${['google','github'].map(provider=>`<button class="social-button" data-provider="${provider}" ${authProviders.includes(provider)?'':'disabled'}><span class="provider-icon">${provider==='google'?'<b class="google-g">G</b>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.3c-3.4.7-4.1-1.4-4.1-1.4-.5-1.4-1.3-1.7-1.3-1.7-1.1-.8.1-.8.1-.8 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.7 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.6-1.4-5.6-6A4.7 4.7 0 0 1 5.5 8.5c-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.4 1.3a11.7 11.7 0 0 1 6 0c2.3-1.6 3.4-1.3 3.4-1.3.6 1.7.2 3 .1 3.3a4.7 4.7 0 0 1 1.3 3.3c0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.4c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>'}</span>${t('continueWith',{provider:provider==='google'?'Google':'GitHub'})}<span>↗</span></button>`).join('')}</div>${authProviders.length<2?`<p class="demo-notice">${t('oauthPending')}</p>`:''}<button class="social-button" data-action="email-login"><span class="provider-icon">@</span>${t('emailLogin')}<span>↗</span></button><p class="muted">${t('accountSeparate')}</p><a class="text-link demo-collection-link" href="${href('/collection',{demo:'1'})}">${t('demoCollection')} →</a>`);}
 function previewBadge(id,holderId){const item=(state(id).claims||[]).find(p=>p.id===holderId);if(!item)return;const b=catalog.find(b=>b.id===id);open(`<div class="eyebrow">${t('publicPreview')}</div><h2>${b.name}</h2><div id="public-live-badge" data-holder="${item.id}" data-badge="${id}">${svg(id,item)}</div><small id="live-badge-status" class="live-badge-note">${t('badgeUpdates')}</small><p id="public-live-details">@${e(item.owner)} · ${id==='quality'?points(item):price(item.amount,item.currency)}</p>${id==='quality'?`<button class="primary" data-support-target="${item.id}">${t('supportProfile')} ↗</button>`:''}`);}
 async function claim(id){
- const b=catalog.find(x=>x.id===id);if(arenaError||!arenaLoaded){toast(t('offline'));return;}if(!data.demo&&!user){login(id);return;}
+ const version=navigationVersion,b=catalog.find(x=>x.id===id);if(arenaError||!arenaLoaded){toast(t('offline'));return;}if(!data.demo&&!user){login(id);return;}
  let level=next(b)/100,previous=0,balance=demoWallet.balance;
  if(data.demo)previous=demoCollection.find(p=>p.badgeId===id)?.amount/100||0;
- else try{const response=await request('/api/me/quote?badge='+id);if(!response.ok)throw Error();const result=await response.json();level=result.level;previous=result.previous;balance=result.balance;if(result.frozen){await walletDialog({...supportContext(),wallet,turnstileSiteKey});return;}}catch{toast(t('walletUnavailable'));return;}
+ else try{const response=await request('/api/me/quote?badge='+id);if(version!==navigationVersion)return;if(!response.ok)throw Error();const result=await response.json();if(version!==navigationVersion)return;level=result.level;previous=result.previous;balance=result.balance;if(result.frozen){await walletDialog({...supportContext(),wallet,turnstileSiteKey});return;}}catch{if(version===navigationVersion)toast(t('walletUnavailable'));return;}
  const fixed=['genesis','quality'].includes(id);if(fixed&&previous>0){toast(t('alreadyOwned'));return;}const cost=()=>Math.max(0,Number($('#amount').value)-(fixed?0:previous));
  open(`<div class="eyebrow">${t('checkoutEyebrow')}</div><h2>${b.name}</h2>${svg(id,state(id))}${data.demo?`<p class="demo-notice">${t('checkoutDemo')}</p>`:''}<form id="checkout-form"><label for="handle">${t('publicAlias')}</label><input id="handle" name="handle" placeholder="${t('aliasPlaceholder')}" pattern="[A-Za-z0-9_]{2,24}" minlength="2" maxlength="24" required autocomplete="nickname"><label for="amount">${t(id==='genesis'?'editionAmount':id==='quality'?'activationAmount':'bidAmount',{currency:'BC'})}</label><input type="number" id="amount" min="${level}" max="1000000000" step="1" value="${level}" ${fixed?'readonly':''} required><p>${t(id==='genesis'?'genesisTerms':id==='quality'?'bagTerms':'bidTerms')}</p><div class="credit-quote" id="credit-quote"></div><label class="wallet-consent"><input type="checkbox" id="spend-consent" required><span>${t('spendConsent')} <a href="/terms" target="_blank" rel="noopener">${t('readTerms')}</a></span></label><label class="wallet-consent"><input type="checkbox" id="spend-execution" required><span>${t('executionConsent')}</span></label><p>${t('walletSpendNote')}</p><button class="primary" type="submit">${t(data.demo?'demoFlow':'spendCredits')} ↗</button><p id="checkout-status" role="status"></p></form>`);
  const update=()=>$('#credit-quote').textContent=t('creditQuote',{level:$('#amount').value,previous:fixed?0:previous,cost:cost(),balance});$('#amount').oninput=update;update();
@@ -92,8 +95,8 @@ async function claim(id){
 }
 function receiptBanner(){if(!receipt)return '';const message=receipt.kind==='support'&&receipt.status==='accepted'?'receiptSupportAccepted':receiptMessage(receipt.status);return `<div class="receipt-banner ${receipt.status==='accepted'?'receipt-success':''}" role="status"><span>${t(message)}</span>${receipt.reference?`<small>REF / ${e(receipt.reference)}</small><a class="text-link" href="/api/me/confirmation/${e(receipt.reference)}" download>${t('downloadConfirmation')} ↓</a>`:''}<button class="text-link" data-action="check-receipt">${t('retry')} ↻</button></div>`;}
 function pendingAttemptsHtml(){if(!user||!pendingAttempts.length)return '';return `<section class="pending-attempts"><h3>${t('pendingMoves')}</h3>${pendingAttempts.map(a=>`<div class="pending-attempt"><div><strong>${e(a.badge==='wallet'?t('topup'):catalog.find(b=>b.id===a.badge)?.name||a.badge)} · ${price(a.amount,a.currency)}</strong><small>${t(a.state==='review'?'reviewPaymentText':receiptMessage(a.state))} · REF / ${e(a.id)}</small></div>${a.state==='open'&&a.checkout_url?`<a class="outline" href="${e(a.checkout_url)}">${t('resumeCheckout')} ↗</a>`:''}</div>`).join('')}</section>`;}
-async function refreshReceipt(){
- const session=params.get('checkout');if(!session||session==='cancel')return;
+async function refreshReceipt(session=params.get('checkout')){
+ if(!session||session==='cancel')return;
  if(session==='success'){receipt={status:'waiting'};return;}
  if(!user){receipt={status:'signin'};return;}
  try{const response=await request('/api/me/checkout?session='+encodeURIComponent(session));
@@ -105,30 +108,77 @@ async function refreshReceipt(){
  }catch{receipt={status:'unavailable'};}
 }
 async function loadCollection(){
- if(!user||collectionBusy)return;collectionBusy=true;collectionError=false;
- try{const response=await request('/api/me/badges');
-  if(response.status===401){user=null;collectionItems=[];pendingAttempts=[];return;}
-  if(!response.ok)throw Error();const result=await response.json();collectionItems=result.items;
-  const walletResponse=await request('/api/me/wallet');if(walletResponse.ok)wallet=await walletResponse.json();
-  const attempts=await request('/api/me/attempts');if(attempts.ok)pendingAttempts=(await attempts.json()).attempts;
- }catch{collectionError=true;}finally{collectionBusy=false;}
+ if(!user)return;if(collectionTask){if(collectionTaskOwner===user.id)return collectionTask;await collectionTask;return loadCollection();}const owner=user.id;collectionTaskOwner=owner;collectionError=false;
+ collectionTask=(async()=>{try{
+  const [badges,walletResponse,attempts]=await Promise.all(['/api/me/badges','/api/me/wallet','/api/me/attempts'].map(path=>request(path)));
+  if(user?.id!==owner)return;
+  if([badges,walletResponse,attempts].some(r=>r.status===401)){user=null;collectionItems=[];pendingAttempts=[];wallet=null;return;}
+  if(!badges.ok)throw Error();const [inventory,balance,pending]=await Promise.all([badges.json(),walletResponse.ok?walletResponse.json():null,attempts.ok?attempts.json():null]);
+  if(user?.id!==owner)return;collectionItems=inventory.items;if(balance)wallet=balance;if(pending)pendingAttempts=pending.attempts;
+ }catch{if(user?.id===owner)collectionError=true;}finally{collectionTask=null;}})();return collectionTask;
 }
 async function load(){try{const response=await request('/api/arena');if(!response.ok)throw Error();const value=await response.json();if(!value.states||!Array.isArray(value.rankings))throw Error();data=value;arenaLoaded=true;arenaError=false;}catch{arenaError=true;}}
 
-document.addEventListener('click',ev=>{const link=ev.target.closest('a[data-scroll]');if(!link||ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.altKey)return;const target=link.dataset.scroll;if(page==='/'&&location.pathname==='/'){ev.preventDefault();$('#'+target)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}else sessionState('badgewars-scroll',target);});
-document.addEventListener('click',async ev=>{const node=ev.target.closest('button');if(!node)return;if(node.dataset.claim)claim(node.dataset.claim);if(node.dataset.contributors)contributorsDialog(node.dataset.contributors,supportContext());if(node.dataset.supportTarget)supportDialog(node.dataset.supportTarget,supportContext());if(node.dataset.personal)await personalDialog(node.dataset.personal,{t,locale,open,svg,toast,page,user,items:collectionItems});if(node.dataset.preview)previewBadge(node.dataset.badge,node.dataset.preview);if(node.dataset.provider&&authProviders.includes(node.dataset.provider))location.assign(`/api/auth/start?provider=${node.dataset.provider}&lang=${locale}${loginBadge?'&badge='+loginBadge:''}${loginSupport?'&support='+loginSupport:''}${params.get('checkout')?.match(/^[0-9a-f-]{36}$/i)?'&checkout='+encodeURIComponent(params.get('checkout')):''}`);if(node.dataset.filter){filter=node.dataset.filter;render();}if(node.dataset.page){rankingQuery.page=Number(node.dataset.page);drawRanking();saveRankingQuery();}switch(node.dataset.action){case 'email-login':await emailDialog(emailContext());break;case 'refund-request':refundDialog({open,t});break;case 'billing-portal':if(data.demo){toast(t('billingDemo'));break;}try{const response=await request('/api/me/billing-portal',{method:'POST'});const result=await response.json();if(!response.ok)throw Error();location.assign(result.url);}catch{toast(t('billingUnavailable'));}break;case 'wallet':await walletDialog({...supportContext(),wallet,turnstileSiteKey});break;case 'login':login();break;case 'account':location.assign(href('/collection'));break;case 'rules':open(`<div class="eyebrow">${t('termsEyebrow')}</div><h2>${t('rules')}</h2>${rulesContent()}<p><a class="text-link" href="/terms">${t('readTerms')} ↗</a></p>`);break;case 'reset-ranking':rankingQuery={metric:rankingQuery.metric,currency:'credits',badge:rankingQuery.badge,search:'',sort:'highest',page:1};saveRankingQuery();render();break;case 'retry-arena':await load();render();break;case 'check-receipt':await refreshReceipt();render();break;case 'retry-collection':await loadCollection();render();break;case 'logout':try{const response=await request('/api/auth/logout',{method:'POST'});if(!response.ok)throw Error();user=null;collectionItems=[];pendingAttempts=[];render();}catch{toast(t('logoutError'));}break;}});
-function supportContext(){return {t,price,svg,open,toast,locale,demo:data.demo,user,login,wallet,turnstileSiteKey,refresh:async()=>{await loadCollection();render();},demoRefresh:()=>{data=structuredClone(demoArena);render();}};}
+let navigationVersion=0,navigationPending=false,activePageAnimation=null;
+const scrollPositions=new Map(),reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rememberScroll(){const position=[scrollX,scrollY];scrollPositions.set(currentEntry,position);if(history.state?.bwEntry===currentEntry)history.replaceState({...history.state,bwScroll:position},'',location.href);}
+async function navigate(value,{pop=false,state=null,scroll=''}={}){
+ const route=internalRoute(value,location.origin);if(!route)return false;const version=++navigationVersion;
+ navigationPending=true;$('main').setAttribute('aria-busy','true');
+ try{
+  await bootstrap;if(version!==navigationVersion)return true;
+  if(!pop&&route.path===location.pathname){if($('#modal').open)$('#modal').close();if(scroll||route.scroll)$('#'+(scroll||route.scroll))?.scrollIntoView({behavior:reducedMotion()?'instant':'smooth',block:'start'});else window.scrollTo({top:0,behavior:reducedMotion()?'instant':'smooth'});return true;}
+  if(route.page==='/collection'){
+   const response=await request('/api/auth/me');if(!response.ok)throw Error('identity_unavailable');const identity=await response.json();
+   if(identity.navigation?.checkout)sessionState('badgewars-receipt',identity.navigation.checkout);
+   if(version!==navigationVersion)return true;
+   if(identity.navigation){locale=language(identity.navigation.locale);stored('badgewars-language',locale);}
+   if(user?.id!==identity.user?.id){collectionItems=[];wallet=null;pendingAttempts=[];}user=identity.user;
+   await loadCollection();if(version!==navigationVersion)return true;
+   if(sessionState('badgewars-receipt'))route.params.set('checkout',sessionState('badgewars-receipt'));
+   if(route.params.has('checkout'))await refreshReceipt(route.params.get('checkout'));
+  }
+  if(!arenaLoaded&&!legalRoutes.includes(route.page)){await load();if(version!==navigationVersion)return true;}
+  const commit=()=>{
+   if(version!==navigationVersion)return;rememberScroll();
+   currentEntry=pop?(state?.bwEntry||crypto.randomUUID()):crypto.randomUUID();
+   const entry={...(pop?state:{}),bwEntry:currentEntry};history[pop?'replaceState':'pushState'](entry,'',route.path);
+   page=route.page;params=route.params;rankingStorageKey='badgewars-ranking-'+(route.rankingBadge||'flex');rankingQuery=rankingFor(route);
+   if(!params.has('checkout'))receipt=null;receiptPolls=0;loginBadge=null;loginSupport=null;
+   if($('#modal').open)$('#modal').close();clearEmailChallenge();render();
+   if(pop){const [left,top]=scrollPositions.get(currentEntry)||state?.bwScroll||[0,0];window.scrollTo({left,top,behavior:'instant'});}
+   else if(scroll||route.scroll)$('#'+(scroll||route.scroll))?.scrollIntoView({behavior:'instant',block:'start'});
+   else window.scrollTo({top:0,left:0,behavior:'instant'});
+   const heading=$('main h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+  };
+  activePageAnimation?.cancel();commit();
+  if(!reducedMotion()&&$('main').animate)activePageAnimation=$('main').animate([{opacity:.35,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:180,easing:'cubic-bezier(.2,.7,.2,1)'});
+  if(version!==navigationVersion)return true;
+  if(page==='/'&&params.has('support'))await supportDialog(params.get('support'),supportContext());
+  else if(page==='/'&&params.has('badge'))await claim(params.get('badge'));
+  return true;
+ }catch{if(version===navigationVersion)toast(t(route.page==='/collection'?'collectionError':'offline'));return true;}
+ finally{if(version===navigationVersion){navigationPending=false;$('main').removeAttribute('aria-busy');}}
+}
+document.addEventListener('click',ev=>{const link=ev.target.closest('a[href]');if(!link||ev.defaultPrevented||ev.button!==0||ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.altKey||link.hasAttribute('download')||link.target&&link.target!=='_self'||!internalRoute(link.href,location.origin))return;ev.preventDefault();void navigate(link.href,{scroll:link.dataset.scroll||''});});
+window.addEventListener('popstate',ev=>{if(internalRoute(location.href,location.origin))void navigate(location.href,{pop:true,state:ev.state});else location.reload();});
+document.addEventListener('click',async ev=>{const node=ev.target.closest('button');if(!node)return;if(node.dataset.claim)claim(node.dataset.claim);if(node.dataset.contributors)contributorsDialog(node.dataset.contributors,supportContext());if(node.dataset.supportTarget)supportDialog(node.dataset.supportTarget,supportContext());if(node.dataset.personal)await personalDialog(node.dataset.personal,{t,locale,open,svg,toast,page,user,items:collectionItems});if(node.dataset.preview)previewBadge(node.dataset.badge,node.dataset.preview);if(node.dataset.provider&&authProviders.includes(node.dataset.provider))location.assign(`/api/auth/start?provider=${node.dataset.provider}&lang=${locale}${loginBadge?'&badge='+loginBadge:''}${loginSupport?'&support='+loginSupport:''}${params.get('checkout')?.match(/^[0-9a-f-]{36}$/i)?'&checkout='+encodeURIComponent(params.get('checkout')):''}`);if(node.dataset.filter){filter=node.dataset.filter;render();}if(node.dataset.page){rankingQuery.page=Number(node.dataset.page);drawRanking();saveRankingQuery();}switch(node.dataset.action){case 'email-login':await emailDialog(emailContext());break;case 'refund-request':refundDialog({open,t});break;case 'billing-portal':if(data.demo){toast(t('billingDemo'));break;}try{const response=await request('/api/me/billing-portal',{method:'POST'});const result=await response.json();if(!response.ok)throw Error();location.assign(result.url);}catch{toast(t('billingUnavailable'));}break;case 'wallet':await walletDialog({...supportContext(),wallet,turnstileSiteKey});break;case 'login':login();break;case 'account':await navigate(href('/collection'));break;case 'rules':open(`<div class="eyebrow">${t('termsEyebrow')}</div><h2>${t('rules')}</h2>${rulesContent()}<p><a class="text-link" href="/terms">${t('readTerms')} ↗</a></p>`);break;case 'reset-ranking':rankingQuery={metric:rankingQuery.metric,currency:'credits',badge:rankingQuery.badge,search:'',sort:'highest',page:1};saveRankingQuery();render();break;case 'retry-arena':await load();render();break;case 'check-receipt':await refreshReceipt();render();break;case 'retry-collection':await loadCollection();render();break;case 'logout':try{const response=await request('/api/auth/logout',{method:'POST'});if(!response.ok)throw Error();user=null;collectionItems=[];pendingAttempts=[];render();}catch{toast(t('logoutError'));}break;}});
+function supportContext(){const version=navigationVersion;return {isCurrent:()=>version===navigationVersion,t,price,svg,open,toast,locale,demo:data.demo,user,login,wallet,turnstileSiteKey,refresh:async()=>{await loadCollection();render();},demoRefresh:()=>{data=structuredClone(demoArena);render();}};}
 document.addEventListener('error',ev=>{if(ev.target.matches?.('.avatar img'))ev.target.remove();},true);
 $('.close').onclick=()=>$('#modal').close();$('#modal').addEventListener('click',ev=>{if(ev.target===$('#modal')){const r=$('#modal').getBoundingClientRect();if(ev.clientX<r.left||ev.clientX>r.right||ev.clientY<r.top||ev.clientY>r.bottom)$('#modal').close();}});
+const bootstrap=(async()=>{
 render();await Promise.allSettled([(async()=>{const r=await request('/api/legal');if(r.ok)legalInfo=await r.json();})(),legalRoutes.includes(page)?Promise.resolve():load(),(async()=>{const response=await request('/api/auth/config');if(response.ok){const config=await response.json();authProviders=config.providers||[];emailEnabled=config.emailAvailable===true;turnstileSiteKey=config.turnstileSiteKey;}})(),(async()=>{const response=await request('/api/auth/me');if(response.ok){const result=await response.json();user=result.user;if(result.navigation){locale=language(result.navigation.locale);stored('badgewars-language',locale);if(result.navigation.checkout){params.set('checkout',result.navigation.checkout);sessionState('badgewars-receipt',result.navigation.checkout);}}}})()]);if(page==='/collection')await loadCollection();await refreshReceipt();render();
 if(pendingEmailAction)await emailDialog(emailContext(),pendingEmailAction.mode,pendingEmailAction.code);
 const initialScroll=initialRoute.scroll||sessionState('badgewars-scroll');sessionState('badgewars-scroll','');
 if(['arena','how','genesis-owners'].includes(initialScroll))$('#'+initialScroll)?.scrollIntoView({behavior:'instant',block:'start'});
+else if(history.state?.bwScroll){const [left,top]=history.state.bwScroll;window.scrollTo({left,top,behavior:'instant'});}
 if(page==='/'&&params.has('support'))await supportDialog(params.get('support'),supportContext());
 if(page==='/'&&!params.has('support')&&params.has('badge')&&catalog.some(b=>b.id===params.get('badge')))claim(params.get('badge'));
 if(params.get('auth')==='error')toast(t('loginError'));if(params.get('checkout')==='cancel'){toast(t('cancelled'));sessionState('badgewars-receipt','');}
+})();
+await bootstrap;
 let privateRefresh=0;
-setInterval(async()=>{if(legalRoutes.includes(page))return;const liveBadge=$('#public-live-badge');if(document.visibilityState==='hidden'||($('#modal').open&&!liveBadge))return;const wasError=arenaError;await load();if(liveBadge){const item=(state(liveBadge.dataset.badge).claims||[]).find(p=>p.id===liveBadge.dataset.holder);if(!arenaError&&item){liveBadge.innerHTML=svg(liveBadge.dataset.badge,item,liveBadge.dataset.style==='compact');if($('#public-live-details'))$('#public-live-details').textContent='@'+item.owner+' · '+(item.badgeId==='quality'?points(item):price(item.amount,item.currency));}if($('#live-badge-status'))$('#live-badge-status').textContent=t(arenaError?'staleBadge':'badgeUpdates');return;}if(page==='/collection'&&++privateRefresh%4===0)await loadCollection();if(page==='/leaderboard'&&!arenaError&&!wasError)drawRanking();else render();},15000);
-setInterval(async()=>{if(page==='/collection'&&params.has('checkout')&&receiptPolls<12&&document.visibilityState!=='hidden'&&['open','creating','complete','checking','unavailable'].includes(receipt?.status)){receiptPolls++;await refreshReceipt();render();}},5000);
+setInterval(async()=>{if(legalRoutes.includes(page)||navigationPending)return;const liveBadge=$('#public-live-badge');if(document.visibilityState==='hidden'||($('#modal').open&&!liveBadge))return;const wasError=arenaError,version=navigationVersion;await load();if(navigationPending||version!==navigationVersion)return;if(liveBadge){const item=(state(liveBadge.dataset.badge).claims||[]).find(p=>p.id===liveBadge.dataset.holder);if(!arenaError&&item){liveBadge.innerHTML=svg(liveBadge.dataset.badge,item,liveBadge.dataset.style==='compact');if($('#public-live-details'))$('#public-live-details').textContent='@'+item.owner+' · '+(item.badgeId==='quality'?points(item):price(item.amount,item.currency));}if($('#live-badge-status'))$('#live-badge-status').textContent=t(arenaError?'staleBadge':'badgeUpdates');return;}if(page==='/collection'&&++privateRefresh%4===0)await loadCollection();if(navigationPending||version!==navigationVersion)return;if(page==='/leaderboard'&&!arenaError&&!wasError)drawRanking();else render();},15000);
+setInterval(async()=>{if(!navigationPending&&page==='/collection'&&params.has('checkout')&&receiptPolls<12&&document.visibilityState!=='hidden'&&['open','creating','complete','checking','unavailable'].includes(receipt?.status)){receiptPolls++;const version=navigationVersion;await refreshReceipt();if(!navigationPending&&version===navigationVersion)render();}},5000);
 
 $('#modal').addEventListener('close',clearEmailChallenge);

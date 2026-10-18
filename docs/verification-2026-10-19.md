@@ -14,12 +14,13 @@
 - Flex comienza en 1 BC. Migración 0009 cambia solo la base y marca la proyección pendiente; conserva niveles, badges y saldos existentes. El siguiente mínimo sigue siendo líder + 1 y renovar paga solo la diferencia.
 - Rankings separados de Flex, Bait, Build Funded y Trust Bag, con filtros privados en sesión por badge y rutas limpias. Genesis mantiene su propia tabla de propietarios por edición, sin clasificación artificial por precio fijo.
 - Revisión visual ES/EN, búsqueda de un alias conservando #2 en Flex y #1 en Build Funded, separación de filtros y tabla de Genesis. Inicio conserva Hall of Flex como resumen.
-- Menú sticky comprobado con desplazamiento superior a 1.500 px y borde superior en 0. Altura observada para que los destinos de sección queden debajo; transiciones de página disponibles en el navegador de prueba y desactivadas con preferencia de movimiento reducido.
+- Menú sticky comprobado con desplazamiento superior a 1.500 px y borde superior en 0. Altura observada para que los destinos de sección queden debajo; transiciones breves del contenido, sin bloquear el menú y desactivadas con preferencia de movimiento reducido.
+- Navegación interna sin recarga del documento: menú, cuenta, pestañas de badge y enlaces legales. Revisión en navegador de Atrás/Adelante, conservación de filtros, cambios rápidos y colección autenticada. Las respuestas obsoletas no cambian la sección elegida; los datos privados se preparan antes de sustituir la vista anterior. OAuth, descargas y pagos conservan su navegación de servidor. La carga inicial de una visita nueva sigue necesitando obtener los datos.
 - Condiciones r7 ES/EN explican mínimo de Flex y prioridad de la primera operación confirmada atómicamente en D1. Los documentos de condiciones aceptados anteriormente permanecen conservados por versión.
 
 ## Puja coincidente
 
-55 pruebas automáticas correctas. Prueba adicional sobre HTTP con workerd y D1 nativos **locales**, en almacenamiento aislado:
+56 pruebas automáticas correctas, incluida la separación entre navegación interna y endpoints de acceso/pago/descarga. Prueba adicional sobre HTTP con workerd y D1 nativos **locales**, en almacenamiento aislado:
 
 1. Dos cuentas ficticias con 5 BC reciben simultáneamente un presupuesto de 1 BC para Flex.
 2. Se envían dos compras de ese nivel a la vez: una respuesta 200 y una 409 `price_changed`.
