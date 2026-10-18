@@ -1,0 +1,17 @@
+export async function verifyStripe(body,header,secret,now=Date.now()){
+ if(!header||!secret)return false;
+ const fields=header.split(',').map(x=>x.split('='));
+ const t=fields.find(([k])=>k==='t')?.[1];
+ if(!t||!/^\d+$/.test(t)||Math.abs(now/1000-Number(t))>300)return false;
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const signature=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(`${t}.${body}`));
+ const hex=Array.from(new Uint8Array(signature),b=>b.toString(16).padStart(2,'0')).join('');
+ return fields.filter(([k,v])=>k==='v1'&&/^[a-f0-9]{64}$/.test(v)).some(([,candidate])=>{let diff=0;for(let i=0;i<64;i++)diff|=candidate.charCodeAt(i)^hex.charCodeAt(i);return diff===0;});
+}
+export function validCheckout(input,catalog){
+ const badge=catalog.find(b=>b.id===input?.badge);
+ if(!badge||typeof input.owner!=='string'||!/^[A-Za-z0-9_]{2,24}$/.test(input.owner)||!Number.isSafeInteger(input.amount)||input.amount>10000000||input.amount%100!==0)return false;
+ const kind=input.kind||'claim';
+ if(kind==='support')return badge.id==='quality'&&input.amount>=100&&typeof input.targetId==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.targetId);
+ return kind==='claim'&&!input.targetId&&input.amount>=badge.base&&(!['genesis','quality'].includes(badge.id)||input.amount===badge.base);
+}

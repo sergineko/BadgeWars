@@ -1,0 +1,62 @@
+import {pointsOf} from '../public/points.js';
+const fields=`u.id,p.badge AS "badgeId",p.owner,p.amount,p.currency,p.edition,
+ to_char((CASE WHEN u.badge='quality' THEN u.created_at ELSE p.created_at END) AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS created_at,u.avatar_url AS "avatarUrl",
+ u.show_top AS "showTop",trunc(u.support_amount/100)::text AS points,u.contributor_count AS "supporterCount"`;
+export async function inventory(db,userId){
+ const items=(await db.query(`SELECT ${fields},'accepted' AS status,
+ CASE WHEN p.badge='quality' THEN (SELECT count(*)+1 FROM badgewars.user_badges r WHERE r.badge='quality' AND (r.support_amount>u.support_amount OR (r.support_amount=u.support_amount AND (r.created_at,r.id)<(u.created_at,u.id))))::integer
+ WHEN p.badge<>'genesis' THEN (SELECT count(*)+1 FROM badgewars.user_badges r JOIN badgewars.purchases q ON q.id=r.current_purchase_id WHERE r.badge=u.badge AND (q.amount>p.amount OR (q.amount=p.amount AND (q.created_at,q.id)<(p.created_at,p.id))))::integer ELSE NULL END AS rank
+ FROM badgewars.user_badges u JOIN badgewars.purchases p ON p.id=u.current_purchase_id WHERE u.user_id=$1 ORDER BY u.badge`,[userId])).rows;
+ for(const item of items)if(item.badgeId==='quality')item.topSupporters=item.showTop?(await groupedSupport(db,item.id,item.showTop)).map(p=>p.alias):[];
+ return {items,nextCursor:null};
+}
+async function groupedSupport(db,holderId,limit=20,offset=0){
+ return (await db.query(`SELECT (array_agg(owner ORDER BY created_at DESC,id DESC))[1] AS alias,
+ trunc(sum(amount::numeric)/100)::text AS points,count(*)::integer AS contributions,max(created_at) AS last_at
+ FROM badgewars.purchases WHERE target_badge_id=$1 AND kind='support' AND status='accepted'
+ GROUP BY user_id ORDER BY sum(amount::numeric) DESC,min(created_at),user_id LIMIT $2 OFFSET $3`,[holderId,limit,offset])).rows;
+}
+export async function privateSupporters(db,userId,holderId,page=1){
+ const holder=(await db.query(`SELECT ${fields},(SELECT count(*)+1 FROM badgewars.user_badges r WHERE r.badge='quality' AND (r.support_amount>u.support_amount OR (r.support_amount=u.support_amount AND (r.created_at,r.id)<(u.created_at,u.id))))::integer AS rank FROM badgewars.user_badges u JOIN badgewars.purchases p ON p.id=u.current_purchase_id WHERE u.id=$1 AND u.user_id=$2 AND u.badge='quality'`,[holderId,userId])).rows[0];
+ if(!holder)return null;
+ const current=Number.isFinite(Number(page))?Math.min(1000000,Math.max(1,Math.trunc(Number(page))||1)):1,rows=await groupedSupport(db,holderId,21,(current-1)*20);
+ return {...holder,topSupporters:holder.showTop?(await groupedSupport(db,holderId,holder.showTop)).map(p=>p.alias):[],supporters:rows.slice(0,20),page:current,hasMore:rows.length>20};
+}
+export async function setVisibility(db,userId,holderId,count){
+ if(!Number.isInteger(count)||count<0||count>5)throw Error('invalid_visibility');
+ await db.query('BEGIN');try{
+  // Same lock order as settlement: badge family, then individual holder.
+  await db.query("SELECT id FROM badgewars.badges WHERE id='quality' FOR UPDATE");
+  const result=await db.query("UPDATE badgewars.user_badges SET show_top=$3,updated_at=now() WHERE id=$1 AND user_id=$2 AND badge='quality' RETURNING id",[holderId,userId,count]);
+  if(!result.rowCount){await db.query('ROLLBACK');return false;}
+  await db.query("UPDATE badgewars.badges SET dirty=true,revision=revision+1 WHERE id='quality'");await db.query('COMMIT');return true;
+ }catch(error){await db.query('ROLLBACK');throw error;}
+}
+export async function publicProjection(db,id){
+ const badge=(await db.query('SELECT * FROM badgewars.badges WHERE id=$1',[id])).rows[0];
+ const rows=(await db.query(`SELECT ${fields},u.user_id FROM badgewars.user_badges u JOIN badgewars.purchases p ON p.id=u.current_purchase_id WHERE u.badge=$1 ORDER BY CASE WHEN u.badge='quality' THEN u.support_amount ELSE p.amount END DESC,CASE WHEN u.badge='quality' THEN u.created_at ELSE p.created_at END,u.id`,[id])).rows;
+ const entries=[];
+ for(const row of rows){
+  const aliases=(await db.query("SELECT id FROM badgewars.purchases WHERE user_id=$1 AND badge=$2 AND kind='claim' AND status='accepted'",[row.user_id,id])).rows.map(r=>r.id);
+  // Only the owner's opt-in number of aliases is ever placed in public KV. No full donor list, donor amounts or account IDs.
+  const top=row.badgeId==='quality'&&row.showTop>0?await groupedSupport(db,row.id,Math.min(5,row.showTop)):[];
+  const {user_id,showTop,...entry}=row;
+  entries.push({...publicEntry(entry),aliases,rank:id==='quality'?entries.length+1:undefined,topSupporters:top.map(p=>p.alias)});
+ }
+ return {owner:['genesis','quality'].includes(id)?null:badge.owner,amount:badge.amount,sold:badge.sold,revision:badge.revision,entries};
+}
+export function publicEntry(entry){
+ const {aliases,showTop,user_id,...result}=entry;
+ if(result.badgeId==='quality'){result.points=pointsOf(result);delete result.amount;delete result.currency;delete result.supportTotal;}
+ return result;
+}
+export async function syncAvatar(db,userId,avatarUrl){
+ const ids=(await db.query('SELECT badge FROM badgewars.user_badges WHERE user_id=$1 AND avatar_url IS DISTINCT FROM $2',[userId,avatarUrl])).rows.map(p=>p.badge);
+ if(!ids.length)return;
+ await db.query('BEGIN');try{
+  await db.query('SELECT id FROM badgewars.badges WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE',[ids]);
+  await db.query(`WITH changed AS (UPDATE badgewars.user_badges SET avatar_url=$2 WHERE user_id=$1 AND badge=ANY($3::text[]) AND avatar_url IS DISTINCT FROM $2 RETURNING badge)
+  UPDATE badgewars.badges SET dirty=true,revision=revision+1 WHERE id IN (SELECT badge FROM changed)`,[userId,avatarUrl,ids]);
+  await db.query('COMMIT');
+ }catch(error){await db.query('ROLLBACK');throw error;}
+}

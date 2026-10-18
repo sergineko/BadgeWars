@@ -1,0 +1,11 @@
+import {catalog,escapeXml} from '../public/badges.js';
+import {badgeUrl} from './badge-url.mjs';
+export async function personalEmbed(db,userId,holderId,appUrl,{style='',locale='en',format='md'}={}){
+ const row=(await db.query(`SELECT u.id,u.badge,p.owner FROM badgewars.user_badges u
+ JOIN badgewars.purchases p ON p.id=u.current_purchase_id WHERE u.id=$1 AND u.user_id=$2 AND p.status='accepted'`,[holderId,userId])).rows[0];
+ if(!row)return null;
+ const badge=catalog.find(b=>b.id===row.badge),image=new URL(badgeUrl(row.badge,row.id,locale,style),appUrl),target=new URL(row.badge==='quality'?`/support/${row.id}`:`/badge/${row.badge}`,appUrl);
+ const alt=`${badge.name} · @${row.owner}`;
+ const code=format==='html'?`<a href="${escapeXml(target.href)}"><img src="${escapeXml(image.href)}" alt="${escapeXml(alt)}" /></a>`:`[![${alt}](${image.href})](${target.href})`;
+ return {id:row.id,badgeId:row.badge,owner:row.owner,imageUrl:image.href,targetUrl:target.href,code};
+}

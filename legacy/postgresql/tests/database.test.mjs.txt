@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import {settle} from '../src/settlement.mjs';
+import {catalog} from '../public/badges.js';
+test('PostgreSQL migration, payment idempotency, losing bids, editions and rollback',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
+  await db.exec(await readFile(new URL('../migrations/001_badgewars.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../migrations/002_accounts_currency.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../migrations/003_payment_recovery.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../migrations/004_inventory_support.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../migrations/005_trust_points.sql',import.meta.url),'utf8'));
+  // PGlite uses affectedRows; the application uses the node-postgres rowCount API.
+  const connection={query:async(sql,params)=>{const result=await db.query(sql,params);return {...result,rowCount:result.rows.length||result.affectedRows||0};}};
+  const pay=async(badgeId,owner,amount,id,userId)=>{const b=catalog.find(b=>b.id===badgeId);await settle(connection,b,{owner,amount,userId},{id,payment_intent:'pi_'+id});};
+  await pay('flex','first',10000,'cs_first');
+  await pay('flex','first',10000,'cs_first');
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM badgewars.purchases')).rows[0].n,1);
+  await pay('flex','winner',12000,'cs_winner');
+  await pay('flex','too_late',11000,'cs_late');
+  assert.equal((await db.query("SELECT owner FROM badgewars.badges WHERE id='flex'")).rows[0].owner,'winner');
+  assert.equal((await db.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_late'")).rows[0].status,'refund_pending');
+  const collector='90000000-0000-4000-8000-000000000001';
+  await pay('genesis','owner_1',100000,'cs_genesis_1',collector);
+  await pay('genesis','different_alias',100000,'cs_genesis_repeat',collector);
+  assert.equal((await db.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_genesis_repeat'")).rows[0].status,'refund_pending');
+  assert.equal((await db.query("SELECT currency FROM badgewars.purchases WHERE session_id='cs_genesis_1'")).rows[0].currency,'eur');
+  for(let i=2;i<=11;i++)await pay('genesis','owner_'+i,100000,'cs_genesis_'+i,`90000000-0000-4000-8000-${String(i).padStart(12,'0')}`);
+  const genesis=(await db.query("SELECT sold FROM badgewars.badges WHERE id='genesis'")).rows[0];assert.equal(genesis.sold,10);
+  assert.equal((await db.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_genesis_11'")).rows[0].status,'refund_pending');
+  assert.deepEqual((await db.query("SELECT edition FROM badgewars.purchases WHERE badge='genesis' AND status='accepted' ORDER BY edition")).rows.map(r=>r.edition),[1,2,3,4,5,6,7,8,9,10]);
+  await assert.rejects(pay('flex','bad<alias',13000,'cs_invalid'));
+  assert.equal((await db.query("SELECT owner FROM badgewars.badges WHERE id='flex'")).rows[0].owner,'winner');
+  assert.equal((await db.query("SELECT count(*)::integer AS n FROM badgewars.purchases WHERE session_id='cs_invalid'")).rows[0].n,0);
+  await db.exec('SET ROLE anon;');
+  await assert.rejects(db.query('SELECT * FROM badgewars.purchases'));
+  await db.exec('RESET ROLE; SET ROLE badgewars_app;');
+  assert.equal((await db.query('SELECT count(*)::integer AS n FROM badgewars.badges')).rows[0].n,5);
+  await assert.rejects(db.query('CREATE TABLE badgewars.unauthorized(id int)'));
+ }finally{await db.close();}
+});

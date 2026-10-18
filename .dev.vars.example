@@ -1,0 +1,23 @@
+# Copy to .dev.vars for local Worker testing; never commit real credentials.
+APP_URL=http://127.0.0.1:8787
+AUTH_COOKIE_SECRET=replace_with_random_value_of_at_least_32_characters
+AUTH_PROVIDERS=google,github
+GOOGLE_CLIENT_ID=replace
+GOOGLE_CLIENT_SECRET=replace
+GITHUB_CLIENT_ID=replace
+GITHUB_CLIENT_SECRET=replace
+TURNSTILE_SITE_KEY=replace
+TURNSTILE_SECRET_KEY=replace
+POLAR_ENVIRONMENT=sandbox
+POLAR_ACCESS_TOKEN=replace
+POLAR_PRODUCT_ID=replace_with_sandbox_product_uuid
+POLAR_ORGANIZATION_ID=replace_with_sandbox_organization_uuid
+POLAR_ORGANIZATION_SLUG=replace-with-organization-slug
+# New Standard Webhooks secret: whsec_ followed by base64-encoded key bytes.
+POLAR_WEBHOOK_SECRET=whsec_replace
+# Production stays disabled without documented acceptance of the actual model.
+POLAR_LIVE_APPROVAL_REFERENCE=
+# Seller identification defaults to the verified/user-provided SergioTech data
+# in public/terms.js. Optional overrides: SELLER_LEGAL_NAME, SELLER_COUNTRY,
+# SELLER_CITY, SELLER_ADDRESS, SELLER_SUPPORT_EMAIL, SELLER_TAX_ID.
+# These are public legal details. Do not add a telephone field.

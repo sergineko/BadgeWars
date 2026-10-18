@@ -1,0 +1,105 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import {settle} from '../src/settlement.mjs';
+import {inventory,privateSupporters,publicProjection,publicEntry,setVisibility,syncAvatar} from '../src/inventory.mjs';
+import {saveAttempt,checkoutForm} from '../src/billing.mjs';
+import {validCheckout} from '../src/security.mjs';
+import {catalog,badgeSvg} from '../public/badges.js';
+import {profileImage} from '../public/profile.js';
+const account=n=>`90000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+async function migrate(db,n=5){await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');for(const f of ['001_badgewars.sql','002_accounts_currency.sql','003_payment_recovery.sql','004_inventory_support.sql','005_trust_points.sql'].slice(0,n))await db.exec(await readFile(new URL('../migrations/'+f,import.meta.url),'utf8'));}
+const adapter=db=>({query:async(sql,args)=>{const r=await db.query(sql,args);return {...r,rowCount:r.rows.length||r.affectedRows||0};}});
+test('migration consolidates earlier purchases without breaking their first URL',async()=>{
+ const db=new PGlite();try{await migrate(db,3);const first=crypto.randomUUID(),second=crypto.randomUUID();
+  for(const [id,amount,time] of [[first,10000,'2026-01-01'],[second,15000,'2026-02-01']])await db.query("INSERT INTO badgewars.purchases(id,session_id,payment_intent,badge,owner,amount,status,user_id,created_at) VALUES($1,$2,$3,'flex','collector',$4,'accepted',$5,$6)",[id,'cs_'+id,'pi_'+id,amount,account(1),time]);
+  await db.exec(await readFile(new URL('../migrations/004_inventory_support.sql',import.meta.url),'utf8'));
+  const current=await inventory(adapter(db),account(1));assert.equal(current.items.length,1);assert.equal(current.items[0].id,first);assert.equal(current.items[0].amount,15000);
+  assert.deepEqual(new Set((await publicProjection(adapter(db),'flex')).entries[0].aliases),new Set([first,second]));
+ }finally{await db.close();}
+});
+test('inventory, private supporters, public opt-in and support settlements',async t=>{
+ const db=new PGlite();await migrate(db);const sql=adapter(db),owner=account(1),other=account(2);let number=0,bag,stable;
+ const pay=async(badge,userId,amount,extra={})=>{const session={id:'cs_inventory_'+(++number),payment_intent:'pi_inventory_'+number};const input={owner:'alias_'+userId.slice(-3),userId,amount,...extra};await settle(sql,catalog.find(b=>b.id===badge),input,session);return {session,input};};
+ const support=(userId,amount,extra={})=>pay('quality',userId,amount,{kind:'support',targetId:bag.id,...extra});
+ try{
+  await t.test('renewal keeps a stable ID and removes the previous rank from the inventory',async()=>{
+   await pay('flex',owner,10000);stable=(await inventory(sql,owner)).items[0].id;
+   await pay('flex',other,11000);assert.equal((await inventory(sql,owner)).items[0].rank,2);
+   await pay('flex',owner,12000);const items=(await inventory(sql,owner)).items;assert.equal(items.length,1);assert.equal(items[0].id,stable);assert.equal(items[0].amount,12000);assert.equal(items[0].rank,1);
+   const publicRows=(await publicProjection(sql,'flex')).entries;assert.equal(publicRows.length,2);assert.equal(publicRows[0].aliases.length,2);
+   assert.equal((await inventory(sql,account(99))).items.length,0);
+  });
+  await t.test('activation creates an empty personal bag without treating the fee as support',async()=>{
+   await pay('quality',owner,2000,{owner:'bag_owner',avatarUrl:'https://example.com/avatar.png'});bag=(await inventory(sql,owner)).items.find(p=>p.badgeId==='quality');
+   assert.equal(bag.points,'0');assert.equal(bag.supporterCount,0);assert.equal(bag.showTop,0);assert.deepEqual(bag.topSupporters,[]);assert.equal(bag.rank,1);
+  });
+  await t.test('contributions aggregate by account, do not transfer ownership and are idempotent',async()=>{
+   const first=await support(other,500,{owner:'first_alias'});await settle(sql,catalog.find(b=>b.id==='quality'),first.input,first.session);
+   await support(other,1000,{owner:'latest_alias'});
+   for(let i=3;i<=25;i++)await support(account(i),i*100);
+   const list=await privateSupporters(sql,owner,bag.id);assert.equal(list.owner,'bag_owner');assert.equal(list.supporterCount,24);assert.equal(list.points,'337');assert.equal(list.supporters.length,20);assert.equal(list.hasMore,true);
+   const secondPage=await privateSupporters(sql,owner,bag.id,2);assert.equal(secondPage.supporters.length,4);assert.equal(secondPage.hasMore,false);
+   const donor=[...list.supporters,...secondPage.supporters].find(p=>p.alias==='latest_alias');assert.equal(donor.points,'15');assert.equal(donor.contributions,2);
+   assert.equal((await inventory(sql,other)).items.some(p=>p.badgeId==='quality'),false);
+   assert.equal((await inventory(sql,owner)).items.find(p=>p.badgeId==='quality').id,bag.id);
+  });
+  await t.test('full contributor details are owner-only and absent from the public projection by default',async()=>{
+   assert.equal(await privateSupporters(sql,other,bag.id),null);assert.equal(await privateSupporters(sql,owner,stable),null);
+   const projection=await publicProjection(sql,'quality'),entry=publicEntry(projection.entries[0]);assert.deepEqual(entry.topSupporters,[]);
+   for(const value of ['latest_alias',account(2),'showTop','supporters','first_alias'])assert.ok(!JSON.stringify(entry).includes(value));
+   assert.equal(entry.owner,'bag_owner');assert.equal(entry.points,'337');assert.equal(entry.user_id,undefined);
+  });
+  await t.test('only the owner may opt in to 1–5 public aliases, with no donor amounts or account IDs',async()=>{
+   assert.equal(await setVisibility(sql,other,bag.id,5),false);
+   for(const count of [1,3,5]){
+    assert.equal(await setVisibility(sql,owner,bag.id,count),true);const entry=publicEntry((await publicProjection(sql,'quality')).entries[0]);assert.equal(entry.topSupporters.length,count);assert.ok(entry.topSupporters.every(p=>typeof p==='string'));
+    assert.equal(entry.topSupporters[0],'alias_025');assert.equal(entry.showTop,undefined);assert.equal(entry.user_id,undefined);assert.equal(entry.supporters,undefined);
+   }
+   for(const count of [-1,6,1.5,'5'])await assert.rejects(setVisibility(sql,owner,bag.id,count),/invalid_visibility/);
+   await assert.rejects(sql.query('UPDATE badgewars.user_badges SET show_top=6 WHERE id=$1',[bag.id]));
+  });
+  await t.test('renewing a personal bag preserves its support, URL and visibility preference',async()=>{
+   await pay('quality',owner,2000,{owner:'updated_owner'});const updated=(await inventory(sql,owner)).items.find(p=>p.badgeId==='quality');assert.equal(updated.id,bag.id);assert.equal(updated.points,'337');assert.equal(updated.showTop,5);assert.equal(updated.owner,'updated_owner');assert.equal(updated.topSupporters.length,5);
+   await setVisibility(sql,owner,bag.id,0);assert.deepEqual((await publicProjection(sql,'quality')).entries[0].topSupporters,[]);
+  });
+  await t.test('self support is rejected without inflating totals',async()=>{
+   const self=await support(owner,100);assert.equal((await sql.query('SELECT status FROM badgewars.purchases WHERE session_id=$1',[self.session.id])).rows[0].status,'refund_pending');assert.equal((await privateSupporters(sql,owner,bag.id)).points,'337');
+  });
+  await t.test('contribution idempotency binds the target and kind and emits matching Stripe metadata',async()=>{
+   const id=crypto.randomUUID(),input={badge:'quality',owner:'supporter',amount:100,kind:'support',targetId:bag.id};const attempt=await saveAttempt(sql,input,other,'https://badges.example',id);
+   const form=checkoutForm(attempt);assert.equal(form['metadata[target_id]'],bag.id);assert.equal(form['metadata[kind]'],'support');assert.ok(form['line_items[0][price_data][product_data][name]'].includes('Trust Bag support'));
+   await assert.rejects(saveAttempt(sql,{...input,kind:'claim',targetId:null,amount:2000},other,'https://badges.example',id),/idempotency_conflict/);
+   await assert.rejects(saveAttempt(sql,{...input,targetId:stable},other,'https://badges.example',id),/idempotency_conflict/);
+  });
+  await t.test('provider avatars update existing badges and remain detached from private account IDs',async()=>{
+   await syncAvatar(sql,owner,'https://example.com/new-avatar.png');for(const p of (await inventory(sql,owner)).items)assert.equal(p.avatarUrl,'https://example.com/new-avatar.png');
+   const entry=publicEntry((await publicProjection(sql,'flex')).entries.find(p=>p.id===stable));assert.equal(entry.avatarUrl,'https://example.com/new-avatar.png');assert.ok(!JSON.stringify(entry).includes(owner));
+   await db.exec('SET ROLE anon;');await assert.rejects(db.query('SELECT * FROM badgewars.user_badges'));await db.exec('RESET ROLE;');
+  });
+  await t.test('scores grow beyond the old integer ceiling and ranks change exactly, without duplicate credits',async()=>{
+   await pay('quality',other,2000,{owner:'other_bag'});const otherBag=(await inventory(sql,other)).items.find(p=>p.badgeId==='quality');
+   const huge=9007199254740991999999999999999n;
+   // Seed an accumulated counter to exercise arithmetic well beyond JavaScript's safe integer range.
+   await sql.query('UPDATE badgewars.user_badges SET support_amount=$2 WHERE id=$1',[bag.id,String(huge*100n)]);
+   await sql.query('UPDATE badgewars.user_badges SET support_amount=$2 WHERE id=$1',[otherBag.id,String((huge+2n)*100n)]);
+   const first=await support(other,100);await settle(sql,catalog.find(b=>b.id==='quality'),first.input,first.session);
+   let item=(await inventory(sql,owner)).items.find(p=>p.id===bag.id);assert.equal(item.points,String(huge+1n));assert.equal(item.rank,2);
+   await support(other,200);item=(await inventory(sql,owner)).items.find(p=>p.id===bag.id);assert.equal(item.points,String(huge+3n));assert.equal(item.rank,1);
+   const projection=await publicProjection(sql,'quality');assert.equal(projection.entries[0].id,bag.id);assert.equal(projection.entries[0].points,String(huge+3n));assert.equal(projection.entries[1].rank,2);
+  });
+ }finally{await db.close();}
+});
+test('support inputs validate target, currency family, whole units and fixed activation fee',()=>{
+ const input={badge:'quality',owner:'backer',kind:'support',targetId:account(1),amount:100};assert.equal(validCheckout(input,catalog),true);
+ for(const changes of [{badge:'flex'},{targetId:null},{targetId:'oops'},{amount:99},{amount:150},{kind:'other'}])assert.equal(validCheckout({...input,...changes},catalog),false);
+ assert.equal(validCheckout({badge:'quality',owner:'holder',amount:2000},catalog),true);assert.equal(validCheckout({badge:'quality',owner:'holder',amount:2100},catalog),false);
+});
+test('Trust Bag SVG shows points and increasing levels, escapes aliases and caps them at five',()=>{
+ for(const [total,label] of [['0','LEVEL 0'],['25','LEVEL 2'],['100','LEVEL 3'],['1000','LEVEL 4']])assert.ok(badgeSvg('quality',{points:total}).includes(label));
+ const svg=badgeSvg('quality',{owner:'holder',points:'500',topSupporters:['<bad>','two','three','four','five','hidden_six']});assert.ok(svg.includes('&lt;bad&gt;'));assert.ok(!svg.includes('<bad>'));assert.ok(!svg.includes('hidden_six'));assert.ok(!svg.includes('Certified Clean Code'));
+});
+test('profile images require a valid HTTPS URL and reject embedded credentials',()=>{
+ assert.equal(profileImage('https://example.com/photo.png'),'https://example.com/photo.png');for(const input of [null,'javascript:alert(1)','http://example.com/p.png','https://secret:password@example.com/p.png','data:image/svg+xml,test'])assert.equal(profileImage(input),null);
+});

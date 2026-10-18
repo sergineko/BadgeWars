@@ -1,0 +1,77 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import {saveAttempt,recoverAttempt,reconcileRefund,recordRecoveryError,recordRefundError} from '../src/billing.mjs';
+import {collectionPage} from '../src/collection.mjs';
+import {settle} from '../src/settlement.mjs';
+import {catalog} from '../public/badges.js';
+import {checkoutKey,forgetCheckout,stored,paymentError,receiptMessage} from '../public/flow.js';
+test('browser retry keys survive blocked storage and preserve a payment intent',()=>{
+ const input={badge:'flex',owner:'buyer',amount:12000,locale:'es'};
+ const first=checkoutKey(input);assert.equal(checkoutKey(input),first);forgetCheckout(input);assert.notEqual(checkoutKey(input),first);
+ stored('test-language','en');assert.equal(stored('test-language'),'en');assert.equal(receiptMessage('refund_pending'),'receiptRefundPending');assert.equal(receiptMessage('refund_failed'),'refundFailedText');assert.equal(paymentError('genesis_already_owned'),'alreadyGenesis');
+});
+test('PostgreSQL recovery paths and current inventory',async t=>{
+ const db=new PGlite();await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
+ for(const file of ['001_badgewars.sql','002_accounts_currency.sql','003_payment_recovery.sql','004_inventory_support.sql','005_trust_points.sql'])await db.exec(await readFile(new URL('../migrations/'+file,import.meta.url),'utf8'));
+ const sql={query:async(query,params)=>{const r=await db.query(query,params);return {...r,rowCount:r.rows.length||r.affectedRows||0};}};
+ const database=fn=>fn(sql),user='90000000-0000-4000-8000-000000000001',other='90000000-0000-4000-8000-000000000002',id='80000000-0000-4000-8000-000000000001';
+ let row;
+ try{
+  await t.test('idempotency is bound to the buyer and immutable purchase parameters',async()=>{
+   row=await saveAttempt(sql,{badge:'flex',owner:'buyer',amount:12000,locale:'es'},user,'https://badges.example',id);
+   assert.equal((await saveAttempt(sql,{badge:'flex',owner:'buyer',amount:12000,locale:'es'},user,'https://badges.example',id)).id,id);
+   await assert.rejects(saveAttempt(sql,{badge:'flex',owner:'buyer',amount:13000,locale:'es'},user,'https://badges.example',id),/idempotency_conflict/);
+   await assert.rejects(saveAttempt(sql,{badge:'flex',owner:'buyer',amount:12000,locale:'es'},other,'https://badges.example',id),/idempotency_conflict/);
+  });
+  await t.test('a lost Checkout response is recoverable with the same Stripe idempotency key',async()=>{
+   const keys=[];const session={id:'cs_test_recovered',url:'https://checkout.stripe.com/recovered',status:'open',payment_status:'unpaid'};
+   const deps={database,stripe:async(path,form,key)=>{assert.equal(path,'checkout/sessions');keys.push(key);assert.ok(form.success_url.includes('{CHECKOUT_SESSION_ID}'));assert.equal(form['metadata[user_id]'],user);return session;},fulfill:async()=>assert.fail('Unpaid session must not grant a badge')};
+   await recoverAttempt(row,deps);await recoverAttempt(row,deps);assert.deepEqual(keys,['checkout:'+id,'checkout:'+id]);
+   row=(await sql.query('SELECT * FROM badgewars.checkout_attempts WHERE id=$1',[id])).rows[0];assert.equal(row.session_id,session.id);
+  });
+  await t.test('a missed webhook is reconciled from the authoritative paid session',async()=>{
+   const session={id:row.session_id,status:'complete',payment_status:'paid',payment_intent:'pi_recovered'};
+   await recoverAttempt(row,{database,stripe:async()=>session,fulfill:async s=>settle(sql,catalog[0],{owner:'buyer',amount:12000,userId:user,attemptId:id},s)});
+   assert.equal((await sql.query('SELECT state FROM badgewars.checkout_attempts WHERE id=$1',[id])).rows[0].state,'complete');
+   assert.equal((await sql.query('SELECT count(*)::integer AS n FROM badgewars.purchases WHERE user_id=$1',[user])).rows[0].n,1);
+  });
+  await t.test('expired sessions close and uncertain old creations require explicit review',async()=>{
+   const oldId=crypto.randomUUID();const old=await saveAttempt(sql,{badge:'bait',owner:'old_buyer',amount:500},user,'https://badges.example',oldId);
+   old.created_at=new Date(Date.now()-24*3600000);await recoverAttempt(old,{database,stripe:async()=>assert.fail('Never recreate past the safe window')});
+   assert.equal((await sql.query('SELECT state FROM badgewars.checkout_attempts WHERE id=$1',[oldId])).rows[0].state,'review');
+   const expId=crypto.randomUUID(),exp=await saveAttempt(sql,{badge:'bait',owner:'expired_buyer',amount:500},user,'https://badges.example',expId);
+   await recoverAttempt(exp,{database,stripe:async()=>({id:'cs_test_expired',status:'expired'}),fulfill:async()=>assert.fail()});
+   assert.equal((await sql.query('SELECT state FROM badgewars.checkout_attempts WHERE id=$1',[expId])).rows[0].state,'expired');
+  });
+  await t.test('pending and failed refunds are never reported as refunded',async()=>{
+   await settle(sql,catalog[0],{owner:'late_buyer',amount:11000,userId:user},{id:'cs_test_loser',payment_intent:'pi_loser'});
+   let state='pending',creations=0;
+   const stripe=async(path,form)=>{if(path.startsWith('refunds?'))return {data:[]};if(form)creations++;return {id:'re_loser',status:state};};
+   await reconcileRefund(sql,stripe,'cs_test_loser');assert.equal((await sql.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_test_loser'")).rows[0].status,'refund_pending');
+   state='failed';await reconcileRefund(sql,stripe,'cs_test_loser');assert.equal((await sql.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_test_loser'")).rows[0].status,'refund_failed');
+   state='succeeded';await reconcileRefund(sql,stripe,'cs_test_loser');assert.equal((await sql.query("SELECT status FROM badgewars.purchases WHERE session_id='cs_test_loser'")).rows[0].status,'refunded');assert.equal(creations,1);
+  });
+  await t.test('lost refund responses are recovered from Stripe without a second refund',async()=>{
+   await settle(sql,catalog[0],{owner:'late_again',amount:10500,userId:user},{id:'cs_test_lost_refund',payment_intent:'pi_lost_refund'});
+   await reconcileRefund(sql,async(path,form)=>{assert.equal(form,undefined);return {data:[{id:'re_existing',status:'succeeded',amount:10500,metadata:{badgewars_session:'cs_test_lost_refund'}}]};},'cs_test_lost_refund');
+   assert.equal((await sql.query("SELECT refund_id FROM badgewars.purchases WHERE session_id='cs_test_lost_refund'")).rows[0].refund_id,'re_existing');
+  });
+  await t.test('inventory returns current badges once and isolates accounts with the same alias',async()=>{
+   for(let i=0;i<8;i++)await settle(sql,catalog.find(b=>b.id==='bait'),{owner:'same_alias',amount:500+i*100,userId:i===7?other:user},{id:'cs_page_'+i,payment_intent:'pi_page_'+i});
+   const page=await collectionPage(sql,user);assert.equal(page.nextCursor,null);assert.equal(page.items.length,2);
+   assert.equal(page.items.find(p=>p.badgeId==='bait').amount,1100);assert.equal(page.items.find(p=>p.badgeId==='bait').rank,2);
+   assert.equal(page.items.filter(p=>p.badgeId==='flex').length,1);assert.ok(page.items.every(p=>p.status==='accepted'));
+   assert.equal((await collectionPage(sql,other)).items.length,1);
+  });
+  await t.test('repeated provider failures enter a visible review state',async()=>{
+   const retry=await saveAttempt(sql,{badge:'bait',owner:'retry_buyer',amount:500},user,'https://badges.example',crypto.randomUUID());
+   for(let i=0;i<10;i++)await recordRecoveryError(sql,retry.id);
+   assert.equal((await sql.query('SELECT state FROM badgewars.checkout_attempts WHERE id=$1',[retry.id])).rows[0].state,'review');
+   await settle(sql,catalog[0],{owner:'refund_outage',amount:10100,userId:user},{id:'cs_test_outage',payment_intent:'pi_outage'});
+   for(let i=0;i<10;i++)await recordRefundError(sql,'cs_test_outage');
+   const failed=(await sql.query("SELECT status,refund_status FROM badgewars.purchases WHERE session_id='cs_test_outage'")).rows[0];assert.equal(failed.status,'refund_failed');assert.equal(failed.refund_status,'provider_unavailable');
+  });
+ }finally{await db.close();}
+});

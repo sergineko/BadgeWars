@@ -1,0 +1,78 @@
+import {uuid} from './collection.mjs';
+import {profileImage} from '../public/profile.js';
+const encode=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const decode=text=>Uint8Array.from(atob(text.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+async function key(secret){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret)),{name:'AES-GCM'},false,['encrypt','decrypt']);}
+export async function seal(value,secret){const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(secret),new TextEncoder().encode(JSON.stringify(value)));return encode(iv)+'.'+encode(new Uint8Array(encrypted));}
+export async function unseal(value,secret){try{const [iv,encrypted]=value.split('.');return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(iv)},await key(secret),decode(encrypted))));}catch{return null;}}
+export const configured=env=>Boolean(env.SUPABASE_URL&&env.SUPABASE_ANON_KEY&&env.AUTH_COOKIE_SECRET?.length>=32);
+export const providers=env=>configured(env)?(env.AUTH_PROVIDERS||'').split(',').filter(p=>['google','github'].includes(p)):[];
+function cookie(name,value,env,age=2592000){return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${new URL(env.APP_URL).protocol==='https:'?'; Secure':''}`;}
+function readCookie(request,name){return request.headers.get('Cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(name+'='))?.slice(name.length+1);}
+function privateHeaders(headers={}){return {'Cache-Control':'no-store','Vary':'Cookie',...headers};}
+export function privateJson(value,status=200,cookies=[]){const response=Response.json(value,{status,headers:privateHeaders()});for(const c of cookies)response.headers.append('Set-Cookie',c);return response;}
+export async function siteReturn(flow,env){
+ const locale=flow.locale==='en'?'en':'es',checkout=/^cs_[A-Za-z0-9_]{6,255}$/.test(flow.checkout||'')||flow.checkout==='cancel'?flow.checkout:null;
+ const support=uuid(flow.support)?flow.support:null,badge=['flex','bait','funded','quality','genesis'].includes(flow.badge)?flow.badge:null;
+ const path=flow.error?'/collection/sign-in-error':checkout&&checkout!=='cancel'?'/collection':support?`/support/${support}`:badge?`/badge/${badge}`:checkout==='cancel'?'/':'/collection';
+ const response=new Response(null,{status:302,headers:privateHeaders({Location:new URL(path,env.APP_URL).href})});
+ if(env.AUTH_COOKIE_SECRET?.length>=32)response.headers.append('Set-Cookie',cookie('bw_return',await seal({locale,checkout,expires:Date.now()+600000},env.AUTH_COOKIE_SECRET),env,600));
+ return response;
+}
+async function authFetch(env,path,init={}){return fetch(`${env.SUPABASE_URL.replace(/\/$/,'')}/auth/v1/${path}`,{...init,signal:AbortSignal.timeout(8000),headers:{apikey:env.SUPABASE_ANON_KEY,'Content-Type':'application/json',...init.headers}});}
+export async function identity(request,env){
+ const raw=readCookie(request,'bw_session');if(!raw||!configured(env))return {user:null,cookies:[]};
+ let session=await unseal(raw,env.AUTH_COOKIE_SECRET);const cookies=[];
+ if(!session?.access_token||!session.refresh_token)return {user:null,cookies:[cookie('bw_session','',env,0)]};
+ if(session.expires_at<Date.now()/1000+60){
+  const response=await authFetch(env,'token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});
+  if(response.status===400||response.status===401)return {user:null,cookies:[cookie('bw_session','',env,0)]};
+  if(!response.ok)throw Error('Auth refresh unavailable');
+  const tokens=await response.json();session={access_token:tokens.access_token,refresh_token:tokens.refresh_token,expires_at:Math.floor(Date.now()/1000)+tokens.expires_in};
+  cookies.push(cookie('bw_session',await seal(session,env.AUTH_COOKIE_SECRET),env));
+ }
+ let result;try{result=await authFetch(env,'user',{headers:{Authorization:`Bearer ${session.access_token}`}});}catch{const error=Error('Auth unavailable');error.cookies=cookies;throw error;}
+ if(result.status===401||result.status===403)return {user:null,cookies:[cookie('bw_session','',env,0)]};
+ if(!result.ok){const error=Error('Auth unavailable');error.cookies=cookies;throw error;}const user=await result.json();
+ // Never trust a browser-supplied user ID or expose provider tokens/metadata.
+ if(!uuid(user.id))throw Error('Invalid auth user');
+ return {user:{id:user.id,name:String(user.user_metadata?.full_name||user.user_metadata?.user_name||'Collector').slice(0,80),avatarUrl:profileImage(user.user_metadata?.avatar_url||user.user_metadata?.picture)},cookies,accessToken:session.access_token};
+}
+export async function authRoute(request,env){
+ const url=new URL(request.url),path=url.pathname;
+ if(path==='/api/auth/config'&&request.method==='GET')return privateJson({providers:providers(env)});
+ if(path==='/api/auth/me'&&request.method==='GET'){
+  const auth=await identity(request,env),raw=readCookie(request,'bw_return');let navigation=null;
+  if(raw&&env.AUTH_COOKIE_SECRET?.length>=32){const value=await unseal(raw,env.AUTH_COOKIE_SECRET);if(value?.expires>Date.now())navigation={locale:value.locale==='en'?'en':'es',checkout:value.checkout};}
+  if(raw)auth.cookies.push(cookie('bw_return','',env,0));
+  return privateJson({user:auth.user,...(navigation?{navigation}:{})},200,auth.cookies);
+ }
+ if(path==='/api/auth/start'&&request.method==='GET'){
+  const provider=url.searchParams.get('provider');if(!providers(env).includes(provider))return siteReturn({locale:url.searchParams.get('lang'),error:true},env);
+  const locale=url.searchParams.get('lang')==='en'?'en':'es';const state=encode(crypto.getRandomValues(new Uint8Array(24)));const verifier=encode(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge=encode(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier))));
+  const callback=new URL('/api/auth/callback',env.APP_URL);callback.searchParams.set('state',state);
+  const target=new URL('/auth/v1/authorize',env.SUPABASE_URL);target.searchParams.set('provider',provider);target.searchParams.set('redirect_to',callback.href);target.searchParams.set('code_challenge',challenge);target.searchParams.set('code_challenge_method','s256');
+  const badge=['flex','bait','funded','quality','genesis'].includes(url.searchParams.get('badge'))?url.searchParams.get('badge'):null;
+  const checkout=/^cs_[A-Za-z0-9_]{6,255}$/.test(url.searchParams.get('checkout')||'')?url.searchParams.get('checkout'):null;
+  const support=uuid(url.searchParams.get('support'))?url.searchParams.get('support'):null;
+  const authCookie=await seal({state,verifier,locale,badge,checkout,support,expires:Date.now()+600000},env.AUTH_COOKIE_SECRET);
+  return new Response(null,{status:302,headers:privateHeaders({Location:target.href,'Set-Cookie':cookie('bw_oauth',authCookie,env,600)})});
+ }
+ if(path==='/api/auth/callback'&&request.method==='GET'){
+  if(!configured(env))return new Response(null,{status:302,headers:privateHeaders({Location:new URL('/collection/sign-in-error',env.APP_URL).href,'Set-Cookie':cookie('bw_oauth','',env,0)})});
+  const flow=await unseal(readCookie(request,'bw_oauth')||'',env.AUTH_COOKIE_SECRET);const cookies=[cookie('bw_oauth','',env,0)];
+  let failed=true;
+  if(flow?.expires>Date.now()&&flow.state===url.searchParams.get('state')&&url.searchParams.get('code')){
+   try{const response=await authFetch(env,'token?grant_type=pkce',{method:'POST',body:JSON.stringify({auth_code:url.searchParams.get('code'),code_verifier:flow.verifier})});
+   if(response.ok){const tokens=await response.json();if(tokens.access_token&&tokens.refresh_token){cookies.push(cookie('bw_session',await seal({access_token:tokens.access_token,refresh_token:tokens.refresh_token,expires_at:Math.floor(Date.now()/1000)+tokens.expires_in},env.AUTH_COOKIE_SECRET),env));failed=false;}}}catch{/* Always return to a usable page after provider/network failure. */}
+  }
+  const response=await siteReturn({...flow,error:failed},env);for(const c of cookies)response.headers.append('Set-Cookie',c);return response;
+ }
+ if(path==='/api/auth/logout'&&request.method==='POST'){
+  if(request.headers.get('Origin')!==new URL(env.APP_URL).origin)return privateJson({error:'origin_forbidden'},403);
+  const auth=await identity(request,env);if(auth.accessToken){const response=await authFetch(env,'logout?scope=local',{method:'POST',headers:{Authorization:`Bearer ${auth.accessToken}`}});if(!response.ok&&response.status!==401)throw Error('Logout unavailable');}
+  return privateJson({ok:true},200,[cookie('bw_session','',env,0)]);
+ }
+ return null;
+}

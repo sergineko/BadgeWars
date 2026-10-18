@@ -1,0 +1,185 @@
+import pg from 'pg';
+import {catalog,badgeSvg} from '../public/badges.js';
+import {verifyStripe,validCheckout} from './security.mjs';
+import {settle} from './settlement.mjs';
+import {authRoute,identity,privateJson,siteReturn} from './auth.mjs';
+import {normalizedBadgeUrl} from './badge-url.mjs';
+import {saveAttempt,recoverAttempt,reconcileRefund,recordRecoveryError,recordRefundError} from './billing.mjs';
+import {uuid,collectionPage} from './collection.mjs';
+import {publicProjection,publicEntry,privateSupporters,setVisibility,syncAvatar} from './inventory.mjs';
+import {personalEmbed} from './embed.mjs';
+import {trustState,trustStateKey} from './trust-state.mjs';
+const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+function imageResponse(response,request){
+ const tag=response.headers.get('ETag');
+ if(tag&&request.headers.get('If-None-Match')?.split(',').map(s=>s.trim()).some(value=>value===tag||value==='*'))return new Response(null,{status:304,headers:response.headers});
+ return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
+}
+async function database(env,fn){const db=new pg.Client({connectionString:env.HYPERDRIVE.connectionString,connectionTimeoutMillis:8000,query_timeout:10000,statement_timeout:10000});await db.connect();try{return await fn(db);}finally{await db.end();}}
+async function stripe(env,path,form,idempotency){
+ const response=await fetch(`https://api.stripe.com/v1/${path}`,{method:form?'POST':'GET',signal:AbortSignal.timeout(8000),headers:{Authorization:`Bearer ${env.STRIPE_SECRET_KEY}`,'Content-Type':'application/x-www-form-urlencoded',...(idempotency?{'Idempotency-Key':idempotency}:{})},...(form?{body:new URLSearchParams(form)}:{})});
+ const result=await response.json();if(!response.ok)throw Error('Stripe unavailable');return result;
+}
+const projection=publicProjection;
+async function sync(env,id){return database(env,async db=>{
+ await db.query('BEGIN');try{
+  const locked=await db.query('SELECT id FROM badgewars.badges WHERE id=$1 AND dirty=true FOR UPDATE',[id]);
+  if(locked.rowCount){await env.BADGES.put(`badge:${id}`,JSON.stringify(await projection(db,id)));await db.query('UPDATE badgewars.badges SET dirty=false WHERE id=$1',[id]);}
+  await db.query('COMMIT');
+  if(locked.rowCount&&id==='quality'&&globalThis.caches)await caches.default.delete(trustStateKey(env.APP_URL)).catch(()=>{});
+ }catch(error){await db.query('ROLLBACK');throw error;}
+});}
+async function refund(env,session){try{return await database(env,db=>reconcileRefund(db,(...args)=>stripe(env,...args),session));}catch(error){await database(env,db=>recordRefundError(db,session));throw error;}}
+const recover=(env,row)=>recoverAttempt(row,{database:fn=>database(env,fn),stripe:(...args)=>stripe(env,...args),fulfill:session=>fulfill(env,session)});
+async function fulfill(env,session){
+ const metadata=session.metadata||{};
+ if(metadata.app!=='badgewars')return; // Other applications can share the Stripe account.
+ const input={badge:metadata.badge,owner:metadata.owner,amount:Number(metadata.amount),userId:metadata.user_id,attemptId:metadata.attempt_id,kind:metadata.kind||'claim',targetId:metadata.target_id||null};
+ if(session.payment_status!=='paid')return;
+ const badge=catalog.find(b=>b.id===input.badge);
+ if(!validCheckout(input,catalog)||session.currency!==badge?.currency||session.amount_total!==input.amount||typeof session.payment_intent!=='string'||!uuid(input.userId)||!uuid(input.attemptId))throw Error('Invalid payment metadata');
+ const attempt=(await database(env,db=>db.query('SELECT * FROM badgewars.checkout_attempts WHERE id=$1',[input.attemptId]))).rows[0];
+ if(!attempt||attempt.user_id!==input.userId||attempt.badge!==input.badge||attempt.owner!==input.owner||attempt.amount!==input.amount||attempt.currency!==session.currency||attempt.kind!==input.kind||attempt.target_badge_id!==input.targetId||(attempt.session_id&&attempt.session_id!==session.id))throw Error('Checkout attempt mismatch');
+ input.avatarUrl=attempt.avatar_url;
+ await database(env,db=>settle(db,badge,input,session));
+ // These are independently recoverable after SQL commits. Failure still asks Stripe to retry.
+ const results=await Promise.allSettled([refund(env,session.id),sync(env,badge.id)]);
+ if(results.some(r=>r.status==='rejected'))throw Error('Payment projection pending');
+ if(globalThis.caches){
+  for(const suffix of ['', '?style=compact', '?lang=es', '?style=compact&lang=es'])await caches.default.delete(new Request(`${env.APP_URL}/badges/${badge.id}.svg${suffix}`));
+  await caches.default.delete(new Request(`${env.APP_URL}/api/arena`));
+ }
+}
+async function checkout(request,env){
+ if(request.headers.get('Origin')!==new URL(env.APP_URL).origin)return json({error:'origin_forbidden'},403);
+ if(!env.STRIPE_SECRET_KEY||!env.HYPERDRIVE)return json({error:'payments_unavailable'},503);
+ const auth=await identity(request,env);if(!auth.user)return privateJson({error:'authentication_required'},401,auth.cookies);
+ let input;try{input=await request.json();}catch{return privateJson({error:'invalid_request'},400,auth.cookies);}
+ const attemptId=request.headers.get('Idempotency-Key');
+ if(!validCheckout(input,catalog)||!uuid(attemptId))return privateJson({error:'invalid_request'},400,auth.cookies);
+ try{
+  const b=catalog.find(b=>b.id===input.badge);
+  const prior=(await database(env,db=>db.query('SELECT * FROM badgewars.checkout_attempts WHERE id=$1 AND user_id=$2',[attemptId,auth.user.id]))).rows[0];
+  if(!prior){
+   const current=(await database(env,db=>db.query('SELECT amount,sold FROM badgewars.badges WHERE id=$1',[b.id]))).rows[0];
+   if(input.kind==='support'){
+    const holder=(await database(env,db=>db.query("SELECT user_id FROM badgewars.user_badges WHERE id=$1 AND badge='quality'",[input.targetId]))).rows[0];
+    if(!holder)return privateJson({error:'target_not_found'},404,auth.cookies);
+    if(holder.user_id===auth.user.id)return privateJson({error:'self_support'},400,auth.cookies);
+   }else{
+    if((b.id==='genesis'&&current.sold>=10)||(!['genesis','quality'].includes(b.id)&&input.amount<Math.max(b.base,current.amount+100)))return privateJson({error:'price_changed'},409,auth.cookies);
+    if(b.id==='genesis'&&(await database(env,db=>db.query("SELECT id FROM badgewars.user_badges WHERE user_id=$1 AND badge='genesis'",[auth.user.id]))).rowCount)return privateJson({error:'genesis_already_owned'},409,auth.cookies);
+   }
+  }
+  const attempt=await database(env,db=>saveAttempt(db,input,auth.user.id,env.APP_URL,attemptId,auth.user.avatarUrl));
+  if(['expired','review','complete'].includes(attempt.state))return privateJson({error:`checkout_${attempt.state}`},409,auth.cookies);
+  const session=await recover(env,attempt);
+  if(!session?.url)return privateJson({error:'checkout_complete'},409,auth.cookies);
+  return privateJson({url:session.url},200,auth.cookies);
+ }catch(error){return privateJson({error:error.message==='idempotency_conflict'?'idempotency_conflict':'checkout_recovering'},error.message==='idempotency_conflict'?409:503,auth.cookies);}
+}
+async function snapshot(env){
+ const states={};for(const b of catalog){const state=await env.BADGES.get(`badge:${b.id}`,'json');if(!state)throw Error('Projection not initialized');states[b.id]=state;}
+ const rankings=catalog.flatMap(b=>(states[b.id].entries||[]).map(p=>publicEntry({...p,badge:b.name,badgeId:b.id})));
+ return {demo:false,states:Object.fromEntries(Object.entries(states).map(([id,{entries,...value}])=>[id,{...value,...(id==='genesis'?{owner:null}:{}),claims:entries.map((entry,i)=>({...publicEntry(entry),rank:id==='genesis'?undefined:i+1}))}])),rankings};
+}
+async function svg(request,env,ctx){
+ const url=normalizedBadgeUrl(request.url);if(!url)return json({error:'invalid_parameters'},400);
+ const id=url.pathname.split('/').pop().replace('.svg','');
+ if(!catalog.some(b=>b.id===id))return json({error:'badge_not_found'},404);
+ if([...url.searchParams.keys()].some(k=>!['style','claim','lang'].includes(k))||[...url.searchParams.keys()].some(k=>url.searchParams.getAll(k).length>1)||(url.searchParams.has('style')&&url.searchParams.get('style')!=='compact')||(url.searchParams.has('lang')&&!['es','en'].includes(url.searchParams.get('lang'))))return json({error:'invalid_parameters'},400);
+ const claim=url.searchParams.get('claim');if(url.searchParams.has('claim')&&!uuid(claim))return json({error:'invalid_purchase'},400);
+ const compact=url.searchParams.get('style')==='compact',locale=url.searchParams.get('lang')||'en';
+ const keyUrl=new URL(`${url.origin}/badges/${id}.svg`);if(compact)keyUrl.searchParams.set('style','compact');if(claim)keyUrl.searchParams.set('claim',claim);if(locale!=='en')keyUrl.searchParams.set('lang',locale);
+ let state=id==='quality'?await trustState(request,env,ctx):null;
+ if(id==='quality'&&!state)return json({error:'projection_pending'},503);
+ keyUrl.searchParams.set('render','6');if(id==='quality')keyUrl.searchParams.set('revision',String(state.revision));
+ const key=new Request(keyUrl),cached=await caches.default.match(key);if(cached)return imageResponse(cached,request);
+ if(!state)state=await env.BADGES.get(`badge:${id}`,'json');if(!state)return json({error:'projection_pending'},503);
+ if(claim){const index=state.entries.findIndex(p=>p.id===claim||p.aliases?.includes(claim));if(index===-1)return json({error:'purchase_not_found'},404);state={...publicEntry(state.entries[index]),revision:state.revision,rank:id==='genesis'?undefined:index+1};}
+ else if(id==='genesis')state={...state,owner:null};
+ const response=new Response(badgeSvg(id,state,compact,locale),{headers:{'Content-Type':'image/svg+xml; charset=utf-8','Cache-Control':`public, max-age=0, s-maxage=${id==='quality'?15:300}, must-revalidate`,'Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff','Content-Language':locale,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox",'ETag':`W/"v6-${id}-${state.id||'arena'}-${state.revision}-${compact}-${state.rank||0}-${locale}"`}});
+ ctx.waitUntil(caches.default.put(key,response.clone()));return imageResponse(response,request);
+}
+async function privateRoute(request,env,ctx){
+ const url=new URL(request.url),auth=await identity(request,env);if(!auth.user)return privateJson({error:'authentication_required'},401,auth.cookies);
+ if(url.pathname==='/api/me/badges'){
+  return privateJson(await database(env,async db=>{await syncAvatar(db,auth.user.id,auth.user.avatarUrl);return collectionPage(db,auth.user.id);}),200,auth.cookies);
+ }
+ if(url.pathname==='/api/me/embed'){
+  if([...url.searchParams.keys()].some(k=>!['badge','style','lang','format'].includes(k)||url.searchParams.getAll(k).length>1))return privateJson({error:'invalid_parameters'},400,auth.cookies);
+  const id=url.searchParams.get('badge'),style=url.searchParams.get('style')||'',locale=url.searchParams.get('lang')||'en',format=url.searchParams.get('format')||'md';
+  if(!uuid(id)||!['','compact'].includes(style)||!['es','en'].includes(locale)||!['md','html'].includes(format))return privateJson({error:'invalid_parameters'},400,auth.cookies);
+  const result=await database(env,db=>personalEmbed(db,auth.user.id,id,env.APP_URL,{style,locale,format}));
+  return privateJson(result||{error:'not_found'},result?200:404,auth.cookies);
+ }
+ if(url.pathname==='/api/me/supporters'){
+  const id=url.searchParams.get('badge');if(!uuid(id))return privateJson({error:'invalid_badge'},400,auth.cookies);
+  const result=await database(env,db=>privateSupporters(db,auth.user.id,id,url.searchParams.get('page')));
+  return privateJson(result||{error:'not_found'},result?200:404,auth.cookies);
+ }
+ if(url.pathname==='/api/me/visibility'){
+  if(request.headers.get('Origin')!==new URL(env.APP_URL).origin)return privateJson({error:'origin_forbidden'},403,auth.cookies);
+  let input;try{input=await request.json();}catch{return privateJson({error:'invalid_request'},400,auth.cookies);}
+  if(!uuid(input.badge)||!Number.isInteger(input.count)||input.count<0||input.count>5)return privateJson({error:'invalid_visibility'},400,auth.cookies);
+  const saved=await database(env,db=>setVisibility(db,auth.user.id,input.badge,input.count));
+  if(!saved)return privateJson({error:'not_found'},404,auth.cookies);
+  ctx.waitUntil(sync(env,'quality').catch(()=>{}));
+  const holder=await database(env,db=>privateSupporters(db,auth.user.id,input.badge));
+  return privateJson({showTop:holder.showTop,topSupporters:holder.topSupporters},200,auth.cookies);
+ }
+ if(url.pathname==='/api/me/checkout'){
+  const session=url.searchParams.get('session');if(!/^cs_[A-Za-z0-9_]{6,255}$/.test(session||''))return privateJson({error:'invalid_session'},400,auth.cookies);
+  const row=(await database(env,db=>db.query('SELECT a.*,p.status AS purchase_status,p.id AS purchase_id FROM badgewars.checkout_attempts a LEFT JOIN badgewars.purchases p ON p.session_id=a.session_id WHERE a.session_id=$1 AND a.user_id=$2',[session,auth.user.id]))).rows[0];
+  if(!row)return privateJson({error:'not_found'},404,auth.cookies);
+  if(!row.purchase_status&&['open','creating'].includes(row.state))ctx.waitUntil(recover(env,row).catch(()=>{}));
+  return privateJson({status:row.purchase_status||row.state,purchaseId:row.purchase_id,badgeId:row.badge,reference:row.id,kind:row.kind,targetId:row.target_badge_id},200,auth.cookies);
+ }
+ const attempts=(await database(env,db=>db.query("SELECT a.id,a.badge,a.amount,a.currency,coalesce(p.status,a.state) AS state,a.checkout_url FROM badgewars.checkout_attempts a LEFT JOIN badgewars.purchases p ON p.session_id=a.session_id WHERE a.user_id=$1 AND (a.state IN ('creating','open','review') OR p.status IN ('refund_pending','refund_failed')) ORDER BY a.created_at DESC LIMIT 20",[auth.user.id]))).rows;
+ return privateJson({attempts},200,auth.cookies);
+}
+export default {
+ async fetch(request,env,ctx){
+  const path=new URL(request.url).pathname;
+  try{
+   if(path.startsWith('/api/auth/')){const response=await authRoute(request,env);if(response)return response;}
+   if(path==='/api/checkout/return'&&request.method==='GET'){
+    const url=new URL(request.url),session=url.searchParams.get('session');
+    if(!/^cs_[A-Za-z0-9_]{6,255}$/.test(session||'')&&url.searchParams.get('status')!=='cancel')return json({error:'invalid_session'},400);
+    return siteReturn({locale:url.searchParams.get('lang'),checkout:url.searchParams.get('status')==='cancel'?'cancel':session,support:url.searchParams.get('support')},env);
+   }
+   if((['/api/me/badges','/api/me/checkout','/api/me/attempts','/api/me/supporters','/api/me/embed'].includes(path)&&request.method==='GET')||(path==='/api/me/visibility'&&request.method==='POST'))return await privateRoute(request,env,ctx);
+   if(path==='/api/support/target'&&request.method==='GET'){
+    const id=new URL(request.url).searchParams.get('badge');if(!uuid(id))return json({error:'invalid_badge'},400);
+    const state=await env.BADGES?.get('badge:quality','json');if(!state)return json({error:'projection_pending'},503);
+    const target=state.entries.find(p=>p.id===id||p.aliases?.includes(id));return json(target?publicEntry(target):{error:'not_found'},target?200:404);
+   }
+   if(path==='/api/checkout'&&request.method==='POST')return await checkout(request,env);
+   if(path==='/api/stripe/webhook'&&request.method==='POST'){
+    const body=await request.text();if(!await verifyStripe(body,request.headers.get('stripe-signature'),env.STRIPE_WEBHOOK_SECRET))return json({error:'invalid_signature'},400);
+    const event=JSON.parse(body);
+    if(['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type))await fulfill(env,event.data.object);
+    if(['refund.updated','refund.failed'].includes(event.type)){
+     const intent=event.data.object.payment_intent;if(typeof intent==='string'){const row=(await database(env,db=>db.query("SELECT session_id FROM badgewars.purchases WHERE payment_intent=$1 AND status<>'accepted'",[intent]))).rows[0];if(row)await refund(env,row.session_id);}
+    }
+    if(event.type==='checkout.session.expired')await database(env,db=>db.query("UPDATE badgewars.checkout_attempts SET state='expired' WHERE session_id=$1 AND state IN ('open','creating')",[event.data.object.id]));
+    return json({received:true});
+   }
+   if(path==='/api/arena'&&request.method==='GET'){
+    if(!env.BADGES)return json({error:'arena_unavailable'},503);
+    const key=new Request(new URL('/api/arena',request.url)),cached=await caches.default.match(key);if(cached)return cached;
+    const response=Response.json(await snapshot(env),{headers:{'Cache-Control':'public, max-age=0, s-maxage=15'}});ctx.waitUntil(caches.default.put(key,response.clone()));return response;
+   }
+   if(path.startsWith('/badges/')&&path.endsWith('.svg')&&request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, HEAD, OPTIONS','Access-Control-Allow-Headers':'If-None-Match','Access-Control-Max-Age':'86400'}});
+   if(path.startsWith('/badges/')&&path.endsWith('.svg')&&['GET','HEAD'].includes(request.method))return await svg(request,env,ctx);
+   if(path.startsWith('/api/')||path.startsWith('/badges/'))return json({error:'not_found'},404);
+   return env.ASSETS.fetch(request);
+  }catch(error){console.error('BadgeWars operation failed',error.name);return privateJson({error:'operation_unavailable'},503,error.cookies||[]);}
+ },
+ async scheduled(event,env,ctx){ctx.waitUntil((async()=>{
+  const {pending,dirty,attempts}=await database(env,async db=>({pending:(await db.query("SELECT session_id FROM badgewars.purchases WHERE status IN ('refund_pending','refund_failed') ORDER BY refund_checked_at NULLS FIRST,created_at LIMIT 8")).rows,dirty:(await db.query('SELECT id FROM badgewars.badges WHERE dirty=true')).rows,attempts:(await db.query("SELECT * FROM badgewars.checkout_attempts WHERE state IN ('creating','open') AND next_check<=now() ORDER BY next_check LIMIT 8")).rows}));
+  for(const row of attempts){try{await recover(env,row);}catch{await database(env,db=>recordRecoveryError(db,row.id));console.error('Checkout recovery pending',row.id);}}
+  for(const row of pending){try{await refund(env,row.session_id);}catch{console.error('Refund retry pending',row.session_id);}}
+  for(const b of dirty){try{await sync(env,b.id);}catch{console.error('Projection retry pending',b.id);}}
+ })());}
+};

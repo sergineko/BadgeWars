@@ -1,0 +1,57 @@
+import {catalog} from '../public/badges.js';
+export function checkoutForm(row){
+ const b=catalog.find(b=>b.id===row.badge);
+ return {mode:'payment','payment_method_types[0]':'card',locale:row.locale,
+  success_url:`${row.app_url}/api/checkout/return?lang=${row.locale}&session={CHECKOUT_SESSION_ID}`,
+  cancel_url:`${row.app_url}/api/checkout/return?lang=${row.locale}&status=cancel${row.kind==='support'?'&support='+row.target_badge_id:''}`,
+  'line_items[0][price_data][currency]':row.currency,'line_items[0][price_data][unit_amount]':String(row.amount),'line_items[0][price_data][product_data][name]':`BadgeWars · ${row.kind==='support'?'Trust Bag support':b.name}`,'line_items[0][quantity]':'1',
+  'metadata[app]':'badgewars','metadata[badge]':row.badge,'metadata[owner]':row.owner,'metadata[amount]':String(row.amount),'metadata[user_id]':row.user_id,'metadata[attempt_id]':row.id,'metadata[kind]':row.kind||'claim','metadata[target_id]':row.target_badge_id||''};
+}
+export async function saveAttempt(db,input,userId,appUrl,id,avatarUrl=null){
+ const b=catalog.find(b=>b.id===input.badge),locale=input.locale==='en'?'en':'es';
+ await db.query('INSERT INTO badgewars.checkout_attempts(id,user_id,badge,owner,amount,currency,locale,app_url,kind,target_badge_id,avatar_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO NOTHING',[id,userId,b.id,input.owner,input.amount,b.currency,locale,appUrl,input.kind||'claim',input.targetId||null,avatarUrl]);
+ const row=(await db.query('SELECT * FROM badgewars.checkout_attempts WHERE id=$1 AND user_id=$2',[id,userId])).rows[0];
+ if(!row||row.badge!==input.badge||row.owner!==input.owner||row.amount!==input.amount||row.locale!==locale||row.kind!==(input.kind||'claim')||row.target_badge_id!==(input.targetId||null))throw Error('idempotency_conflict');
+ return row;
+}
+export async function recoverAttempt(row,{database,stripe,fulfill}){
+ if(['review','expired'].includes(row.state))return null;
+ let session;
+ if(row.session_id)session=await stripe(`checkout/sessions/${encodeURIComponent(row.session_id)}`);
+ else{
+  // Stripe can forget idempotency keys after 24h. Never blindly recreate an old session.
+  if(Date.now()-new Date(row.created_at).getTime()>23*3600000){await database(db=>db.query("UPDATE badgewars.checkout_attempts SET state='review',last_error='checkout_creation_uncertain' WHERE id=$1 AND session_id IS NULL",[row.id]));return null;}
+  session=await stripe('checkout/sessions',checkoutForm(row),`checkout:${row.id}`);
+ }
+ const nextState=session.status==='expired'?'expired':'open';
+ await database(db=>db.query("UPDATE badgewars.checkout_attempts SET session_id=$2,checkout_url=$3,state=CASE WHEN state='complete' THEN state ELSE $4 END,errors=0,last_error=NULL,next_check=now()+interval '5 minutes' WHERE id=$1",[row.id,session.id,session.url||null,nextState]));
+ if(session.payment_status==='paid')await fulfill(session);
+ return session;
+}
+export async function reconcileRefund(db,stripe,sessionId){
+ await db.query('BEGIN');try{
+  const p=(await db.query("SELECT * FROM badgewars.purchases WHERE session_id=$1 AND status IN ('refund_pending','refund_failed','refunded') FOR UPDATE",[sessionId])).rows[0];
+  if(!p){await db.query('COMMIT');return;}
+  let refund;
+  if(p.refund_id)refund=await stripe(`refunds/${encodeURIComponent(p.refund_id)}`);
+  else{
+   // Recover a lost response before creating anything, even beyond Stripe's idempotency window.
+   const prior=await stripe(`refunds?payment_intent=${encodeURIComponent(p.payment_intent)}&limit=100`);
+   refund=prior.data.find(r=>r.metadata?.badgewars_session===sessionId);
+   if(!refund&&prior.data.length){
+    refund=prior.data.find(r=>r.amount===p.amount&&r.status==='succeeded');
+    if(!refund){await db.query("UPDATE badgewars.purchases SET status='refund_failed',refund_status='external_refund_review',refund_checked_at=now() WHERE id=$1",[p.id]);await db.query('COMMIT');return;}
+   }
+   if(!refund)refund=await stripe('refunds',{payment_intent:p.payment_intent,'metadata[badgewars_session]':sessionId},`refund:${sessionId}`);
+  }
+  const status=refund.status==='succeeded'?'refunded':['failed','canceled','requires_action'].includes(refund.status)?'refund_failed':'refund_pending';
+  await db.query('UPDATE badgewars.purchases SET status=$2,refund_id=$3,refund_status=$4,refund_checked_at=now(),refund_errors=0 WHERE id=$1',[p.id,status,refund.id,refund.status]);
+  await db.query('COMMIT');
+ }catch(error){await db.query('ROLLBACK');throw error;}
+}
+export async function recordRecoveryError(db,id){
+ await db.query("UPDATE badgewars.checkout_attempts SET errors=errors+1,last_error='provider_unavailable',state=CASE WHEN errors>=9 THEN 'review' ELSE state END,next_check=now()+interval '15 minutes' WHERE id=$1 AND state IN ('creating','open')",[id]);
+}
+export async function recordRefundError(db,sessionId){
+ await db.query("UPDATE badgewars.purchases SET refund_errors=refund_errors+1,refund_checked_at=now(),status=CASE WHEN refund_errors>=9 THEN 'refund_failed' ELSE status END,refund_status=CASE WHEN refund_errors>=9 THEN 'provider_unavailable' ELSE refund_status END WHERE session_id=$1 AND status IN ('refund_pending','refund_failed')",[sessionId]);
+}

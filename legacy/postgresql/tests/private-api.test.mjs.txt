@@ -1,0 +1,61 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import pg from 'pg';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import worker from '../src/worker.mjs';
+import {seal,authRoute} from '../src/auth.mjs';
+import {settle} from '../src/settlement.mjs';
+import {inventory,publicProjection} from '../src/inventory.mjs';
+import {catalog} from '../public/badges.js';
+test('HTTP API keeps support private, validates owner settings and serves multiple Genesis owners from KV',async()=>{
+ const originalFetch=globalThis.fetch,originalClient=pg.Client,originalCaches=globalThis.caches,db=new PGlite(),jobs=[],kv=new Map();
+ const owner='90000000-0000-4000-8000-000000000001',other='90000000-0000-4000-8000-000000000002';
+ const env={APP_URL:'https://badges.example',SUPABASE_URL:'https://auth.example',SUPABASE_ANON_KEY:'anon',AUTH_COOKIE_SECRET:'a-long-cookie-secret-for-api-tests',AUTH_PROVIDERS:'google',HYPERDRIVE:{connectionString:'test'},BADGES:{get:async key=>kv.get(key),put:async(key,value)=>kv.set(key,JSON.parse(value))}};
+ const sql={query:async(query,args)=>{const r=await db.query(query,args);return {...r,rowCount:r.rows.length||r.affectedRows||0};}};
+ try{
+  await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');for(const f of ['001_badgewars.sql','002_accounts_currency.sql','003_payment_recovery.sql','004_inventory_support.sql','005_trust_points.sql'])await db.exec(await readFile(new URL('../migrations/'+f,import.meta.url),'utf8'));
+  pg.Client=class{async connect(){}async end(){}async query(q,p){return sql.query(q,p);}};
+  globalThis.fetch=async(url,init)=>{assert.ok(String(url).startsWith(env.SUPABASE_URL));return Response.json({id:init.headers.Authorization==='Bearer owner'?owner:other,email:'private@example.com',user_metadata:{full_name:'Collector',avatar_url:'https://example.com/avatar.png'}});};
+  globalThis.caches={default:{match:async()=>null,put:async()=>{},delete:async()=>true}};
+  const cookie=async token=>'bw_session='+await seal({access_token:token,refresh_token:'refresh',expires_at:Date.now()/1000+3600},env.AUTH_COOKIE_SECRET);
+  const cookies={owner:await cookie('owner'),other:await cookie('other')};
+  const fetchApi=async(path,{as='owner',method='GET',body,origin=env.APP_URL}={})=>{const response=await worker.fetch(new Request(env.APP_URL+path,{method,headers:{...(as?{Cookie:cookies[as]}:{}),Origin:origin,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}),env,{waitUntil:job=>jobs.push(job)});await Promise.all(jobs.splice(0));return response;};
+  const pay=async(badge,userId,amount,n,extra={})=>settle(sql,catalog.find(b=>b.id===badge),{owner:'holder_'+n,userId,amount,...extra},{id:'cs_api_'+n,payment_intent:'pi_api_'+n});
+  await pay('quality',owner,2000,1);const bag=(await inventory(sql,owner)).items[0];
+  await pay('quality',other,500,2,{kind:'support',targetId:bag.id,owner:'private_donor'});
+  await pay('quality','90000000-0000-4000-8000-000000000003',300,3,{kind:'support',targetId:bag.id,owner:'second_donor'});
+  await pay('genesis',owner,100000,4);await pay('genesis',other,100000,5);
+  for(const b of catalog)kv.set('badge:'+b.id,JSON.parse(JSON.stringify(await publicProjection(sql,b.id))));
+  assert.equal((await fetchApi('/api/me/supporters?badge='+bag.id,{as:null})).status,401);
+  assert.equal((await fetchApi('/api/me/supporters?badge='+bag.id,{as:'other'})).status,404);
+  const privateResponse=await fetchApi('/api/me/supporters?badge='+bag.id);assert.equal(privateResponse.headers.get('Cache-Control'),'no-store');assert.equal(privateResponse.headers.get('Vary'),'Cookie');assert.equal((await privateResponse.json()).supporters[0].alias,'private_donor');
+  const embedPath='/api/me/embed?badge='+bag.id;
+  assert.equal((await fetchApi(embedPath,{as:null})).status,401);
+  assert.equal((await fetchApi(embedPath,{as:'other'})).status,404);
+  assert.equal((await fetchApi(embedPath+'&user_id='+owner)).status,400);
+  assert.equal((await fetchApi(embedPath+'&format=xml')).status,400);
+  const embedResponse=await fetchApi(embedPath+'&lang=es&style=compact&format=html');
+  assert.equal(embedResponse.status,200);assert.equal(embedResponse.headers.get('Cache-Control'),'no-store');assert.equal(embedResponse.headers.get('Vary'),'Cookie');
+  const embed=await embedResponse.json();assert.equal(embed.id,bag.id);assert.ok(embed.code.startsWith('<a href='));assert.ok(embed.code.includes('/badges/quality/'+bag.id+'/es-compact.svg'));assert.equal(new URL(embed.imageUrl).search,'');assert.ok(embed.code.includes('@holder_1'));assert.equal(new URL(embed.targetUrl).pathname,'/support/'+bag.id);
+  const personalSvg=await fetchApi(new URL(embed.imageUrl).pathname,{as:null});assert.equal(personalSvg.status,200);assert.equal(personalSvg.headers.get('Content-Language'),'es');assert.ok((await personalSvg.text()).includes('Trust Bag'));
+  const markdown=await(await fetchApi(embedPath+'&format=md')).json();assert.ok(markdown.code.startsWith('[![Trust Bag'));assert.ok(markdown.code.includes('/badges/quality/'+bag.id+'/en.svg'));
+  const targetPath='/api/support/target?badge='+bag.id;assert.deepEqual((await(await fetchApi(targetPath,{as:null})).json()).topSupporters,[]);
+  for(const [body,status,as,origin] of [[{badge:bag.id,count:6},400],[{badge:bag.id,count:2},404,'other'],[{badge:bag.id,count:2},403,'owner','https://evil.example']])assert.equal((await fetchApi('/api/me/visibility',{method:'POST',body,as,origin})).status,status);
+  const saved=await fetchApi('/api/me/visibility',{method:'POST',body:{badge:bag.id,count:2}});assert.equal(saved.status,200);assert.deepEqual((await saved.json()).topSupporters,['private_donor','second_donor']);
+  const target=await(await fetchApi(targetPath,{as:null})).json();assert.deepEqual(target.topSupporters,['private_donor','second_donor']);assert.equal(target.supporters,undefined);assert.equal(target.user_id,undefined);assert.equal(target.showTop,undefined);assert.equal(target.aliases,undefined);
+  assert.equal(target.points,'8');assert.equal(target.amount,undefined);assert.equal(target.currency,undefined);assert.equal(target.supportTotal,undefined);
+  const publicArena=await(await fetchApi('/api/arena',{as:null})).json();assert.equal(publicArena.states.genesis.owner,null);assert.equal(publicArena.states.genesis.claims.length,2);assert.equal(new Set(publicArena.states.genesis.claims.map(p=>p.owner)).size,2);assert.ok(!JSON.stringify(publicArena).includes(owner));assert.ok(!JSON.stringify(publicArena).includes('private@example.com'));assert.ok(!JSON.stringify(publicArena).includes('aliases'));
+  const generic=await(await fetchApi('/badges/genesis.svg',{as:null})).text();assert.ok(generic.includes('2 OF 10 COLLECTED'));assert.ok(!generic.includes('holder_4'));assert.ok(!generic.includes('holder_5'));
+  const legacy=kv.get('badge:quality').entries[0].aliases[0],svg=await(await fetchApi('/badges/quality.svg?claim='+legacy,{as:null})).text();assert.ok(svg.includes('private_donor'));assert.ok(!svg.includes('second_donor for'));
+  await fetchApi('/api/me/visibility',{method:'POST',body:{badge:bag.id,count:0}});assert.deepEqual((await(await fetchApi(targetPath,{as:null})).json()).topSupporters,[]);
+ }finally{globalThis.fetch=originalFetch;pg.Client=originalClient;globalThis.caches=originalCaches;await db.close();}
+});
+test('OAuth preserves a personal support target without accepting arbitrary redirect URLs',async()=>{
+ const originalFetch=globalThis.fetch,env={APP_URL:'https://badges.example',SUPABASE_URL:'https://auth.example',SUPABASE_ANON_KEY:'anon',AUTH_COOKIE_SECRET:'a-long-cookie-secret-for-api-tests',AUTH_PROVIDERS:'google'};
+ const id='90000000-0000-4000-8000-000000000001';
+ try{globalThis.fetch=async()=>Response.json({access_token:'token',refresh_token:'refresh',expires_in:3600});
+  const start=await authRoute(new Request(env.APP_URL+'/api/auth/start?provider=google&lang=es&support='+id),env),url=new URL(new URL(start.headers.get('Location')).searchParams.get('redirect_to'));url.searchParams.set('code','valid');
+  const callback=await authRoute(new Request(url,{headers:{Cookie:start.headers.get('Set-Cookie').split(';')[0]}}),env);assert.equal(callback.headers.get('Location'),env.APP_URL+'/support/'+id);
+ }finally{globalThis.fetch=originalFetch;}
+});

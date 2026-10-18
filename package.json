@@ -1,0 +1,20 @@
+{
+  "name": "badgewars",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test",
+    "deploy": "wrangler deploy",
+    "check": "node scripts/check.mjs",
+    "gallery": "node scripts/badge-gallery.mjs",
+    "readiness": "node scripts/readiness.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply badgewars --local",
+    "db:migrate:remote": "wrangler d1 migrations apply badgewars --remote",
+    "dev:worker": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

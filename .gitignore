@@ -1,0 +1,21 @@
+node_modules/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+.wrangler/
+*.log
+.pnpm-store/
+# Local reference conversations, generated captures and payment/account exports.
+*.docx
+artifacts/
+# Credentials and local databases must never be published.
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*

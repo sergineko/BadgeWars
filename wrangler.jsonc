@@ -1,0 +1,42 @@
+{
+  "name": "badgewars",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-10-18",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/badges/*"
+    ]
+  },
+  "vars": {
+    "APP_URL": "https://badgewars.example.com",
+    "AUTH_PROVIDERS": "google,github",
+    "POLAR_ENVIRONMENT": "sandbox"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "BADGES",
+      "id": "REPLACE_WITH_BADGEWARS_KV_ID"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "badgewars",
+      "database_id": "REPLACE_WITH_BADGEWARS_D1_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  }
+}

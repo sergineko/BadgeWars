@@ -1,0 +1,29 @@
+export async function settle(db,badge,input,session){
+ await db.query('BEGIN');try{
+  const current=(await db.query('SELECT * FROM badgewars.badges WHERE id=$1 FOR UPDATE',[badge.id])).rows[0];
+  const prior=await db.query('SELECT id FROM badgewars.purchases WHERE session_id=$1',[session.id]);
+  if(!prior.rowCount){
+   const kind=input.kind||'claim';let accepted=false,edition=null,target=null;
+   if(kind==='support'){
+    target=(await db.query("SELECT * FROM badgewars.user_badges WHERE id=$1 AND badge='quality' FOR UPDATE",[input.targetId])).rows[0];
+    accepted=Boolean(input.userId&&target&&target.user_id!==input.userId);
+   }else if(badge.id==='genesis'){
+    const existing=input.userId?await db.query("SELECT id FROM badgewars.user_badges WHERE user_id=$1 AND badge='genesis'",[input.userId]):{rowCount:0};
+    accepted=current.sold<10&&!existing.rowCount;edition=accepted?current.sold+1:null;
+   }else accepted=badge.id==='quality'?input.amount===badge.base:input.amount>=Math.max(badge.base,current.amount+100);
+   const purchaseId=crypto.randomUUID();
+   await db.query('INSERT INTO badgewars.purchases(id,session_id,payment_intent,badge,owner,amount,status,edition,user_id,currency,kind,target_badge_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',[purchaseId,session.id,session.payment_intent,badge.id,input.owner,input.amount,accepted?'accepted':'refund_pending',edition,input.userId||null,badge.currency,kind,kind==='support'?input.targetId:null]);
+   if(accepted){
+    if(kind==='support'){
+     await db.query("UPDATE badgewars.user_badges SET support_amount=support_amount+$2,contributor_count=contributor_count+CASE WHEN EXISTS(SELECT 1 FROM badgewars.purchases WHERE target_badge_id=$1 AND user_id=$3 AND id<>$4 AND kind='support' AND status='accepted') THEN 0 ELSE 1 END,updated_at=now() WHERE id=$1",[input.targetId,input.amount,input.userId,purchaseId]);
+     await db.query('UPDATE badgewars.badges SET revision=revision+1,dirty=true WHERE id=$1',[badge.id]);
+    }else{
+     if(input.userId)await db.query('INSERT INTO badgewars.user_badges(id,user_id,badge,current_purchase_id,avatar_url) VALUES($1,$2,$3,$1,$4) ON CONFLICT(user_id,badge) DO UPDATE SET current_purchase_id=EXCLUDED.current_purchase_id,avatar_url=EXCLUDED.avatar_url,updated_at=now()',[purchaseId,input.userId,badge.id,input.avatarUrl||null]);
+     await db.query('UPDATE badgewars.badges SET amount=$2,owner=$3,sold=sold+$4,revision=revision+1,dirty=true WHERE id=$1',[badge.id,input.amount,input.owner,badge.id==='genesis'?1:0]);
+    }
+   }
+  }
+  await db.query("UPDATE badgewars.checkout_attempts SET state='complete',session_id=$2,checkout_url=NULL,last_error=NULL WHERE (id=$1 OR session_id=$2) AND user_id=$3",[input.attemptId||null,session.id,input.userId||null]);
+  await db.query('COMMIT');
+ }catch(error){await db.query('ROLLBACK');throw error;}
+}

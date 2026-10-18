@@ -1,0 +1,3 @@
+ALTER TABLE bw_topups ADD COLUMN terms_snapshot TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE bw_topups ADD COLUMN immediate_delivery INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE bw_topups ADD COLUMN adult_confirmed INTEGER NOT NULL DEFAULT 0;
