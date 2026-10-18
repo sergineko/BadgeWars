@@ -108,8 +108,8 @@ const copy={
   "Sign in with the account used in Checkout to check payment."
  ],
  "priceChanged": [
-  "La puja ha cambiado. Actualiza la arena antes de volver a intentarlo.",
-  "The current bid changed. Refresh the arena before trying again."
+  "Otra puja se confirmó antes. No se han descontado BC. Actualiza la arena y revisa el nuevo nivel antes de intentarlo otra vez.",
+  "Another bid was confirmed first. No BC were deducted. Refresh the arena and review the new level before trying again."
  ],
  "alreadyGenesis": [
   "Ya tienes una edición Genesis en tu cuenta.",
@@ -408,8 +408,8 @@ const copy={
   "Ego, in order"
  ],
  "rankingIntro": [
-  "Consulta pujas y puntos de fiabilidad, descubre perfiles y conoce a los coleccionistas de Genesis.",
-  "Explore bids and community trust points, discover profiles and meet the Genesis collectors."
+  "Cinco badges, cinco clasificaciones independientes. Descubre quién lidera cada batalla y quién forma parte de Genesis.",
+  "Five badges, five independent leaderboards. Discover who leads each battle and who belongs to Genesis."
  ],
  "search": [
   "Buscar por alias",
@@ -488,8 +488,8 @@ const copy={
   "Reset filters"
  ],
  "currencyNote": [
-  "Ranking por nivel total adquirido en BC. Las renovaciones cobran solo la diferencia. Los puntos de Trust Bag tienen su propia clasificación.",
-  "Ranked by total acquired BC level. Renewals charge only the difference. Trust Bag points have a separate leaderboard."
+  "Solo compiten los titulares de este badge, por nivel total adquirido en BC. Las renovaciones cobran únicamente la diferencia. Buscar un alias no cambia su posición real.",
+  "Only holders of this badge compete, ranked by total acquired BC level. Renewals charge only the difference. Searching a handle does not change its actual rank."
  ],
  "demoNote": [
   "Vista de demostración. Los nombres y las compras son ejemplos.",
@@ -1610,6 +1610,30 @@ const copy={
  "emailConfirmPassword": [
   "Introduce la contraseña que elegiste al registrarte para verificar que esta cuenta es tuya.",
   "Enter the password you chose during registration to confirm this account is yours."
+ ],
+ "rankingByBadge": [
+  "Clasificaciones por badge",
+  "Leaderboards by badge"
+ ],
+ "independentRanking": [
+  "UNA BATALLA. SU PROPIO RANKING.",
+  "ONE BATTLE. ITS OWN LEADERBOARD."
+ ],
+ "limitedCollection": [
+  "DIEZ EDICIONES. DIEZ COLECCIONISTAS.",
+  "TEN EDITIONS. TEN COLLECTORS."
+ ],
+ "badgeRankingNote": [
+  "Cada badge tiene su propia clasificación. Haz tu movimiento y conquista este primer puesto.",
+  "Every badge has its own leaderboard. Make your move and claim this top spot."
+ ],
+ "trustRankingShort": [
+  "Tu lugar depende de los puntos de apoyo de tu comunidad, sin mezclarlo con las pujas de otros badges.",
+  "Your place depends on community support points, independently of bids on other badges."
+ ],
+ "genesisRankingNote": [
+  "Genesis se organiza por número de edición. Sus diez propietarios tienen el mismo precio de acceso; no compiten por importe.",
+  "Genesis is listed by edition number. Its ten holders pay the same entry price; they do not compete on amount."
  ]
 };
 export const messages=Object.fromEntries(["es","en"].map((locale,i)=>[locale,Object.fromEntries(Object.entries(copy).map(([k,v])=>[k,v[i]]))]));

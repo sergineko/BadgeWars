@@ -1,6 +1,6 @@
 # BadgeWars
 
-Web ES/EN de badges SVG dinámicos, ranking público y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.8.
+Web ES/EN de badges SVG dinámicos, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.9.
 
 ## Desarrollo
 
@@ -25,14 +25,15 @@ pnpm exec wrangler deploy --dry-run --outdir .wrangler/build
 ## Modelo actual
 
 - Un saldo de BadgeCredits (BC): 1 USD o 1 EUR de precio base adquiere 1 BC. Recargas enteras desde 5; impuestos mostrados en Polar. Sin conversión, retiradas, transferencias ni pagos a titulares.
-- Flex: nivel inicial 100 BC; Bait: 5 BC; Build Funded: 50 BC. El mínimo competitivo supera al líder en 1 BC. Renovar consume solo la diferencia frente al nivel propio anterior.
+- Flex: nivel inicial 1 BC; Bait: 5 BC; Build Funded: 50 BC. El mínimo competitivo supera al líder en 1 BC. Renovar consume solo la diferencia frente al nivel propio anterior. Dos intentos del mismo nivel: gana el primero confirmado atómicamente; el segundo conserva íntegro su saldo, sin cargo ni devolución posterior.
 - Trust Bag: activación 20 BC. Otras cuentas aportan desde 1 BC por punto, sin límite de producto al total. Ranking exacto, incluso fuera de la precisión de Number. La lista de contribuidores es privada y su titular decide publicar de cero a cinco alias.
 - Genesis: 1.000 BC, diez números como máximo, una edición por cuenta; jamás se reemite un número suspendido.
 - Una ficha actual por cuenta y badge. Renovar conserva su identificador y URL. Generador de inserción solo para su propietario autenticado; el SVG resultante es público para funcionar en Internet.
 - Google/GitHub OAuth con PKCE y estado de un uso en D1. No se conservan tokens sociales; sesiones opacas con hash, HttpOnly y Secure en HTTPS. Cada proveedor representa una cuenta distinta, sin vinculación automática por email.
 - Correo/contraseña propios en D1 con scrypt y pepper, verificación, recuperación de un uso, revocación de sesiones y Turnstile. Preparado y probado localmente; producción desactivada hasta Workers Paid y Email Sending verificado.
 - Solicitud privada de revisión por recarga cobrada y no abonada: bloquea consumo posterior, abono previo, deuda y saldo insuficiente; no ejecuta devoluciones de dinero. Las reversiones impuestas por Polar se concilian igualmente.
-- Rutas limpias, sin filtros/idioma en la URL: `/leaderboard`, `/leaderboard/trust`, `/leaderboard/genesis`, `/collection`, `/terms`, `/privacy`, `/legal`, `/cookies`. Los callbacks técnicos limpian la dirección al redirigir.
+- Rutas limpias, sin filtros/idioma en la URL: `/leaderboard/flex`, `/leaderboard/bait`, `/leaderboard/funded`, `/leaderboard/trust`, `/leaderboard/genesis`, `/collection`, `/terms`, `/privacy`, `/legal`, `/cookies`. Cada badge tiene su clasificación; Genesis muestra propietarios por edición. `/leaderboard` abre Flex y los callbacks técnicos limpian la dirección al redirigir.
+- Menú superior persistente al desplazarse; anclas ajustadas a su altura real y transiciones de página mediante View Transitions donde estén disponibles. Se respeta la preferencia de movimiento reducido.
 
 ## Infraestructura
 
@@ -52,8 +53,8 @@ La revisión del Word se documenta en [docs/payments-and-operations.md](docs/pay
 
 ## Preparación del despliegue
 
-Consultar [docs/review-and-launch.md](docs/review-and-launch.md), [docs/oauth-cloudflare.md](docs/oauth-cloudflare.md) y [docs/migration-d1.md](docs/migration-d1.md). El dominio ya tiene delegación Cloudflare guardada, D1 UE y KV creados. Email Routing tiene una regla de soporte activa y destino verificado. Aún no se han aplicado migraciones remotas ni desplegado esta versión. Estado y activación del correo: [email-auth-and-domain.md](docs/email-auth-and-domain.md).
+Consultar [docs/review-and-launch.md](docs/review-and-launch.md), [docs/oauth-cloudflare.md](docs/oauth-cloudflare.md) y [docs/migration-d1.md](docs/migration-d1.md). Worker publicado en [badgewars.com](https://badgewars.com), con nueve migraciones D1, KV inicializado, cron y accesos sociales probados. Workers Free se conserva; correo/contraseña y cobros públicos siguen pendientes. Estado y activación del correo: [email-auth-and-domain.md](docs/email-auth-and-domain.md).
 
-La compra simulada con Polar Sandbox, su abono único, webhooks reales y factura están comprobados. También se han probado 40 variantes de inserción SVG desde otro origen local y el cambio de rango con la misma URL. Alcance y pendientes: [verificación del 18 de octubre](docs/verification-2026-10-18.md). Falta probar OAuth con las aplicaciones definitivas, completar la matriz externa y configurar/desplegar Cloudflare. Las credenciales, bases, exportaciones, capturas y conversaciones Word se mantienen fuera de Git.
+La compra simulada con Polar Sandbox, su abono único, webhooks reales y factura están comprobados. También se probaron 40 variantes de inserción SVG desde otro origen local y el cambio de rango con la misma URL. Alcance anterior: [verificación del 18 de octubre](docs/verification-2026-10-18.md). Despliegue y cambios actuales: [verificación del 19 de octubre](docs/verification-2026-10-19.md). Falta completar la matriz externa, Turnstile real, salida de correo, publicación general de Google y aceptación comercial/configuración de Polar. Las credenciales, bases, exportaciones, capturas y conversaciones Word permanecen fuera de Git.
 
 `legacy/postgresql/` contiene código y migraciones anteriores, desactivados y conservados como referencia. No ejecutar esas migraciones en D1. Si existieran compras reales previas, conciliar y migrar sus datos antes de cambiar tráfico: los ficheros de demo no son registros financieros.

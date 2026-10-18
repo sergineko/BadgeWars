@@ -13,12 +13,15 @@ test('clean navigation keeps legacy filters, language and section intent without
  assert.equal(routeState(origin+'/?lang=en#how').scroll,'how');assert.equal(routeState(origin+'/?lang=en#how').path,'/');
  assert.equal(routeState(origin+'/#leaderboard').page,'/leaderboard');
  assert.equal(routeState(origin+'/leaderboard#genesis-owners').path,'/leaderboard/genesis');
- assert.equal(routeState(origin+'/leaderboard/genesis').scroll,'genesis-owners');
+ assert.equal(routeState(origin+'/leaderboard/genesis').rankingBadge,'genesis');
  assert.equal(routeState(origin+'/collection?demo=1').path,'/collection/demo');
  assert.equal(routeState(origin+'/collection/demo').params.get('demo'),'1');
  assert.equal(routeState(origin+'/collection/sign-in-error').params.get('auth'),'error');
  for(const [path,key,value] of [['/badge/genesis','badge','genesis'],['/support/'+id,'support',id]]){const state=routeState(origin+path);assert.equal(state.page,'/');assert.equal(state.params.get(key),value);assert.equal(state.path,path);}
- assert.equal(cleanHref('/leaderboard',{metric:'trust'}),'/leaderboard/trust');assert.equal(cleanHref('/leaderboard#genesis-owners'),'/leaderboard/genesis');assert.equal(cleanHref('/collection',{demo:'1'}),'/collection/demo');assert.equal(cleanHref('/#arena'),'/');assert.equal(rankingPath('bids'),'/leaderboard');
+ assert.equal(cleanHref('/leaderboard',{metric:'trust'}),'/leaderboard/trust');assert.equal(cleanHref('/leaderboard#genesis-owners'),'/leaderboard/genesis');assert.equal(cleanHref('/collection',{demo:'1'}),'/collection/demo');assert.equal(cleanHref('/#arena'),'/');assert.equal(rankingPath('bids'),'/leaderboard/flex');
+ for(const badge of ['flex','bait','funded','quality','genesis']){const path=rankingPath(badge==='quality'?'trust':'bids',badge),state=routeState(origin+path+'?badge=all');assert.equal(state.page,'/leaderboard');assert.equal(state.rankingBadge,badge);assert.equal(state.path,path);assert.equal(new URL(origin+cleanHref('/leaderboard',{badge})).search,'');}
+ assert.equal(routeState(origin+'/leaderboard?badge=funded').path,'/leaderboard/funded');
+ assert.equal(routeState(origin+'/leaderboard/unknown').page,'/leaderboard/unknown');
 });
 
 test('clean personal SVG addresses normalize to the same stable owner and locale as legacy embeds',()=>{

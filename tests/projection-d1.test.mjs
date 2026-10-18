@@ -20,6 +20,6 @@ test('D1 throttle remains effective across Worker instances and conflicting leve
   assert.equal(await throttle(db,'key',2),true);assert.equal(await throttle(db,'key',2),true);assert.equal(await throttle(db,'key',2),false);
   const a=await seedUser(db,{credits:200}),b=await seedUser(db,{credits:200}),buy=user=>settle(db,catalog[0],{...consent,userId:user,amount:10000,owner:'holder'},crypto.randomUUID());
   const result=await Promise.allSettled([buy(a),buy(b)]);assert.equal(result.filter(r=>r.status==='fulfilled').length,1);assert.equal(db.sqlite.prepare('SELECT sum(balance) AS n FROM bw_wallets').get().n,300);
-  const first=db.sqlite.prepare('SELECT user_id FROM bw_user_badges').get().user_id;db.sqlite.prepare("UPDATE bw_user_badges SET status='suspended' WHERE user_id=?").run(first);const q=await quote(db,first===a?b:a,'flex');assert.equal(q.level,100);
+  const first=db.sqlite.prepare('SELECT user_id FROM bw_user_badges').get().user_id;db.sqlite.prepare("UPDATE bw_user_badges SET status='suspended' WHERE user_id=?").run(first);const q=await quote(db,first===a?b:a,'flex');assert.equal(q.level,1);
  }finally{db.close();}
 });

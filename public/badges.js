@@ -2,7 +2,7 @@ import {collectibleSvg} from './badge-art.js';
 import {pointsOf,formatPoints,shortPoints,trustTier} from './points.js';
 import {translate as tr,language} from './i18n.js';
 export const catalog=[
- {id:'flex',name:'The Apex Flex',color:'#bf8aff',tag:'THE ORIGINAL',base:10000,currency:'credits'},
+ {id:'flex',name:'The Apex Flex',color:'#bf8aff',tag:'THE ORIGINAL',base:100,currency:'credits'},
  {id:'bait',name:'Don’t Click This',color:'#ff9565',tag:'PLEASE, DON’T',base:500,currency:'credits'},
  {id:'funded',name:'Build Funded',color:'#6fdbbc',tag:'BACK THE BUILD',base:5000,currency:'credits'},
  {id:'quality',name:'Trust Bag',color:'#6dcafa',tag:'SUPPORT SHOWS',base:2000,currency:'credits'},

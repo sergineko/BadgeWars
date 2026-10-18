@@ -3,6 +3,24 @@ import {createD1,seedUser,consent} from './helpers/d1.mjs';
 import {settle,quote} from '../src/settlement.mjs';import {catalog} from '../public/badges.js';
 import {inventory,privateSupporters,publicProjection,setVisibility} from '../src/inventory.mjs';
 const buy=(db,userId,badge,amount,extra={},id=crypto.randomUUID())=>settle(db,catalog.find(b=>b.id===badge),{...consent,userId,badge,owner:'holder',amount:amount*100,...extra},id);
+
+test('Apex opens at 1 BC; competing bids at the same level charge only the first committed action',async()=>{
+ const db=createD1();try{
+  const a=await seedUser(db,{credits:5}),b=await seedUser(db,{credits:5});
+  assert.equal((await quote(db,a,'flex')).level,1);assert.equal(catalog.find(b=>b.id==='flex').base,100);
+  const results=await Promise.allSettled([buy(db,a,'flex',1),buy(db,b,'flex',1)]);
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  assert.match(results.find(r=>r.status==='rejected').reason.message,/price_changed/);
+  const winner=results[0].status==='fulfilled'?a:b,loser=winner===a?b:a;
+  assert.equal(db.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(winner).balance,4);
+  assert.equal(db.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(loser).balance,5);
+  assert.equal(db.sqlite.prepare("SELECT count(*) AS n FROM bw_ledger WHERE kind='spend'").get().n,1);
+  assert.equal(db.sqlite.prepare('SELECT count(*) AS n FROM bw_actions').get().n,1);
+  assert.equal((await quote(db,loser,'flex')).level,2);
+  await buy(db,loser,'flex',2);const renewed=await buy(db,winner,'flex',3);
+  assert.equal(renewed.cost,2);assert.equal((await inventory(db,winner)).items.length,1);
+ }finally{db.close();}
+});
 test('D1 applies wallet debit, cumulative level and stable inventory atomically; renewals pay only the difference',async()=>{
  const db=createD1();try{const a=await seedUser(db,{credits:500}),b=await seedUser(db,{credits:500});
  const first=await buy(db,a,'flex',100);assert.equal(first.cost,100);await buy(db,b,'flex',101);

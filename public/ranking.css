@@ -1,0 +1,17 @@
+.badge-ranking-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:4px 0 30px}
+.badge-ranking-tab{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:16px 13px;border:1px solid #39333f;border-radius:12px;background:#18151e;color:#b9b2c3;font-size:12px;transition:border-color .2s,background .2s,transform .2s}
+.badge-ranking-tab:hover,.badge-ranking-tab:focus-visible{border-color:var(--badge-color);transform:translateY(-2px)}
+.badge-ranking-tab.selected{border-color:var(--badge-color);background:color-mix(in srgb,var(--badge-color) 12%,#16131b);color:#f9f6ff}
+.ranking-tab-mark{font:22px 'Space Grotesk',sans-serif;color:var(--badge-color)}
+.badge-ranking-tab small{margin-left:auto;font:11px monospace;padding:4px 7px;border-radius:5px;background:#ffffff09;color:var(--badge-color)}
+.ranking-scope{display:flex;justify-content:space-between;align-items:center;gap:25px;padding:24px 0 27px;border-top:1px solid #332c3c}
+.ranking-scope h2{font:600 clamp(25px,3vw,38px) 'Space Grotesk',sans-serif;color:var(--badge-color);margin:9px 0 0;letter-spacing:-1px}
+.ranking-scope .eyebrow{font-size:9px;color:#a69baf}
+.ranking-scope>p{font-size:12px;line-height:1.8;color:#a69baf;max-width:390px;margin:0}
+.ranking-controls.badge-ranking-controls{grid-template-columns:minmax(0,2fr) minmax(150px,1fr)}
+.ranking-controls.badge-ranking-controls.trust-controls{grid-template-columns:minmax(0,2fr) minmax(160px,1fr) minmax(150px,1fr)}
+.ranking-controls.badge-ranking-controls.genesis-controls{grid-template-columns:1fr}
+.ranking-page #ranking-results .limited-owners{margin-top:20px}
+@media(max-width:900px){.badge-ranking-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.ranking-scope{align-items:flex-start;flex-direction:column;gap:15px}.ranking-scope>p{max-width:600px}}
+@media(max-width:600px){.badge-ranking-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.badge-ranking-tab{padding:13px 10px;font-size:11px}.badge-ranking-tab:last-child{grid-column:1/-1}.ranking-controls.badge-ranking-controls,.ranking-controls.badge-ranking-controls.trust-controls{grid-template-columns:1fr}.ranking-scope h2{font-size:29px}}
+@media(prefers-reduced-motion:reduce){.badge-ranking-tab{transition:none}.badge-ranking-tab:hover,.badge-ranking-tab:focus-visible{transform:none}}

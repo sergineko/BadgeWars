@@ -1,15 +1,16 @@
 # Cuentas propias y dominio
 
-## Decisión y estado del 18 de octubre de 2026
+## Decisión y estado del 19 de octubre de 2026
 
 Se centraliza la autenticación por contraseña en Workers y D1, sin Firebase. Por petición del titular, **Workers Free se mantiene durante la preparación**. Antes de habilitar correo/contraseña públicamente hay que activar Paid, comprobar CPU y verificar Email Sending. `EMAIL_AUTH_ENABLED=false` es la configuración de despliegue actual; no anunciar todavía ese acceso como operativo en Internet.
 
-- Namecheap conserva el registro de `badgewars.com`. Nameservers guardados: `jay.ns.cloudflare.com` y `ziggy.ns.cloudflare.com`. La delegación necesita propagación y comprobación de zona/certificado antes del lanzamiento.
-- D1 dedicada `badgewars`, UUID `6fb4d88f-8d52-432d-968e-0832b481eb81`, creada con jurisdicción Unión Europea. **No se han aplicado migraciones remotas**.
-- KV `badgewars-public`, ID `f452a6607f9b4ce0a4050ef689873cb8`, creado para proyecciones públicas. No contiene saldo, email ni credenciales; aún no está inicializado en remoto.
-- Se han sustituido los MX/SPF iniciales de Namecheap por Email Routing de Cloudflare, con DKIM. Destino profesional verificado y regla activa `support@badgewars.com` hacia el buzón profesional del titular. Sin catch-all. No es un buzón independiente ni habilita por sí solo el envío SMTP; comprobar recepción externa antes de publicar el contacto.
-- GitHub OAuth «BadgeWars» creado con callback exacto `https://badgewars.com/api/auth/callback/github`, sin wildcard ni Device Flow. Secreto guardado en `.dev.vars.production`, ignorado por Git. Falta cargarlo en Worker y probar una sesión real.
-- Proyecto Google Cloud `badgewars` creado sin facturación. El contacto público se preparará con `support@badgewars.com`; no se ha publicado el Gmail personal. Faltan cuenta Google profesional, permisos del proyecto, consentimiento y cliente web.
+- Namecheap conserva el registro de `badgewars.com`. Nameservers `jay.ns.cloudflare.com` y `ziggy.ns.cloudflare.com` efectivos. El Worker sirve el dominio raíz y `www` con certificado válido. Los dos registros de parking se sustituyeron con autorización del titular; correo conservado. `www` redirige con 308 a HTTPS raíz conservando la ruta y los parámetros técnicos; la aplicación limpia filtros e idioma.
+- D1 dedicada `badgewars`, UUID `6fb4d88f-8d52-432d-968e-0832b481eb81`, jurisdicción Unión Europea. Nueve migraciones aplicadas en remoto. La 0009 baja solo la base de Flex a 1 BC, sin modificar niveles, inventario o saldos existentes.
+- KV `badgewars-public`, ID `f452a6607f9b4ce0a4050ef689873cb8`, inicializado por cron para las cinco familias. API y SVG públicos comprobados. No contiene saldo, email ni credenciales.
+- Email Routing de Cloudflare sustituye los MX/SPF iniciales de Namecheap, con DKIM. Destino profesional verificado y regla activa `support@badgewars.com` hacia el buzón profesional del titular. Sin catch-all. El titular completó la verificación de Google recibida por ese alias. No es un buzón independiente ni habilita por sí solo envío SMTP.
+- GitHub OAuth «BadgeWars»: callback exacto `https://badgewars.com/api/auth/callback/github`, sin wildcard ni Device Flow. Claves cargadas como secretos del Worker. Acceso real completado y colección privada con saldo cero comprobada.
+- Proyecto Google Cloud `badgewars` sin facturación. Cuenta profesional `support@badgewars.com`, contacto público y desarrollador con esa dirección. Cliente web con callback exacto `https://badgewars.com/api/auth/callback/google`; enlaces de inicio/privacidad/términos guardados. Acceso real de la cuenta de pruebas completado, colección privada y cierre de sesión comprobados. La app sigue en **Testing**, con esa cuenta como usuario de prueba: falta preparar su publicación para acceso general y resolver los requisitos de marca/dominio que indique Google.
+- Worker `badgewars` desplegado con Assets, D1, KV, secretos y cron `*/5 * * * *`. Inicio OAuth con PKCE S256 y cookies Secure/HttpOnly verificado. El token temporal de preparación caduca el 19 de octubre; no forma parte de los secretos del Worker ni del repositorio.
 
 ## Variables y activación final
 
@@ -35,6 +36,6 @@ Según la documentación consultada, Workers Paid parte de 5 USD/mes más uso e 
 
 ## Pruebas
 
-`node --test tests/email-auth-d1.test.mjs` valida activación, pre-registro hostil, repetición/caducidad, revocación, origen, Turnstile, límites, fallo de correo y carreras. `node scripts/qa-email-auth.mjs`, con Wrangler local en 8788 y claves oficiales de prueba, comprueba el flujo completo con D1/workerd, scrypt y email simulado. Requiere aplicar las ocho migraciones en la D1 **local** asociada a la configuración actual; los IDs nuevos generan un estado local distinto al antiguo placeholder.
+`node --test tests/email-auth-d1.test.mjs` valida activación, pre-registro hostil, repetición/caducidad, revocación, origen, Turnstile, límites, fallo de correo y carreras. `node scripts/qa-email-auth.mjs`, con Wrangler local en 8788 y claves oficiales de prueba, comprueba el flujo completo con D1/workerd, scrypt y email simulado. Requiere aplicar las nueve migraciones en la D1 **local** asociada a la configuración actual; los IDs nuevos generan un estado local distinto al antiguo placeholder.
 
 Antes de producción: QA con entrega real, sesiones Google/GitHub definitivas, recuperación desde otro dispositivo, cambio de contraseña durante login y vigilancia de abusos. La cuenta Google con email existente debe crearla el titular, incluida contraseña y aceptación de condiciones; [Google exige cuenta o grupo administrado para soporte OAuth](https://support.google.com/cloud/answer/15549049?hl=en).
