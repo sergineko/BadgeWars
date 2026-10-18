@@ -20,7 +20,7 @@ Evidencias locales excluidas de Git: artifacts/polar-model-review-route.png y ar
 
 ## Siguiente decisión necesaria
 
-Mantener los cobros desactivados. Para continuar con Polar haría falta una revisión expresa posterior que realmente admita las mecánicas declaradas, o modificar el producto de forma sustancial y someter el modelo nuevo a revisión. La otra vía es seleccionar un proveedor que admita el modelo actual. No recategorizar ni ocultar BC, rankings, Build Funded o Trust Bag para superar el filtro. No se ha solicitado ni contratado otro proveedor.
+Mantener los cobros desactivados. Para continuar con Polar haría falta una revisión expresa posterior que realmente admita las mecánicas declaradas, o modificar el producto de forma sustancial y someter el modelo nuevo a revisión. La otra vía es seleccionar un proveedor que admita el modelo actual. No recategorizar ni ocultar BC, rankings, Build Funded o Trust Bag para superar el filtro. Posteriormente se envió una [consulta del modelo a Freemius](freemius-model-review.md), cuyo formulario confirmó la presentación; respuesta pendiente. No se ha contratado ni integrado otro proveedor.
 
 El resto de tareas de lanzamiento se conserva en la [tabla de pendientes](review-and-launch.md#tabla-de-pendientes). Los avances de Google, Turnstile, correo y operación pueden continuar sin habilitar pagos.
 
