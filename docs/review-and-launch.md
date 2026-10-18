@@ -47,4 +47,5 @@ Fuentes: [Cloudflare D1](https://developers.cloudflare.com/d1/platform/pricing/)
 - Conservación comprobada de condiciones aceptadas r2 al introducir r3; no se reescribe el documento previo.
 - Revisión en navegador de ES/EN, rutas limpias, páginas legales, recargas de ejemplo, casillas sin premarcar y pantalla estrecha sin desbordamiento. Captura: `artifacts/refund-policy-v7.png`.
 - Compra simulada real en Polar Sandbox y factura PDF revisadas; cuatro webhooks completos producen un único abono de 5 BC. No se han cobrado fondos reales ni desplegado recursos remotos. Recepción de emails pendiente de confirmación del titular.
+- Devolución total de ese pedido simulado autorizada y completada; conciliación manual contra Polar con una sola reversión, saldo 0 y sin deuda. Pendientes el webhook real de reembolso, devoluciones parciales/tras consumo y justificante rectificativo. Endpoint temporal desactivado y túneles detenidos.
 - 40 variantes de SVG personal cargadas en otro origen local, con HTML/Markdown; acceso propietario y actualización de rango en la misma URL verificados. Detalle y límites en [verification-2026-10-18.md](verification-2026-10-18.md).

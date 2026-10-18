@@ -7,6 +7,7 @@
 - Conexión con la API real de **Polar Sandbox**, producto de recarga privada en EUR/USD y token temporal con `checkouts:read`, `checkouts:write`, `orders:read`, caducidad de un día. Las credenciales permanecen únicamente en `.dev.vars`, ignorado por Git.
 - Compra simulada completada por el titular: 5 EUR de base + 1,05 EUR de IVA español = 6,05 EUR de total. El monedero recibió exactamente 5 BC; no se cobraron fondos reales.
 - Cuatro eventos reales de Sandbox (`order.paid` y `order.updated`) recibieron HTTP 202 y terminaron en estado completo. Solo se insertó un abono en el ledger. No hubo incidencias de conciliación.
+- Devolución completa de ese único pedido de Sandbox, autorizada expresamente como excepción de prueba: Polar confirmó 5 EUR de base y 1,05 EUR de impuesto devueltos. La conciliación autoritativa manual dejó saldo 0, deuda 0 y monedero congelado para revisión, con una sola reversión de 5 BC. Una segunda conciliación no duplicó la reversión. Esta parte se probó con el webhook desactivado y una referencia administrativa en la inbox local; no se afirma haber recibido webhooks reales de reembolso.
 - Factura PDF de Sandbox generada, descargada y revisada: emisor «BadgeWars via Polar Software, Inc.», base 5 EUR, IVA 21 %, total 6,05 EUR. Es documentación de prueba, no una factura de una venta real. La recepción del email y el acceso del comprador al portal requieren confirmación del titular.
 - 40 variantes de inserción desde una página en otro origen local: cinco badges × dos idiomas × dos estilos × HTML/Markdown. Las 40 imágenes cargaron correctamente en el navegador sin sesión en los SVG. Se comprobaron CORS, idioma, HEAD y ETag/304.
 - El generador exige la sesión del propietario. Una cuenta ajena recibe 404 y una petición sin sesión recibe 401. Renovar mantiene la URL y una sola ficha actual por badge; el incremento de dos niveles consumió solo 2 BC.
@@ -18,7 +19,7 @@
 
 - OAuth de Google/GitHub: faltan aplicaciones y claves. Las cuentas de integración son ficticias; no se ha probado todavía el recorrido completo con una identidad social real.
 - Recargas pagadas en USD, cantidades de 15 BC y libres; fallos/3DS del proveedor y una compra posterior desde una sesión social real. La validación automatizada de estas ramas no sustituye la prueba externa.
-- Reembolso externo parcial/total y documento rectificativo. La prueba propuesta afecta únicamente al pedido simulado y requiere autorización expresa como excepción a la política comercial.
+- Webhooks reales de reembolso, devolución parcial, devolución tras consumir créditos y documento rectificativo. La devolución total con saldo intacto sí está verificada, con conciliación manual.
 - Dominio, D1/KV remotos, despliegue, cron y observabilidad en Cloudflare. El entorno nativo local no confirma estos recursos remotos.
 - Aceptación comercial del modelo por Polar para producción, alta de recursos de producción y revisión jurídica/fiscal definitiva.
 
@@ -38,4 +39,4 @@ node scripts/qa-rank-refresh.mjs
 
 Las claves oficiales de prueba de Turnstile se admiten únicamente con entorno `sandbox` explícito y `APP_URL` de loopback. No habilitan pagos en un dominio desplegado ni en producción. Véase [Cloudflare: claves de prueba](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
 
-Los informes, capturas, bases, documentos de referencia y exportaciones privadas se conservan localmente y están excluidos del repositorio. El relay y el túnel son temporales; no son la infraestructura de producción.
+Los informes, capturas, bases, documentos de referencia y exportaciones privadas se conservan localmente y están excluidos del repositorio. Los relays/túneles se han detenido y el endpoint de Sandbox está desactivado. Su reactivación necesita un destino vigente y autorizado. No son la infraestructura de producción.
