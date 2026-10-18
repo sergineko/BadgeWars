@@ -31,4 +31,8 @@ Evidencia local ignorada: `artifacts/concurrent-bids-native.json`. La prueba no 
 
 ## Pendientes para apertura comercial
 
-Turnstile de producción; publicación general de Google; Workers Paid y Email Sending con entrega real antes de activar correo/contraseña; aceptación expresa de Polar del modelo completo, recursos/secretos de producción y webhook permanente; matriz final de pagos/reversiones, alertas, recuperación y revisión legal/fiscal del titular. El binding de email desplegado no prueba que la salida de correo esté habilitada. No se ha enviado ninguna solicitud comercial al proveedor.
+Turnstile de producción; publicación general de Google; Workers Paid y Email Sending con entrega real antes de activar correo/contraseña; aceptación del modelo por un proveedor, recursos/secretos de producción y webhook permanente; matriz final de pagos/reversiones, alertas, recuperación y revisión legal/fiscal del titular. El binding de email desplegado no prueba que la salida de correo esté habilitada. Estado centralizado en la [tabla de pendientes](review-and-launch.md#tabla-de-pendientes).
+
+## Revisión comercial de Polar
+
+El titular inició sesión en producción y autorizó preparar el alta del negocio. La descripción presentada explica las cinco familias, saldo BC sin transferencias ni retiradas, rankings pagados y ausencia de pagos a usuarios. El onboarding respondió **«Use case not supported»**, citando saldo prepago, prueba social/reputación comprada y patrocinio. El formulario no completó el acceso al dashboard del negocio; no se ha obtenido aprobación ni referencia de aceptación. No se habilitaron cobros, conectaron cuentas bancarias ni contrataron planes. [Descripción íntegra, respuesta y siguientes opciones](polar-model-review.md).

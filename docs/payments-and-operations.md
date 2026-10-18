@@ -4,7 +4,7 @@
 
 `Propuesta de cobros.docx` propone Polar como MoR, recargas en lugar de un checkout por puja, créditos enteros, sugerencias de 5/15/50 y renovación por diferencia. El usuario confirmó saldo único: 1 USD o 1 EUR de base = 1 BC. Se ha implementado sin rehacer el frontend en Astro: el proyecto real usa módulos ESM.
 
-Se descartan sus afirmaciones de que un monedero evita automáticamente bloqueos, permite posponer obligaciones fiscales o elimina disputas. La AUP vigente de Polar restringe saldos de clientes, patrocinios/donaciones y prueba social pagada. Hace falta aceptación expresa del modelo real; no basta cambiar sus nombres. Sandbox permanece separado de producción y no se han enviado solicitudes al proveedor.
+Se descartan sus afirmaciones de que un monedero evita automáticamente bloqueos, permite posponer obligaciones fiscales o elimina disputas. La AUP vigente de Polar restringe saldos de clientes, patrocinios/donaciones y prueba social pagada. Hace falta aceptación expresa del modelo real; no basta cambiar sus nombres. Sandbox permanece separado de producción. El 19 de octubre de 2026 se presentó la descripción completa en el onboarding de producción, que rechazó BC prepago, rankings pagados, Build Funded y Trust Bag con «Use case not supported». No hay aprobación ni cobros reales habilitados; ver [resultado y alcance](polar-model-review.md).
 
 ## Quién vende y quién factura
 

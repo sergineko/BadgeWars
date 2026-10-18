@@ -2,6 +2,8 @@
 
 Web ES/EN de badges SVG dinámicos, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.9.
 
+**Lanzamiento:** [tabla de pendientes y criterios de cierre](docs/review-and-launch.md#tabla-de-pendientes) · [revisión comercial de Polar](docs/polar-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
+
 ## Desarrollo
 
 Node 24 o posterior (las pruebas usan SQLite integrado):
@@ -48,6 +50,8 @@ La caché de la API pública y SVG Trust Bag es corta (15 s, metadatos 10 s); ot
 Polar está integrado para sandbox con API/webhooks **2026-10**. Precio fijo generado en servidor, confirmación autoritativa de la orden pagada, firma Standard Webhooks, inbox durable, idempotencia por referencia y recuperación por cron. Volver del checkout no acredita nada y recargar nunca compra un badge automáticamente. Reembolsos y casos dudosos congelan el monedero y generan revisión operativa; no hay devolución automática de saldo a dinero desde la app.
 
 **No habilitar producción sin aceptación expresa del proveedor para el modelo completo.** La política vigente de Polar restringe saldos de clientes, patrocinios/donaciones y prueba social pagada. Llamarlo «créditos» no elimina esas restricciones ni garantiza evitar bloqueos. El código exige `POLAR_LIVE_APPROVAL_REFERENCE` y datos de titular completos antes de permitir pagos de producción; esa referencia no sustituye una aprobación real.
+
+El 19 de octubre de 2026 se presentó el modelo íntegro en el onboarding de producción de Polar: su validación respondió **«Use case not supported»**, señalando BC prepago, rankings pagados, Build Funded y Trust Bag. Los cobros siguen bloqueados; [resultado, alcance y descripción presentada](docs/polar-model-review.md).
 
 La revisión del Word se documenta en [docs/payments-and-operations.md](docs/payments-and-operations.md). Los términos ES/EN describen mecánicas, derechos obligatorios y privacidad reales; no suponen una exención de obligaciones fiscales o de actividad del titular.
 
