@@ -6,7 +6,7 @@ Estado del **19 de octubre de 2026**: adaptación publicada en https://badgewars
 
 | Elemento | Resultado |
 |---|---|
-| Worker publicado | Última versión operativa: `4e2feb12-c2cf-4ee4-be0b-b274bc6201ab`; incluye los controles del [bloque C](block-c-verification.md). |
+| Worker publicado | Última versión operativa: `2e06ca6b-0298-41d9-b3e3-4f33c418c8c2`; incluye los controles del [bloque C](block-c-verification.md). |
 | Base de datos | Trece migraciones en D1 remota; 0012/0013 añaden control operativo e índices. Exportación protegida localmente y restauración aislada comprobada. [Bloque C](block-c-verification.md). |
 | Configuración desplegada | `DODO_PAYMENTS_ENVIRONMENT=test_mode`; Workers Free, correo/contraseña desactivado. Sin credenciales de cobro en producción. Productos EUR/USD, clave y webhook configurados solo para QA aislado. |
 | API pública y documentos | `/api/legal` devuelve condiciones `2026-10-19-r8` y Dodo Payments. `/terms`, `/refunds`, `/privacy`, `/legal`, `/cookies`: HTTP 200, ES/EN en HTML sin JavaScript. |

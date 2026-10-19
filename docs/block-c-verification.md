@@ -1,6 +1,6 @@
 # Bloque C · Operación y seguridad
 
-Comprobado el **19 de octubre de 2026**, desplegado en la versión `4e2feb12-c2cf-4ee4-be0b-b274bc6201ab`. Workers continúa en **Free**. Los cobros públicos y el acceso por correo/contraseña permanecen desactivados. Este bloque no modifica la política comercial ni sustituye la aceptación de Dodo o el cierre legal/fiscal.
+Comprobado el **19 de octubre de 2026**, desplegado en la versión `2e06ca6b-0298-41d9-b3e3-4f33c418c8c2`. Workers continúa en **Free**. Los cobros públicos y el acceso por correo/contraseña permanecen desactivados. Este bloque no modifica la política comercial ni sustituye la aceptación de Dodo o el cierre legal/fiscal.
 
 | Control | Resultado comprobado |
 |---|---|

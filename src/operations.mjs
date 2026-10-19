@@ -44,11 +44,11 @@ export async function notifyOperations(db,env,key,signals,now=Date.now()){
 }
 export async function serviceHealth(env,now=Date.now()){
  try{
-  const cron=await runtime(env.DB,'scheduler'),publisher=await runtime(env.DB,'publisher'),projection=await first(env.DB,'SELECT count(*) n FROM bw_badges WHERE dirty=1 AND published_at<?',[now-900000]);
+  const cron=await runtime(env.DB,'scheduler'),publisher=await runtime(env.DB,'publisher'),operations=await runtime(env.DB,'operations'),projection=await first(env.DB,'SELECT count(*) n FROM bw_badges WHERE dirty=1 AND published_at<?',[now-900000]);
   const cached=await env.BADGES?.get('badge:flex','stream');await cached?.cancel?.();
   const fresh=job=>Boolean(job?.finishedAt&&now-job.finishedAt<1200000&&!job.failed?.length);
-  const checks={database:true,cache:Boolean(cached),scheduler:fresh(cron),publisher:fresh(publisher),projections:projection.n===0,maintenance:env.MAINTENANCE_MODE==='true'};
-  const healthy=checks.cache&&checks.scheduler&&checks.publisher&&checks.projections&&!checks.maintenance;
+  const checks={database:true,cache:Boolean(cached),scheduler:fresh(cron),publisher:fresh(publisher),operations:Boolean(operations&&now-operations.updatedAt<2100000),projections:projection.n===0,maintenance:env.MAINTENANCE_MODE==='true'};
+  const healthy=checks.cache&&checks.scheduler&&checks.publisher&&checks.operations&&checks.projections&&!checks.maintenance;
   return Response.json({status:healthy?'ok':'degraded',checks},{status:healthy?200:503,headers:{'Cache-Control':'no-store','Retry-After':'300','X-Content-Type-Options':'nosniff'}});
  }catch{return Response.json({status:'unavailable'},{status:503,headers:{'Cache-Control':'no-store','Retry-After':'300'}});}
 }

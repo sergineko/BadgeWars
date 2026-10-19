@@ -38,11 +38,12 @@ test('operational alerts use counts only, serialize concurrent sends, retry fail
 test('health fails closed on stale cron, pending projections, maintenance and database failure without exposing accounts',async()=>{
  const db=createD1(),now=Date.now(),env={DB:db,BADGES:{async get(){return 'projection';}}};try{
   assert.equal((await serviceHealth(env,now)).status,503);
-  db.sqlite.exec('UPDATE bw_badges SET dirty=0');await runtime(db,'scheduler',{finishedAt:now,failed:[]},now);await runtime(db,'publisher',{finishedAt:now,failed:[]},now);
+  db.sqlite.exec('UPDATE bw_badges SET dirty=0');await runtime(db,'scheduler',{finishedAt:now,failed:[]},now);await runtime(db,'publisher',{finishedAt:now,failed:[]},now);await runtime(db,'operations',{},now);
   assert.equal((await serviceHealth(env,now)).status,200);
   assert.equal((await serviceHealth({...env,BADGES:{async get(){return null;}}},now)).status,503);
   assert.equal((await serviceHealth(env,now+1200001)).status,503);
   assert.equal((await serviceHealth({...env,MAINTENANCE_MODE:'true'},now)).status,503);
+  await runtime(db,'operations',{},now-2100001);assert.equal((await serviceHealth(env,now)).status,503);
   assert.equal((await serviceHealth({DB:{prepare(){throw Error('private secret');}}},now)).status,503);
  }finally{db.close();}
 });
