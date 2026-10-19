@@ -27,6 +27,15 @@ La suspensión y la reversión no se han cambiado para que encajen con el texto:
 
 La AEAT indica que el alta censal debe preceder al inicio de las operaciones; si ya existe alta, una nueva actividad puede requerir modificación. No se asigna un epígrafe o régimen fiscal por deducción de la web ni se presenta una declaración en nombre del titular. El MoR gestiona su venta al comprador, pero no acredita el cumplimiento de las obligaciones propias del operador. La comprobación de los documentos definitivos del MoR y la referencia de aceptación siguen agrupadas en **E**.
 
+## Expediente preparado para completar el cierre
+
+- [Expediente jurídico/fiscal](legal-tax-handover.md): descripción exacta del negocio, separación de facturas al comprador y relación con el MoR, MSA contrastado, criterios condicionados a la entidad contractual, ficha de confirmación y consulta lista para el titular/asesoría. No se ha enviado ni presentado un alta.
+- [Registro de tratamientos](privacy-register.md): categorías, finalidades, bases, destinatarios, conservación técnica, controles, ponderación de riesgos, derechos y procedimiento ante brechas. Está elaborado a partir del código; no suplanta la aprobación del responsable ni acredita contratos que no se han examinado en su cuenta.
+
+La revisión adicional del MSA público de Dodo, apartados 3, 7 y 14, confirma que el proveedor mantiene soporte de producto y obligaciones de cumplimiento. No prueba que la atención exclusivamente escrita esté exenta del art. 21.3 TRLGCU. Tampoco permite identificar sin documentación particular cuál de las sociedades del grupo liquidará con SergioTech. Estas conclusiones están motivadas en el expediente; no se marca D como cerrado para ocultar esas dependencias.
+
+El titular eligió comprobar su situación censal en la sede oficial de la AEAT y autorizó únicamente su lectura, sin presentar declaraciones. Se ha preparado el acceso a la consulta de actividades; la comprobación requiere su identificación. Los resultados privados no se incorporarán al repositorio y no se consideran verificados antes de leerlos.
+
 ## Atención y privacidad: procedimiento preparado
 
 Responsable: Sergio Moreno García / SergioTech.es. Entrada: `support@badgewars.com`; incidencias técnicas según [procedimiento operativo](operations-runbook.md).
@@ -44,6 +53,7 @@ Responsable: Sergio Moreno García / SergioTech.es. Entrada: `support@badgewars.
 - [RGPD, información, derechos y decisiones automatizadas](https://www.boe.es/buscar/doc.php?id=DOUE-L-2016-80807).
 - [AEAT, alta censal y nueva actividad](https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/guia-practica-cumplimentacion-modelo-censal-036/capitulo-01-cuestiones-generales/plazos-presentacion/declaracion-alta/alta-censo-empresarios-profesionales-retenedores-036.html).
 - [Dodo Buyer Terms](https://dodopayments.com/legal/buyer-terms), [privacidad](https://dodopayments.com/legal/privacy-policy) y [DPA: roles y transferencias](https://dodopayments.com/legal/dpa). Las dos primeras páginas respondieron HTTP 200 y HTML al comprobarse directamente; el extractor de búsqueda no pudo abrirlas. No se usó la versión `/archive/` como contrato actual.
+- [Dodo MSA](https://dodopayments.com/terms-of-use), [LIVA, arts. 69–70](https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740#a69) y [Reglamento de facturación, art. 5](https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696#a5), contrastados al preparar el expediente.
 - [Cloudflare DPA](https://www.cloudflare.com/cloudflare-customer-dpa/).
 
 ## Publicación y pruebas
