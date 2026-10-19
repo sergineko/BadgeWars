@@ -135,6 +135,14 @@ const copy={
   "Recarga pendiente de confirmación del proveedor.",
   "Top-up awaiting provider confirmation."
  ],
+ "receiptDeclined": [
+  "El proveedor ha rechazado este intento de pago. No se han añadido BC. Puedes iniciar otra recarga desde tu monedero.",
+  "The provider declined this payment attempt. No BC were added. You can start another top-up from your wallet."
+ ],
+ "receiptCancelled": [
+  "El proveedor ha cancelado este intento de pago. No se han añadido BC.",
+  "The provider cancelled this payment attempt. No BC were added."
+ ],
  "receiptAccepted": [
   "Recarga confirmada. Los créditos están disponibles; vuelve al badge para confirmar el consumo.",
   "Top-up confirmed. Your credits are available; return to the badge to confirm spending."

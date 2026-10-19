@@ -5,6 +5,12 @@ import {queryRanking} from '../public/ranking.js';
 import {demoEntries} from '../public/demo.js';
 import {catalog,badgeSvg,money} from '../public/badges.js';
 import {seal,unseal,authRoute,identity} from '../src/auth.mjs';
+import {receiptMessage} from '../public/flow.js';
+test('rejected receipts explain that no BC were added in both languages',()=>{
+ for(const state of ['failed','cancelled'])for(const locale of ['es','en']){
+  const message=translate(locale,receiptMessage(state));assert.ok(message.includes('BC'));assert.notEqual(receiptMessage(state),'receiptPending');assert.notEqual(receiptMessage(state),'receiptUnavailable');
+ }
+});
 test('both languages cover the same copy and interpolate pagination',()=>{
  assert.deepEqual(Object.keys(messages.es),Object.keys(messages.en));for(const locale of ['es','en'])for(const value of Object.values(messages[locale]))assert.equal(typeof value,'string');
  assert.equal(translate('en','page',{page:2,total:3}),'Page 2 of 3');assert.equal(translate('es','page',{page:2,total:3}),'Página 2 de 3');

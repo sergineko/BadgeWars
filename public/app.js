@@ -103,7 +103,7 @@ async function refreshReceipt(session=params.get('checkout')){
  try{const response=await request('/api/me/checkout?session='+encodeURIComponent(session));
   if(response.status===401){receipt={status:'signin'};return;}
   if(response.status===404){receipt={status:'missing'};return;}
-  if(!response.ok)throw Error();const next=await response.json();const changed=receipt?.status!==next.status;receipt=next;if(['accepted','refunded','expired'].includes(next.status))sessionState('badgewars-receipt','');
+  if(!response.ok)throw Error();const next=await response.json();const changed=receipt?.status!==next.status;receipt=next;if(['accepted','refunded','expired','failed','cancelled'].includes(next.status))sessionState('badgewars-receipt','');
   if(receiptPolls>=12&&['open','creating','complete'].includes(receipt.status))receipt.status='waiting';
   if(changed&&['accepted','refunded','refund_pending','refund_failed'].includes(next.status))await loadCollection();
  }catch{receipt={status:'unavailable'};}

@@ -77,6 +77,38 @@ test('cron recovers lost payment and refund webhooks within the configured Dodo 
   state.payment.refunds=[{refund_id:'ref_lost',status:'succeeded',payment_id:paymentId,amount:1815,currency:'EUR'}];db.sqlite.exec('UPDATE bw_orders SET next_check=0');await recoverTopups(db,env);assert.equal(wallet(db,user).balance,0);assert.equal(wallet(db,user).frozen,1);
  }finally{db.close();globalThis.fetch=previous;}
 });
+
+test('declined and cancelled payments close pending receipts without credits and recover a later success',async()=>{
+ const previous=globalThis.fetch;try{
+  for(const status of ['failed','cancelled']){
+   const {db,user,id,state}=await fixture();try{
+    state.payment.status=status;db.sqlite.exec('UPDATE bw_topups SET next_check=0');
+    await recoverTopups(db,env);
+    assert.equal(db.sqlite.prepare('SELECT state FROM bw_topups').get().state,status);
+    assert.equal(wallet(db,user).balance,0);assert.equal(wallet(db,user).frozen,0);
+    assert.equal(db.sqlite.prepare('SELECT count(*) n FROM bw_ledger').get().n,0);
+    state.payment.status='succeeded';db.sqlite.exec('UPDATE bw_topups SET next_check=0');
+    await recoverTopups(db,env);await reconcilePayment(db,env,paymentId);
+    assert.equal(wallet(db,user).balance,15);
+    assert.equal(db.sqlite.prepare('SELECT state FROM bw_topups').get().state,'accepted');
+    state.payment.status=status;await reconcilePayment(db,env,paymentId);
+    assert.equal(db.sqlite.prepare('SELECT state FROM bw_topups').get().state,'accepted');
+    assert.equal(wallet(db,user).balance,15);
+   }finally{db.close();}
+  }
+ }finally{globalThis.fetch=previous;}
+});
+
+test('rejected checkout retries are bounded and cannot overwrite a payment review',async()=>{
+ const previous=globalThis.fetch,{db,user,state}=await fixture();try{
+  state.payment.status='failed';await reconcilePayment(db,env,paymentId);
+  db.sqlite.exec("UPDATE bw_topups SET created_at='2020-01-01T00:00:00Z',next_check=0");
+  const calls=state.calls.length;await recoverTopups(db,env);assert.equal(state.calls.length,calls);
+  assert.equal(db.sqlite.prepare('SELECT state FROM bw_topups').get().state,'failed');
+  db.sqlite.exec("UPDATE bw_topups SET state='review'");await reconcilePayment(db,env,paymentId);
+  assert.equal(db.sqlite.prepare('SELECT state FROM bw_topups').get().state,'review');assert.equal(wallet(db,user).balance,0);
+ }finally{db.close();globalThis.fetch=previous;}
+});
 test('authoritative full refunds reverse all BC without assuming refund API input units; incomplete partial details never mint',async()=>{
  const previous=globalThis.fetch;try{
   const first=await fixture();await reconcilePayment(first.db,env,paymentId);first.state.payment.refund_status='full';first.state.payment.refunds=[];await reconcilePayment(first.db,env,paymentId);assert.equal(wallet(first.db,first.user).balance,0);assert.equal(first.db.sqlite.prepare('SELECT reversed FROM bw_orders').get().reversed,15);first.db.close();

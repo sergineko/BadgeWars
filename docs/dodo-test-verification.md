@@ -19,7 +19,7 @@ Las comprobaciones siguientes usan la API real de **Dodo test mode** y el Worker
 | Separación de cuentas | Dos cuentas ficticias y dos clientes de facturación independientes, incluso usando el mismo correo de recepción. El portal de una cuenta rechaza el cliente de la otra. |
 | Compra de badge | Apex Flex adquirido por 1 BC; la otra cuenta lo supera con 2 BC. Renovar a nivel 3 consume solo 2 BC adicionales. |
 | Inventario e idempotencia | Una sola ficha por cuenta/familia; repetir la referencia no vuelve a gastar. La URL personal del SVG se conserva al renovar. |
-| Inserción | Códigos HTML y Markdown del propietario cargan el SVG desde otro origen local, con CORS y sin sesión en la imagen. El generador privado rechaza anónimos y otras cuentas. No es una prueba en un README alojado por GitHub. |
+| Inserción | Códigos HTML y Markdown del propietario cargan el SVG desde otro origen local, con CORS y sin sesión en la imagen. El generador privado rechaza anónimos y otras cuentas. La ampliación posterior del [bloque B](block-b-verification.md) verifica además web HTTPS y README de GitHub. |
 | Portal | Botón real de la colección abre el portal Dodo del cliente correcto. Se corrigió el envío de POST vacío que impedía abrirlo desde la interfaz. |
 | Facturas | PDFs EUR/USD descargados y revisados visualmente: cinco unidades, base, IVA y total separados, marca BadgeWars y entidad MoR de Dodo. Son documentos de test. |
 | Emails | El titular confirmó la recepción de los dos emails de compra en el correo de soporte reenviado a su buzón profesional. |
@@ -42,10 +42,10 @@ Verificado con la devolución real de test y con **40 variantes de URL** de las 
 
 ## Alcance y pendientes
 
-- **62 pruebas automáticas correctas y 49 comprobaciones de sintaxis**. Se han retirado el adaptador, las pruebas y la documentación del proveedor descartado. Las migraciones SQL ya aplicadas se conservan como secuencia histórica; 0011 retira los triggers de compatibilidad y rechaza nuevas operaciones ajenas a Dodo.
+- **69 pruebas automáticas correctas y 55 comprobaciones de sintaxis tras la ampliación B**. Se han retirado el adaptador, las pruebas y la documentación del proveedor descartado. Las migraciones SQL ya aplicadas se conservan como secuencia histórica; 0011 retira los triggers de compatibilidad y rechaza nuevas operaciones ajenas a Dodo.
 - El endpoint temporal quedó desactivado en Dodo al terminar y se detuvo el túnel público. La vista local de QA se conserva para revisión. Antes de cobrar hay que registrar el endpoint live permanente y configurar productos, claves y firma del mismo entorno. La aceptación comercial de Dodo sigue pendiente.
-- Quedan pruebas adicionales de métodos rechazados/3DS, datos fiscales de empresa/NIF-IVA y devolución parcial en otra moneda. Los escenarios automáticos no equivalen a haber ejecutado cada uno con un emisor bancario real. El circuito de tarjeta de test, B2C EUR/USD, portal, documentos y reversiones descrito arriba sí se ejecutó externamente.
-- Google general, Turnstile de producción, correo/contraseña, alertas, recuperación y revisión legal/fiscal siguen en la [tabla de lanzamiento](review-and-launch.md).
+- La [ampliación B](block-b-verification.md) añade rechazos reales de test, solicitud `force_3ds`, factura empresarial con NIF ficticio, parcial EUR y SVG personal en web/GitHub externos. El simulador no presentó un reto 3DS interactivo; la comprobación bancaria y los documentos reales corresponden a E.
+- Google público, GitHub y Turnstile ya están comprobados. Correo/contraseña queda preparado hasta Paid; C, D y E mantienen su alcance en la [tabla de lanzamiento](review-and-launch.md).
 
 ## Repetición local
 
@@ -53,6 +53,6 @@ Verificado con la devolución real de test y con **40 variantes de URL** de las 
 
 Las credenciales, clientes, sesiones de portal, cuerpos de pago, PDFs, informes JSON y capturas permanecen en rutas locales ignoradas. No copiar `.dev.vars.dodo-test` a producción ni publicar esos archivos.
 
-## Publicación
+## Publicación inicial de esta verificación
 
 Versión 0.10.1 publicada en `badgewars.com`: Worker `33175f1e-6f72-4823-ad90-28e01b189012`, once migraciones remotas. Comprobación posterior: cero recargas, pedidos y asientos de pago en D1 de producción; ninguna fila de QA importada. Los cobros live permanecen desactivados.

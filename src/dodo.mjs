@@ -89,7 +89,16 @@ export async function reconcilePayment(db,env,paymentId){
  }
  if(payment.refund_status==='partial'&&refunded===0){await freeze(db,row,'refund_amount_review',key);return;}
  if(!Number.isSafeInteger(refunded)||refunded>payment.total_amount){await freeze(db,row,'refund_amount_review',key);throw Error('payment_mismatch');}
- if(!existing&&(payment.status!=='succeeded'||refunded>0)){if(refunded>0)await freeze(db,row,'uncredited_refund',key);return;}
+ if(!existing&&(payment.status!=='succeeded'||refunded>0)){
+  if(refunded>0)await freeze(db,row,'uncredited_refund',key);
+  else if(!unresolved&&!pending){
+   const state=['failed','cancelled'].includes(payment.status)?payment.status:'open';
+   // A rejected attempt grants nothing. A later verified success in this same
+   // checkout can still settle; never overwrite an accepted or reviewed top-up.
+   await run(db,"UPDATE bw_topups SET state=? WHERE id=? AND state IN('creating','open','failed','cancelled') AND NOT EXISTS(SELECT 1 FROM bw_orders WHERE topup_id=?)",[state,row.id,row.id]);
+  }
+  return;
+ }
  // Dodo refunds are gross (including tax). Preserve fractions for review, never round BC up.
  const netRefund=Number(BigInt(refunded)*BigInt(row.credits*100)/BigInt(payment.total_amount));
  const reversed=Math.min(row.credits,Math.floor(netRefund/100));
@@ -123,7 +132,9 @@ export async function processEvents(db,env,limit=2){
 }
 export async function recoverTopups(db,env){
  if(!env.DODO_PAYMENTS_API_KEY)return;
- for(const row of await rows(db,"SELECT * FROM bw_topups WHERE provider='dodo' AND environment=? AND state='open' AND next_check<=? ORDER BY created_at LIMIT 4",[paymentEnvironment(env),Date.now()]))try{
+ // Recheck rejected checkouts during their 24h retry window, even if a webhook
+ // is lost. Keep their terminal status visible without polling them forever.
+ for(const row of await rows(db,"SELECT * FROM bw_topups WHERE provider='dodo' AND environment=? AND (state='open' OR (state IN('failed','cancelled') AND created_at>strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day'))) AND next_check<=? ORDER BY next_check,created_at LIMIT 4",[paymentEnvironment(env),Date.now()]))try{
   const checkout=await dodoClient(env).checkoutSessions.retrieve(row.checkout_id);
   if(checkout.id!==row.checkout_id)throw Error('payment_mismatch');
   if(checkout.payment_id)await reconcilePayment(db,env,checkout.payment_id);
