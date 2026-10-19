@@ -2,7 +2,7 @@
 
 SaaS ES/EN de badges SVG dinámicos por API, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.10.1.
 
-**Lanzamiento:** [tabla de pendientes y criterios de cierre](docs/review-and-launch.md#tabla-de-pendientes) · [consulta enviada a Freemius](docs/freemius-model-review.md) · [revisión de Dodo y precedente de Outbid](docs/dodo-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
+**Lanzamiento:** [cinco bloques y criterios de cierre](docs/review-and-launch.md#plan-de-lanzamiento-cinco-bloques) · [consulta enviada a Freemius](docs/freemius-model-review.md) · [revisión de Dodo y precedente de Outbid](docs/dodo-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
 
 ## Desarrollo
 
@@ -33,6 +33,8 @@ pnpm exec wrangler deploy --dry-run --outdir .wrangler/build
 - Una ficha actual por cuenta y badge. Renovar conserva su identificador y URL. Generador de inserción solo para su propietario autenticado; el SVG resultante es público para funcionar en Internet.
 - Google/GitHub OAuth con PKCE y estado de un uso en D1. No se conservan tokens sociales; sesiones opacas con hash, HttpOnly y Secure en HTTPS. Cada proveedor representa una cuenta distinta, sin vinculación automática por email.
 - Correo/contraseña propios en D1 con scrypt y pepper, verificación, recuperación de un uso, revocación de sesiones y Turnstile. Preparado y probado localmente; producción desactivada hasta Workers Paid y Email Sending verificado.
+- Google publicado en producción y probado con una cuenta fuera de la anterior lista de test; GitHub también comprobado. Workers Free se mantiene.
+- Código personal HTML con protección de conexión: tarjeta SVG incluida en la web anfitriona cuando falla la imagen remota, sin icono roto ni ranking antiguo. Markdown/GitHub y HTML simple se conservan con sus límites. [Compatibilidad y pruebas](docs/badge-connection-fallback.md).
 - Solicitud privada de revisión por recarga cobrada y no abonada: bloquea consumo posterior, abono previo, deuda y saldo insuficiente; no ejecuta devoluciones de dinero. Las reversiones impuestas por Dodo se concilian igualmente.
 - Rutas limpias, sin filtros/idioma en la URL: `/leaderboard/flex`, `/leaderboard/bait`, `/leaderboard/funded`, `/leaderboard/trust`, `/leaderboard/genesis`, `/collection`, `/terms`, `/refunds`, `/privacy`, `/legal`, `/cookies`. Cada badge tiene su clasificación; Genesis muestra propietarios por edición. `/leaderboard` abre Flex y los callbacks técnicos limpian la dirección al redirigir. Las cinco páginas legales incluyen ES/EN en HTML sin JavaScript.
 - Menú superior persistente al desplazarse; navegación interna sin recargar el documento ni mostrar una página intermedia de carga. Conserva Atrás/Adelante, posición de scroll y filtros independientes. La colección privada prepara sus datos manteniendo la vista anterior; descargas, OAuth y pagos conservan su flujo de servidor. Anclas ajustadas a la altura del menú y transiciones breves del contenido, respetando movimiento reducido.

@@ -21,6 +21,9 @@ test('private inventory and embed generation require the session owner; visibili
   assert.equal((await call(ctx,'/api/me/supporters?badge='+badge.holderId)).status,404);
   const owned=await settle(ctx.env.DB,catalog[3],{...consent,userId:ctx.user,amount:2000,owner:'mine'},crypto.randomUUID());
   const embed=await call(ctx,'/api/me/embed?badge='+owned.holderId+'&lang=es');assert.equal(embed.status,200);assert.equal(embed.headers.get('Cache-Control'),'no-store');const code=await embed.json();assert.ok(JSON.stringify(code).includes('/badges/quality/'+owned.holderId+'/es.svg'));
+  const resilient=await call(ctx,'/api/me/embed?badge='+owned.holderId+'&lang=es&format=html-safe');assert.equal(resilient.status,200);assert.ok((await resilient.json()).code.includes('Estado sin verificar'));
+  assert.equal((await call(ctx,'/api/me/embed?badge='+badge.holderId+'&format=html-safe')).status,404);
+  assert.equal((await call(ctx,'/api/me/embed?badge='+owned.holderId+'&format=unknown')).status,400);
   assert.equal((await call(ctx,'/api/me/visibility')).status,404);
   assert.equal((await call(ctx,'/api/me/visibility','POST',{badge:owned.holderId,count:6})).status,400);
   assert.equal((await call(ctx,'/api/me/visibility','POST',{badge:owned.holderId,count:2},{Origin:'https://evil.example'})).status,403);

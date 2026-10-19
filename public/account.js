@@ -22,6 +22,8 @@ export function clearEmailChallenge(){if(activeWidget!==null){window.turnstile?.
 
 export async function emailDialog(ctx,mode='login',actionCode=''){
  const {t,open}=ctx,$=s=>document.querySelector(s),registration=mode==='register',reset=mode==='reset'||mode==='resend',confirm=mode==='confirm',newPassword=mode==='password';
+ clearEmailChallenge();
+ if(!ctx.enabled){open(`<div class="eyebrow">BADGEWARS / ACCOUNT</div><h2>${t('emailLogin')}</h2><p>${t('emailSetup')}</p><div class="social-buttons">${(ctx.providers||[]).map(provider=>`<button class="social-button" data-provider="${provider}">${t('continueWith',{provider:provider==='google'?'Google':'GitHub'})} ↗</button>`).join('')}</div>`);return;}
  const title=t({login:'emailLogin',register:'emailRegister',reset:'emailReset',resend:'emailResend',confirm:'emailConfirm',password:'emailNewPassword'}[mode]);
  open(`<div class="eyebrow">BADGEWARS / ACCOUNT</div><h2>${title}</h2><p>${t('emailPrivacy')}</p><form id="email-form" class="account-form">
  ${!confirm&&!newPassword?`<label for="account-email">${t('emailLabel')}</label><input id="account-email" name="email" type="email" autocomplete="email" maxlength="254" required>`:''}

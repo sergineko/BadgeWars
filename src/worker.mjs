@@ -103,7 +103,7 @@ async function privateRoute(request,env,ctx){
  if(url.pathname==='/api/me/embed'){
   if([...url.searchParams.keys()].some(k=>!['badge','style','lang','format'].includes(k)||url.searchParams.getAll(k).length>1))return reply({error:'invalid_parameters'},400);
   const id=url.searchParams.get('badge'),style=url.searchParams.get('style')||'',locale=url.searchParams.get('lang')||'en',format=url.searchParams.get('format')||'md';
-  if(!uuid(id)||!['','compact'].includes(style)||!['es','en'].includes(locale)||!['md','html'].includes(format))return reply({error:'invalid_parameters'},400);
+  if(!uuid(id)||!['','compact'].includes(style)||!['es','en'].includes(locale)||!['md','html','html-safe'].includes(format))return reply({error:'invalid_parameters'},400);
   const result=await personalEmbed(db,userId,id,env.APP_URL,{style,locale,format});return reply(result||{error:'not_found'},result?200:404);
  }
  if(url.pathname==='/api/me/supporters'){

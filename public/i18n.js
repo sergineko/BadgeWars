@@ -655,6 +655,9 @@ const copy={
   "Que lo vea Internet.",
   "Let the internet see it."
  ],
+ "embedResilient": ["HTML con protección de conexión", "HTML with connection fallback"],
+ "embedResilientHelp": ["Si la imagen no llega, muestra una tarjeta local sin ranking y sin icono de imagen rota. La web que lo publique debe permitir SVG y los estilos incluidos. El enlace puede seguir bloqueado por la red del visitante.", "If the image cannot load, a local card appears without a ranking or a broken-image icon. The host website must allow SVG and the included styles. The visitor’s network may still block the link."],
+ "embedStandardHelp": ["Compatible con los sitios que solo admiten imágenes, como GitHub. Markdown y HTML simple no pueden sustituir una imagen bloqueada por la red; la protección visual está en el formato HTML con protección.", "Compatible with image-only hosts such as GitHub. Markdown and simple HTML cannot replace a network-blocked image; use the HTML with connection fallback format for visual protection."],
  "badgeStyle": [
   "Estilo del badge",
   "Badge style"
@@ -1536,8 +1539,8 @@ const copy={
   "Your email is private. Verify it before accessing credits and badges."
  ],
  "emailSetup": [
-  "El acceso por correo está pendiente de configurar.",
-  "Email sign-in is awaiting configuration."
+  "Correo y contraseña estarán disponibles próximamente. Mientras tanto, entra con Google o GitHub.",
+  "Email and password sign-in is coming soon. For now, continue with Google or GitHub."
  ],
  "emailForgot": [
   "He olvidado mi contraseña",
