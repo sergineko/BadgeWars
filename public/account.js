@@ -6,7 +6,7 @@ export async function billingDialog(ctx){
  const {t,open}=ctx;
  async function access(customerId){
   try{
-   const response=await request('/api/me/billing-portal',{method:'POST',...(customerId?{headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId})}:{})});
+   const response=await request('/api/me/billing-portal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(customerId?{customerId}:{})});
    const result=await response.json();if(!response.ok)throw Error();
    if(ctx.isCurrent&&!ctx.isCurrent())return;
    if(result.url){location.assign(result.url);return;}

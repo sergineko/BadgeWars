@@ -2,10 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createD1,seedUser,consent} from './helpers/d1.mjs';
 import {env,input,fixture,providerMock,product,paymentId,business,makePayment} from './helpers/dodo.mjs';
-import {createTopup,reconcilePayment,receiveEvent,processEvents,recoverTopups,paymentsReady,billingPortalUrl} from '../src/dodo.mjs';
+import {createTopup,reconcilePayment,receiveEvent,processEvents,recoverTopups,paymentsReady,billingPortalUrl,apiKeyReady} from '../src/dodo.mjs';
 import {settle} from '../src/settlement.mjs';
 import {catalog} from '../public/badges.js';
 const wallet=(db,user)=>db.sqlite.prepare('SELECT * FROM bw_wallets WHERE user_id=?').get(user);
+
+test('opaque dashboard API keys are supported without inferring the environment from their format',()=>{
+ assert.equal(apiKeyReady('opaque-test-credential-without-a-mode-prefix','test_mode'),true);
+ assert.equal(apiKeyReady('dodo_live_wrong-environment','test_mode'),false);
+ assert.equal(apiKeyReady('dodo_test_wrong-environment','live_mode'),false);
+ for(const value of ['',undefined,'replace'])assert.equal(apiKeyReady(value,'test_mode'),false);
+ assert.equal(paymentsReady({...env,DODO_PAYMENTS_API_KEY:'opaque-dashboard-credential'}),true);
+});
+
+test('D1 rejects new payment rows from an unsupported provider or unspecified environment',async()=>{
+ const db=createD1(),user=await seedUser(db);
+ try{
+  const insert=db.sqlite.prepare('INSERT INTO bw_topups(id,user_id,credits,currency,product_id,terms_version,provider,environment) VALUES(?,?,5,?,?,?,?,?)');
+  for(const [provider,mode] of [['retired','test_mode'],['dodo','sandbox'],['dodo','']])assert.throws(()=>insert.run(crypto.randomUUID(),user,'eur',product,'test',provider,mode));
+  assert.equal(db.sqlite.prepare('SELECT count(*) AS n FROM bw_topups').get().n,0);
+ }finally{db.close();}
+});
 test('Dodo fixed-price packs preserve consents, quantity, currency and idempotency without minting on redirect',async()=>{
  const previous=globalThis.fetch,{db,user,id,state}=await fixture();try{
   const call=state.calls.find(c=>c.path==='/checkouts'),body=JSON.parse(call.init.body);
@@ -54,7 +71,7 @@ test('partial and pending refunds or disputes reserve the wallet; refunded payme
   }
  }finally{globalThis.fetch=previous;}
 });
-test('cron recovers lost payment and refund webhooks without reading or reinterpreting Polar rows',async()=>{
+test('cron recovers lost payment and refund webhooks within the configured Dodo environment',async()=>{
  const previous=globalThis.fetch,{db,user,state}=await fixture();try{
   db.sqlite.exec('UPDATE bw_topups SET next_check=0');await recoverTopups(db,env);assert.equal(wallet(db,user).balance,15);
   state.payment.refunds=[{refund_id:'ref_lost',status:'succeeded',payment_id:paymentId,amount:1815,currency:'EUR'}];db.sqlite.exec('UPDATE bw_orders SET next_check=0');await recoverTopups(db,env);assert.equal(wallet(db,user).balance,0);assert.equal(wallet(db,user).frozen,1);

@@ -1,5 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {operatorReady} from '../public/terms.js';
+import {apiKeyReady} from '../src/dodo.mjs';
 const config=JSON.parse(await readFile('wrangler.jsonc','utf8'));
 const production=process.argv.includes('--production');
 let file='';try{file=await readFile(production?'.dev.vars.production':'.dev.vars','utf8');}catch{}
@@ -19,7 +20,7 @@ const checks={
  'Presupuesto CPU para scrypt (requiere Paid)':config.compatibility_flags?.includes('nodejs_compat')&&config.limits?.cpu_ms>=1000,
  'Turnstile de producción (sin claves de prueba)':real(vars.TURNSTILE_SITE_KEY)&&real(vars.TURNSTILE_SECRET_KEY)&&!(/^[123]x0+/.test(vars.TURNSTILE_SITE_KEY)||/^[123]x0+/.test(vars.TURNSTILE_SECRET_KEY)),
  'Dodo entorno explícito':vars.DODO_PAYMENTS_ENVIRONMENT===(production?'live_mode':'test_mode'),
- 'Dodo API key del entorno':real(vars.DODO_PAYMENTS_API_KEY)&&vars.DODO_PAYMENTS_API_KEY.startsWith(production?'dodo_live_':'dodo_test_'),
+ 'Dodo API key (autenticación remota pendiente)':apiKeyReady(vars.DODO_PAYMENTS_API_KEY,production?'live_mode':'test_mode'),
  'Dodo negocio':/^bus_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_BUSINESS_ID||'')&&real(vars.DODO_BUSINESS_ID),
  'Dodo productos USD/EUR':/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_USD||'')&&/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_EUR||'')&&real(vars.DODO_PRODUCT_ID_USD)&&real(vars.DODO_PRODUCT_ID_EUR),
  'Dodo Standard Webhooks':real(vars.DODO_PAYMENTS_WEBHOOK_KEY),

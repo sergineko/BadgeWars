@@ -10,7 +10,7 @@ Los BC solo sirven para funciones del software. El precio de adquisición no imp
 
 ## Conciliación y entrega
 
-El retorno del navegador no acredita saldo. Un webhook se verifica por sus bytes originales y negocio, se conserva en D1 y provoca la consulta del pago actual. Validar entorno, referencia/cuenta, producto, cantidad, moneda, base, sesión y estado. El abono y su referencia son idempotentes. Cron recupera eventos y revisa pagos acreditados en lotes. Proveedor/entorno forman parte de la identidad de los registros; no procesar un pago Polar como si fuera Dodo.
+El retorno del navegador no acredita saldo. Un webhook se verifica por sus bytes originales y negocio, se conserva en D1 y provoca la consulta del pago actual. Validar entorno, referencia/cuenta, producto, cantidad, moneda, base, sesión y estado. El abono y su referencia son idempotentes. Cron recupera eventos y revisa pagos acreditados en lotes. Proveedor/entorno forman parte de la identidad de los registros; no reutilizar referencias de otro entorno.
 
 No cambiar el importe o los metadatos de una recarga local para hacerla coincidir con un pago extraño. Registrar la incidencia en `bw_operations`, mantener el estado de revisión y comprobar el proveedor. Una creación de checkout incierta no debe repetirse con una clave nueva para forzar el resultado.
 
@@ -22,14 +22,15 @@ Antes de decidir, volver a consultar el pago, los reembolsos/disputas, el ledger
 
 Una reversión obligatoria se concilia incluso tras consumo: el saldo gastable queda en cero como mínimo, el faltante se registra como deuda y se congela la cuenta para revisión. Los badges propios y los apoyos financiados pueden suspenderse; Genesis conserva su número. Las fracciones y monedas de reembolso que no se puedan conciliar exactamente permanecen en revisión. Una disputa ganada no elimina otros bloqueos automáticamente.
 
-Advertencia operativa concreta: la API Dodo expresa el `amount` de entrada de devoluciones parciales en céntimos de USD, también para pagos en otras monedas. `bw_refund_requests.amount` es la base original de la recarga y no debe pasarse directamente a ese parámetro. Revisar la vista previa de Dodo con base, impuestos y total; ver su [guía oficial](https://docs.dodopayments.com/features/transactions/refunds).
+Para devoluciones parciales por API, usar la forma vigente por `items`, consultar antes `payments.retrieveLineItems` y comprobar moneda, base, impuestos y total. No reutilizar recetas antiguas de `amount` raíz ni pasar directamente `bw_refund_requests.amount`. La prueba realizada usa 242 céntimos USD brutos con `tax_inclusive: true`; otras monedas requieren su propia comprobación. Preferir la vista previa del panel para una operación manual.
 
 ## Facturas y evidencias
 
-El portal se crea en servidor para una referencia de cliente del usuario autenticado y del entorno actual. No vincular cuentas por email ni publicar enlaces privados en KV. Si una compra simultánea creó varios perfiles propios, el área permite elegirlos. Antes de lanzamiento comprobar factura, recibo, rectificación, emails y perfil de empresa en Dodo con una compra real de test mode. Las facturas anteriores de Polar Sandbox no verifican Dodo.
+El portal se crea en servidor para una referencia de cliente del usuario autenticado y del entorno actual. No vincular cuentas por email ni publicar enlaces privados en KV. Si una compra simultánea creó varios perfiles propios, el área permite elegirlos. Antes de lanzamiento comprobar factura, recibo, rectificación, emails y perfil de empresa en Dodo con una compra real de test mode.
 
 Conservar documentos aceptados, referencias, estados y resultado de revisiones. No escribir cuerpos completos de webhook, CVC, tarjetas, tokens o datos bancarios en logs. La copia previa de D1 y las credenciales se excluyen de Git. Ensayar una restauración aislada y reconciliar con el proveedor: restaurar D1 no deshace un cobro externo.
 
-## Historial
 
-El Word original proponía Polar y un saldo único. Se mantuvo el modelo BC confirmado por el titular; Polar rechazó su onboarding. La versión anterior de este procedimiento está archivada en [legacy/payments](../legacy/payments/operations-polar.md), junto al adaptador histórico. Las pruebas reales de Polar se conservan como evidencia de aquella integración, no como autorización ni pruebas externas de Dodo.
+## Estado público tras incidencias
+
+Un badge suspendido, una cuenta congelada o con deuda no sirven su SVG activo. La comprobación primaria precede a la caché. Se entrega una tarjeta inactiva ES/EN sin rango ni titular, con enlace `/b/<id>` hacia la colección para gestionar la incidencia y soporte. No reactivar sin conciliar pago, saldo, deuda, apoyos e incidentes pendientes. [Pruebas Dodo](dodo-test-verification.md).

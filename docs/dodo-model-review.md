@@ -10,7 +10,7 @@ Estado del **19 de octubre de 2026**: **verificación enviada; Dodo revisa los d
 | Producto | BadgeWars / SergioTech.es, https://badgewars.com, categoría Software SaaS/IA. |
 | Entrega declarada | Acceso instantáneo, sin intervención humana en la prestación principal; compras únicas, no suscripción. |
 | Integración | API/SDK/Adapters. SDK Dodo, checkout en servidor, firma, inbox, consulta autoritativa, D1 atómica y recuperación. |
-| Etapa / proveedor actual | Beta; NINGUNA como plataforma de cobros activa. Polar solo se usó en Sandbox y se rechazó su onboarding live. |
+| Etapa / proveedor actual | Beta; ningún proveedor procesa cobros live. Dodo es la única integración actual. |
 | Revisión de contenido | Se corrigieron y guardaron las dos descripciones del producto y flujo técnico, incluidas las cinco familias, precios BC, posiciones pagadas, apoyos, ausencia de pagos a titulares y pruebas externas pendientes. |
 | URLs | Web normalizada a badgewars.com. Se conservó el perfil profesional que ya había facilitado el titular. |
 | Último envío | El titular confirmó personalmente el destino bancario y pulsó el envío final. Después se comprobó el estado de revisión en el panel. |
@@ -26,7 +26,7 @@ Los [términos del dominio exacto outbid.lol](https://outbid.lol/terms) identifi
 
 La [política de aceptación](https://docs.dodopayments.com/miscellaneous/merchant-acceptance) evalúa el servicio completo e indica compliance@dodopayments.com para dudas de elegibilidad. No se ocultaron funciones ni se presentó Trust Bag como una certificación de seguridad o un mero coste criptográfico contra bots. La ficha describe los niveles y apoyos pagados, el SVG/API y las recargas sin canje monetario.
 
-La propuesta inicial de email, preparada antes de crear la cuenta, **no se envió**. Fue sustituida por las descripciones de verificación que se guardaron y cuyo expediente se envió después. [Freemius](freemius-model-review.md) sigue con una consulta recibida sin respuesta comercial registrada; [Polar](polar-model-review.md) rechazó el onboarding anterior.
+La propuesta inicial de email, preparada antes de crear la cuenta, **no se envió**. Fue sustituida por las descripciones de verificación que se guardaron y cuyo expediente se envió después. [Freemius](freemius-model-review.md) sigue con una consulta recibida sin respuesta comercial registrada.
 
 ## Descripción del producto guardada
 
@@ -57,4 +57,8 @@ Integration is implemented with the official Dodo SDK and tested locally against
 
 ## Siguiente paso
 
-Esperar la decisión o los requerimientos de Dodo. Su plazo de hasta 72 horas no es una garantía de resolución. No activar recargas hasta completar productos, claves, webhook, Turnstile, pruebas reales de test mode y aceptación comercial. La implementación ya sustituyó a Polar; no se usa una aprobación de otro proveedor como `DODO_LIVE_APPROVAL_REFERENCE`.
+Esperar la decisión o los requerimientos de Dodo. Su plazo de hasta 72 horas no es una garantía de resolución. No activar recargas hasta completar productos, claves, webhook, Turnstile, pruebas reales de test mode y aceptación comercial. No se usa una aprobación de otro proveedor como `DODO_LIVE_APPROVAL_REFERENCE`.
+
+## Verificación técnica posterior al envío
+
+Compras Dodo test EUR/USD, webhooks, saldo, renovación de badge, SVG, portal, facturas y recepción de emails comprobados después de presentar la solicitud. Ver [informe de test](dodo-test-verification.md). No modifica la descripción ya enviada ni implica aprobación comercial.

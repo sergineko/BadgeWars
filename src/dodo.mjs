@@ -4,6 +4,9 @@ import {uuid} from './collection.mjs';
 import {TERMS_VERSION,termsDocument,operatorReady} from '../public/terms.js';
 export {TERMS_VERSION};
 export const paymentEnvironment=env=>env.DODO_PAYMENTS_ENVIRONMENT==='live_mode'?'live_mode':'test_mode';
+// Dashboard keys can be opaque, without a mode prefix. The explicit SDK endpoint
+// and Dodo's authentication bind credentials to their environment.
+export const apiKeyReady=(key,mode)=>configured(key)&&!(/^(?:dodo_test_|dodo_live_)/.test(key)&&!key.startsWith(mode==='live_mode'?'dodo_live_':'dodo_test_'));
 export const providerId=(value,prefix)=>typeof value==='string'&&new RegExp(`^${prefix}_[A-Za-z0-9_-]{3,120}$`).test(value);
 const reference=(env,id)=>`dodo:${paymentEnvironment(env)}:${id}`;
 const configured=value=>typeof value==='string'&&value.length>3&&!/replace|example|placeholder/i.test(value);
@@ -14,7 +17,7 @@ export function dodoClient(env){
 export function paymentsReady(env){
  const mode=paymentEnvironment(env),dummy=/^[123]x0+/.test(env.TURNSTILE_SITE_KEY||'')||/^[123]x0+/.test(env.TURNSTILE_SECRET_KEY||'');
  let local=false;try{local=['localhost','127.0.0.1','[::1]'].includes(new URL(env.APP_URL).hostname);}catch{}
- return Boolean(['test_mode','live_mode'].includes(env.DODO_PAYMENTS_ENVIRONMENT)&&configured(env.DODO_PAYMENTS_API_KEY)&&env.DODO_PAYMENTS_API_KEY.startsWith(mode==='live_mode'?'dodo_live_':'dodo_test_')&&[env.DODO_BUSINESS_ID,env.DODO_PRODUCT_ID_USD,env.DODO_PRODUCT_ID_EUR,env.TURNSTILE_SITE_KEY,env.TURNSTILE_SECRET_KEY].every(configured)&&providerId(env.DODO_BUSINESS_ID,'bus')&&providerId(env.DODO_PRODUCT_ID_USD,'pdt')&&providerId(env.DODO_PRODUCT_ID_EUR,'pdt')&&configured(env.DODO_PAYMENTS_WEBHOOK_KEY)&&env.TURNSTILE_SITE_KEY&&env.TURNSTILE_SECRET_KEY&&(!dummy||local&&mode==='test_mode')&&(mode!=='live_mode'||configured(env.DODO_LIVE_APPROVAL_REFERENCE)&&operatorReady(env)));
+ return Boolean(['test_mode','live_mode'].includes(env.DODO_PAYMENTS_ENVIRONMENT)&&apiKeyReady(env.DODO_PAYMENTS_API_KEY,mode)&&[env.DODO_BUSINESS_ID,env.DODO_PRODUCT_ID_USD,env.DODO_PRODUCT_ID_EUR,env.TURNSTILE_SITE_KEY,env.TURNSTILE_SECRET_KEY].every(configured)&&providerId(env.DODO_BUSINESS_ID,'bus')&&providerId(env.DODO_PRODUCT_ID_USD,'pdt')&&providerId(env.DODO_PRODUCT_ID_EUR,'pdt')&&configured(env.DODO_PAYMENTS_WEBHOOK_KEY)&&env.TURNSTILE_SITE_KEY&&env.TURNSTILE_SECRET_KEY&&(!dummy||local&&mode==='test_mode')&&(mode!=='live_mode'||configured(env.DODO_LIVE_APPROVAL_REFERENCE)&&operatorReady(env)));
 }
 export function checkoutForm(row,appUrl){return {
  product_cart:[{product_id:row.product_id,quantity:row.credits}],billing_currency:row.currency.toUpperCase(),

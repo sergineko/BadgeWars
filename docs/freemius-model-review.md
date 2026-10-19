@@ -28,9 +28,9 @@ El beneficio solicitado por el titular se explica al principio: el comprador rec
 - Si admiten las diez ediciones Genesis de 1.000 BC y la política de reembolsos comerciales descrita, preservando derechos obligatorios y decisiones del MoR.
 - Si requieren cambios reales del producto, límites o documentación adicional, y qué referencia acredita la decisión.
 
-Mantener desactivados los cobros hasta una aceptación expresa del modelo completo y la configuración/pruebas del proveedor elegido. La aprobación general de una cuenta o una recarga de prueba no sustituye esa aceptación. No utilizar una futura referencia de Freemius como POLAR_LIVE_APPROVAL_REFERENCE: si se elige Freemius, habrá que adaptar integración, controles de activación y documentos al nuevo vendedor.
+Mantener desactivados los cobros hasta una aceptación expresa del modelo completo y la configuración/pruebas del proveedor elegido. La aprobación general de una cuenta o una recarga de prueba no sustituye esa aceptación. No utilizar una futura referencia de Freemius como DODO_LIVE_APPROVAL_REFERENCE: si se elige Freemius, habrá que adaptar integración, controles de activación y documentos al nuevo vendedor.
 
-La [guía de créditos de Freemius](https://freemius.com/help/documentation/saas/usage-based-billing-credits/) describe recargas de compra única y consumo en la aplicación. Su [AUP](https://freemius.com/terms/acceptable-use/) mantiene requisitos sobre el producto completo y reglas de los procesadores. Estas fuentes justifican solicitar evaluación; no constituyen aprobación de BadgeWars. El [resultado previo de Polar](polar-model-review.md) permanece registrado por separado y la [tabla de pendientes](review-and-launch.md#tabla-de-pendientes) conserva el bloqueo de cobros.
+La [guía de créditos de Freemius](https://freemius.com/help/documentation/saas/usage-based-billing-credits/) describe recargas de compra única y consumo en la aplicación. Su [AUP](https://freemius.com/terms/acceptable-use/) mantiene requisitos sobre el producto completo y reglas de los procesadores. Estas fuentes justifican solicitar evaluación; no constituyen aprobación de BadgeWars. La [tabla de pendientes](review-and-launch.md#tabla-de-pendientes) refleja el proveedor actual, Dodo.
 
 ## Texto íntegro enviado
 

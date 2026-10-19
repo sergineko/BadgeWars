@@ -14,6 +14,7 @@ import {termsDocument,operatorDetails,paymentSeller} from '../public/terms.js';
 import {requestDeliveryRefund} from './refunds.mjs';
 import {emailRoute} from './email-auth.mjs';
 import {legalPage} from './legal-page.mjs';
+import {suspendedBadgeSvg} from '../public/badge-status.js';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 async function readBody(request,limit){
  if(Number(request.headers.get('Content-Length')||0)>limit)throw Error('body_too_large');
@@ -26,7 +27,10 @@ async function readInput(request){
  const raw=await readBody(request,8192);
  const value=JSON.parse(raw);if(!value||typeof value!=='object'||Array.isArray(value))throw Error('invalid_request');return value;
 }
-function imageResponse(response,request){
+function imageResponse(response,request,personal=false){
+ // Internal render caching remains useful, but a personal image must pass the
+ // primary payment/status check again on every request, including conditional GET.
+ if(personal){const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Badge-Status','active');headers.set('Access-Control-Expose-Headers','X-Badge-Status, ETag');response=new Response(response.body,{status:response.status,headers});}
  const tag=response.headers.get('ETag');
  if(tag&&request.headers.get('If-None-Match')?.split(',').map(s=>s.trim()).some(value=>value===tag||value==='*'))return new Response(null,{status:304,headers:response.headers});
  return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
@@ -43,16 +47,28 @@ async function svg(request,env,ctx){
  if([...url.searchParams.keys()].some(k=>!['style','claim','lang'].includes(k))||[...url.searchParams.keys()].some(k=>url.searchParams.getAll(k).length>1)||(url.searchParams.has('style')&&url.searchParams.get('style')!=='compact')||(url.searchParams.has('lang')&&!['es','en'].includes(url.searchParams.get('lang'))))return json({error:'invalid_parameters'},400);
  const claim=url.searchParams.get('claim');if(url.searchParams.has('claim')&&!uuid(claim))return json({error:'invalid_purchase'},400);
  const compact=url.searchParams.get('style')==='compact',locale=url.searchParams.get('lang')||'en';
+ if(claim){
+  if(!env.DB)return json({error:'badge_status_unavailable'},503);
+  let eligibility;
+  try{eligibility=await first(primary(env),'SELECT b.status,w.frozen,w.debt FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=? AND b.badge=?',[claim,id]);}
+  catch{return json({error:'badge_status_unavailable'},503);}
+  if(!eligibility)return json({error:'purchase_not_found'},404);
+  if(eligibility.status!=='active'||eligibility.frozen||eligibility.debt>0){
+   // img elements need a successful image response to display the inactive card.
+   // No owner, score or rank is served, and no cached active render is consulted.
+   return new Response(request.method==='HEAD'?null:suspendedBadgeSvg(env.APP_URL||url.origin,locale,compact),{headers:{'Content-Type':'image/svg+xml; charset=utf-8','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Expose-Headers':'X-Badge-Status','Content-Language':locale,'X-Badge-Status':'suspended','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox allow-top-navigation-by-user-activation"}});
+  }
+ }
  const keyUrl=new URL(`${url.origin}/badges/${id}.svg`);if(compact)keyUrl.searchParams.set('style','compact');if(claim)keyUrl.searchParams.set('claim',claim);if(locale!=='en')keyUrl.searchParams.set('lang',locale);
  let state=id==='quality'?await trustState(request,env,ctx):null;
  if(id==='quality'&&!state)return json({error:'projection_pending'},503);
  keyUrl.searchParams.set('render','6');if(id==='quality')keyUrl.searchParams.set('revision',String(state.revision));
- const key=new Request(keyUrl),cached=await caches.default.match(key);if(cached)return imageResponse(cached,request);
+ const key=new Request(keyUrl),cached=await caches.default.match(key);if(cached)return imageResponse(cached,request,Boolean(claim));
  if(!state)state=await env.BADGES.get(`badge:${id}`,'json');if(!state)return json({error:'projection_pending'},503);
  if(claim){const index=state.entries.findIndex(p=>p.id===claim||p.aliases?.includes(claim));if(index===-1)return json({error:'purchase_not_found'},404);state={...publicEntry(state.entries[index]),revision:state.revision,rank:id==='genesis'?undefined:index+1};}
  else if(id==='genesis')state={...state,owner:null};
  const response=new Response(badgeSvg(id,state,compact,locale),{headers:{'Content-Type':'image/svg+xml; charset=utf-8','Cache-Control':`public, max-age=0, s-maxage=${id==='quality'?15:300}, must-revalidate`,'Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff','Content-Language':locale,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox",'ETag':`W/"v6-${id}-${state.id||'arena'}-${state.revision}-${compact}-${state.rank||0}-${locale}"`}});
- ctx.waitUntil(caches.default.put(key,response.clone()));return imageResponse(response,request);
+ ctx.waitUntil(caches.default.put(key,response.clone()));return imageResponse(response,request,Boolean(claim));
 }
 async function privateRoute(request,env,ctx){
  const url=new URL(request.url),auth=await identity(request,env);if(!auth.user)return privateJson({error:'authentication_required'},401,auth.cookies);
@@ -130,6 +146,16 @@ export default {
    if(path==='/api/checkout/return'&&request.method==='GET'){
     if(!uuid(url.searchParams.get('topup'))&&url.searchParams.get('status')!=='cancel')return json({error:'invalid_session'},400);
     return await siteReturn({checkout:url.searchParams.get('status')==='cancel'?'cancel':url.searchParams.get('topup'),locale:url.searchParams.get('lang')},env);
+   }
+   const badgeLink=path.match(/^\/b\/([^/]+)$/);
+   if(badgeLink&&['GET','HEAD'].includes(request.method)){
+    if(!uuid(badgeLink[1]))return json({error:'badge_not_found'},404);
+    if(!env.DB)return json({error:'badge_status_unavailable'},503);
+    const row=await first(primary(env),'SELECT b.badge,b.status,w.frozen,w.debt FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=?',[badgeLink[1]]);
+    if(!row)return json({error:'badge_not_found'},404);
+    const paused=row.status!=='active'||row.frozen||row.debt>0;
+    const destination=paused?'/collection':row.badge==='quality'?'/support/'+badgeLink[1]:'/badge/'+row.badge;
+    return new Response(null,{status:302,headers:{Location:new URL(destination,env.APP_URL).href,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
    }
    if(path==='/api/dodo/webhook'&&request.method==='POST'){
     const body=await readBody(request,65536);

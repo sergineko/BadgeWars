@@ -88,8 +88,8 @@ const copy={
   "Refresh collection"
  ],
  "loadedPurchases": [
-  "{n} badges disponibles",
-  "{n} available badges"
+  "{n} badges en tu colección",
+  "{n} badges in your collection"
  ],
  "noBadgeIssued": [
   "Este pago no ha emitido un badge.",
@@ -1308,8 +1308,8 @@ const copy={
   "The wallet could not be loaded. Please try again."
  ],
  "walletFrozen": [
-  "Monedero suspendido para revisión. Contacta con soporte; no se permiten nuevos gastos.",
-  "Wallet suspended for review. Contact support; new spending is disabled."
+  "Cuenta suspendida por una incidencia o revisión de pago. El uso y los SVG de tus badges están bloqueados. Contacta con soporte para regularizar la situación; no se permiten nuevos gastos.",
+  "Account suspended due to a payment issue or review. Badge use and SVG endpoints are blocked. Contact support to resolve it; new spending is disabled."
  ],
  "paymentsSetup": [
   "Las recargas no están activadas. Faltan la configuración y la revisión del proveedor.",
@@ -1392,12 +1392,16 @@ const copy={
   "The portal could not be opened. If you already purchased, use the link in Dodo Payments’s email or contact support."
  ],
  "badgeSuspended": [
-  "En revisión",
-  "Under review"
+  "Suspendido",
+  "Suspended"
  ],
  "badgeReviewNote": [
-  "La publicación de este badge está suspendida mientras revisamos un pago relacionado. Conservas esta ficha y su referencia.",
-  "Publication of this badge is suspended while a related payment is reviewed. This entry and its reference are retained."
+  "Este badge y su endpoint SVG están suspendidos por una incidencia o revisión de pago. Para volver a usarlos debes estar al corriente de pago y contactar con soporte para revisar su reactivación. Conservas esta ficha y su URL.",
+  "This badge and its SVG endpoint are suspended due to a payment issue or review. To use them again, you must be up to date with payments and contact support to review reactivation. This entry and its URL are retained."
+ ],
+ "badgeCodeDisabled": [
+  "Código y SVG bloqueados hasta regularizar el pago",
+  "Embed code and SVG blocked until the payment issue is resolved"
  ],
  "contactSupport": [
   "Contactar con soporte",

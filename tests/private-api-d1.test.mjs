@@ -58,7 +58,7 @@ test('ES/EN legal documents include all five badges, mandatory rights and Sergio
   for(const path of legalRoutes)assert.ok(legalSections(path,locale).length>=3);
   const response=await worker.fetch(new Request(origin+'/api/legal/terms/'+locale+'.txt'),{},{});assert.equal(response.status,200);assert.ok(response.headers.get('Content-Disposition').includes('attachment'));assert.ok((await response.text()).includes(doc.operator.email));
  }
- const ctx=await setup();try{const id=crypto.randomUUID();ctx.env.DB.sqlite.prepare('INSERT INTO bw_topups(id,user_id,credits,currency,product_id,terms_version,terms_snapshot,immediate_delivery,adult_confirmed) VALUES(?,?,5,?,?,?, ?,1,1)').run(id,ctx.other,'usd',crypto.randomUUID(),TERMS_VERSION,JSON.stringify(termsDocument()));assert.equal((await call(ctx,'/api/me/confirmation/'+id)).status,404);}finally{ctx.env.DB.close();}
+ const ctx=await setup();try{const id=crypto.randomUUID();ctx.env.DB.sqlite.prepare("INSERT INTO bw_topups(id,user_id,credits,currency,product_id,terms_version,terms_snapshot,immediate_delivery,adult_confirmed,provider,environment) VALUES(?,?,5,?,?,?, ?,1,1,'dodo','test_mode')").run(id,ctx.other,'usd',crypto.randomUUID(),TERMS_VERSION,JSON.stringify(termsDocument()));assert.equal((await call(ctx,'/api/me/confirmation/'+id)).status,404);}finally{ctx.env.DB.close();}
 });
 
 test('action confirmations preserve separate consent and terms; only their owner can download them',async()=>{

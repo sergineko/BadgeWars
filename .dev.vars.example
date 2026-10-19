@@ -13,7 +13,8 @@ GITHUB_CLIENT_SECRET=replace
 TURNSTILE_SITE_KEY=replace
 TURNSTILE_SECRET_KEY=replace
 DODO_PAYMENTS_ENVIRONMENT=test_mode
-DODO_PAYMENTS_API_KEY=dodo_test_replace
+# Dashboard keys may be opaque: always select and verify the environment explicitly.
+DODO_PAYMENTS_API_KEY=replace_with_test_mode_api_key
 DODO_BUSINESS_ID=bus_replace
 # Two fixed-price products: 1 BC at 100 minor units, tax exclusive, no discounts/PPP.
 DODO_PRODUCT_ID_USD=pdt_replace_usd

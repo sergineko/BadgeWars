@@ -6,10 +6,10 @@ La conexión PostgreSQL/Hyperdrive y las dependencias `pg`/PGlite se han retirad
 
 1. Crear D1 y KV dedicados en la cuenta Cloudflare destino; anotar sus IDs en `wrangler.jsonc`.
 2. Copiar `.dev.vars.example` a `.dev.vars` para desarrollo y configurar secretos independientes para sandbox.
-3. `pnpm db:migrate:local` aplica `0001_d1.sql` a `0009_flex_starting_level.sql` a la instancia local. Se ha verificado también el motor de Wrangler/workerd, no solo un emulador de SQL en las pruebas.
+3. `pnpm db:migrate:local` aplica `0001_d1.sql` a `0011_dodo_only.sql` a la instancia local. Se ha verificado también el motor de Wrangler/workerd, no solo un emulador de SQL en las pruebas.
 4. Aplicar al destino remoto durante el despliegue autorizado con `pnpm db:migrate:remote`. Comprobar versión y filas antes de cambiar el dominio.
 5. Ejecutar la tarea programada tras configurar bindings para publicar las cinco familias iniciales en KV. Hasta entonces las vistas públicas devuelven `projection_pending`/503; no se sustituyen por datos demo.
-6. Probar OAuth, compra real de prueba, emails/portal de Polar, confirmación, gasto, reembolso y recuperación. Activar producción solo con aceptación del proveedor y configuración legal/documental validada.
+6. Probar OAuth, compra real de prueba, emails/portal de Dodo, confirmación, gasto, reembolso y recuperación. Activar producción solo con aceptación del proveedor y configuración legal/documental validada.
 
 ## Si existen datos reales anteriores
 

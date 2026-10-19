@@ -13,9 +13,9 @@ test('Trust Bag shares short-lived KV metadata and switches SVG cache revision w
  const previous=globalThis.caches,cache=new Map();let reads=0;const tasks=[],id='90000000-0000-4000-8000-000000000001';
  globalThis.caches={default:{match:async req=>cache.get(req.url)?.clone(),put:async(req,res)=>cache.set(req.url,res.clone()),delete:async req=>cache.delete(req.url)}};
  let state={revision:1,entries:[{id,badgeId:'quality',owner:'holder',points:'287',rank:1}]};
- const env={BADGES:{get:async()=>{reads++;return structuredClone(state);}}},ctx={waitUntil:job=>tasks.push(job)},url='https://badges.example/badges/quality.svg?claim='+id;
+ const env={DB:{prepare:()=>({bind:()=>({first:async()=>({status:'active',frozen:0,debt:0})})})},BADGES:{get:async()=>{reads++;return structuredClone(state);}}},ctx={waitUntil:job=>tasks.push(job)},url='https://badges.example/badges/quality.svg?claim='+id;
  try{
-  const first=await worker.fetch(new Request(url),env,ctx);await Promise.all(tasks.splice(0));const oldTag=first.headers.get('ETag');assert.equal(first.headers.get('Cache-Control'),'public, max-age=0, s-maxage=15, must-revalidate');assert.ok((await first.text()).includes('data-trust-tier="leader"'));
+  const first=await worker.fetch(new Request(url),env,ctx);await Promise.all(tasks.splice(0));const oldTag=first.headers.get('ETag');assert.equal(first.headers.get('Cache-Control'),'no-store');assert.ok((await first.text()).includes('data-trust-tier="leader"'));
   await worker.fetch(new Request(url+'&style=compact'),env,ctx);await Promise.all(tasks.splice(0));assert.equal(reads,1);
   // The metadata TTL expires (or local publication purges it); old rendered SVGs remain cached.
   state={revision:2,entries:[{id:'90000000-0000-4000-8000-000000000002',badgeId:'quality',owner:'challenger',points:'300',rank:1},{id,badgeId:'quality',owner:'holder',points:'287',rank:2}]};cache.delete(trustStateKey(url).url);
