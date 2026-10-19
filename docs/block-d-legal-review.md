@@ -34,7 +34,7 @@ La AEAT indica que el alta censal debe preceder al inicio de las operaciones; si
 
 La revisión adicional del MSA público de Dodo, apartados 3, 7 y 14, confirma que el proveedor mantiene soporte de producto y obligaciones de cumplimiento. No prueba que la atención exclusivamente escrita esté exenta del art. 21.3 TRLGCU. Tampoco permite identificar sin documentación particular cuál de las sociedades del grupo liquidará con SergioTech. Estas conclusiones están motivadas en el expediente; no se marca D como cerrado para ocultar esas dependencias.
 
-El titular eligió comprobar su situación censal en la sede oficial de la AEAT y autorizó únicamente su lectura, sin presentar declaraciones. Se ha preparado el acceso a la consulta de actividades; la comprobación requiere su identificación. Los resultados privados no se incorporarán al repositorio y no se consideran verificados antes de leerlos.
+El titular eligió comprobar su situación censal en la sede oficial de la AEAT y autorizó únicamente su lectura, sin presentar declaraciones. La consulta real se efectuó el 20 de octubre de 2026, con identificación realizada por el titular, y se le comunicó el resultado y el siguiente trámite indicado por la sede. No se modificaron datos ni se presentó un modelo. La constancia mínima está cifrada localmente, fuera de Git, y se cerró la sesión al terminar. El resultado privado no se publica aquí. Quedan actuaciones fiscales del titular; D no puede cerrarse solo con documentos web o con la aprobación comercial del MoR.
 
 ## Atención y privacidad: procedimiento preparado
 

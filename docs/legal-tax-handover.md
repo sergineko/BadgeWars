@@ -26,13 +26,13 @@ El MSA menciona varias sociedades del grupo. No basta el nombre comercial, el pa
 
 ## Criterio fiscal que debe confirmarse con los datos reales
 
-La [AEAT exige el alta censal antes del inicio de operaciones](https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/guia-practica-cumplimentacion-modelo-censal-036/capitulo-01-cuestiones-generales/plazos-presentacion/declaracion-alta/alta-censo-empresarios-profesionales-retenedores-036.html); si existe otra actividad, puede proceder una modificación. El titular ha indicado que todavía no lo tiene confirmado. No se elige epígrafe ni fecha de alta sin sus circunstancias reales.
+La [AEAT exige el alta censal antes del inicio de operaciones](https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/guia-practica-cumplimentacion-modelo-censal-036/capitulo-01-cuestiones-generales/plazos-presentacion/declaracion-alta/alta-censo-empresarios-profesionales-retenedores-036.html); si existe otra actividad, puede proceder una modificación. Se efectuó una consulta real autorizada el 20/10/2026 y se comunicaron al titular su resultado y el trámite indicado por la sede. Los datos censales y actividades particulares se mantienen fuera de Git. No se elige epígrafe ni fecha de alta sin sus circunstancias reales, ni se toma la fecha del primer cobro como inicio automático de toda obligación: deben revisarse también operaciones preparatorias y adquisiciones cuando corresponda.
 
 Para servicios entre empresas, la localización exige identificar al destinatario y establecimiento correspondiente, considerando reglas especiales. No se presume IVA español ni «IVA 0 %» por usar Dodo. Si la entidad resulta intracomunitaria, debe valorarse ROI/VIES y la información correspondiente; una entidad fuera de la UE no se convierte en intracomunitaria por cobrar en euros. [LIVA, arts. 69–70](https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740#a69) · [AEAT, identificación intracomunitaria](https://sede.agenciatributaria.gob.es/Sede/iva/iva-operaciones-comercio-exterior/identificacion-realizar-operaciones-otros-empresarios-ue.html).
 
 Si se propone autofacturación, hay que comprobar acuerdo previo, aceptación de documentos y copias, y las condiciones adicionales que correspondan cuando el emisor esté fuera de la UE. Una liquidación descargada no es automáticamente una autofactura válida. [Reglamento de facturación, art. 5](https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696#a5).
 
-La actividad y situación del titular determinan sus obligaciones de renta, libros, declaraciones y, en su caso, Seguridad Social. No se afirma que unos ingresos bajos, la ausencia de beneficios o el uso de un MoR eliminen esas obligaciones. La lista definitiva de modelos y el criterio de registro deben quedar documentados por quien tramite el alta.
+La actividad y situación del titular determinan sus obligaciones de renta, libros, declaraciones y, en su caso, Seguridad Social. [Importass](https://portal.seg-social.gob.es/wps/portal/importass/importass/Colectivos/Trabajo%20Autonomo/guia) informa del alta para una actividad económica personal y habitual, con independencia de los ingresos. No se afirma que unos ingresos bajos, la ausencia de beneficios o el uso de un MoR eliminen esas obligaciones. No se consultó la vida laboral ni se tramitó una afiliación. La lista definitiva de modelos, el encaje en Seguridad Social y el criterio de registro deben quedar documentados por quien tramite el alta.
 
 ## Decisiones jurídicas que requieren cierre real
 
@@ -48,8 +48,8 @@ Completar **fuera de Git**; en el repositorio solo se registra la fecha, referen
 | Campo | Situación comprobada / dato por confirmar |
 |---|---|
 | Operador | SergioTech.es, titular identificado en `/legal`; domicilio en Murcia. |
-| Alta censal / actividad | No confirmada por el titular. Indicar si existe alta o modificación, actividad y fecha efectiva. |
-| Seguridad Social | Determinar encaje según circunstancias reales; no confirmado. |
+| Alta censal / actividad | Consulta real de la AEAT realizada y conclusión entregada al titular; actuaciones pendientes. Constancia privada cifrada, no adjunta a Git. Indicar el trámite, actividad y fecha efectiva al completarlos. |
+| Seguridad Social | Determinar y acreditar encaje según circunstancias reales. No se consultó ni modificó su situación en esta intervención. |
 | Contraparte Dodo | Sociedad, país, domicilio y número fiscal del contrato particular; no confirmados. |
 | Factura a Dodo / autofacturación | Confirmar emisor, serie, acuerdo, aceptación y copias; no confirmado. |
 | IVA y declaraciones | Confirmar localización, sujeto pasivo, menciones y obligaciones informativas/ROI si proceden. |
