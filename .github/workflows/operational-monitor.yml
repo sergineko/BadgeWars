@@ -1,0 +1,22 @@
+name: BadgeWars availability
+on:
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/operational-monitor.yml'
+      - 'scripts/monitor-public.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: badgewars-availability
+  cancel-in-progress: false
+jobs:
+  availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check the public service without account credentials
+        run: node scripts/monitor-public.mjs

@@ -1,4 +1,8 @@
 const copy={
+ "maintenanceText": [
+  "Estamos realizando tareas de mantenimiento. Los consumos y recargas están pausados; vuelve a intentarlo más tarde.",
+  "Maintenance is in progress. Spending and top-ups are paused; please try again later."
+ ],
  "billingAccount": [
   "Facturación {n}",
   "Billing account {n}"

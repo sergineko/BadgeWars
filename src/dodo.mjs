@@ -2,6 +2,7 @@ import DodoPayments from 'dodopayments';
 import {first,rows,run,statement} from './db.mjs';
 import {uuid} from './collection.mjs';
 import {TERMS_VERSION,termsDocument,operatorReady} from '../public/terms.js';
+import {recordIncident} from './operations.mjs';
 export {TERMS_VERSION};
 export const paymentEnvironment=env=>env.DODO_PAYMENTS_ENVIRONMENT==='live_mode'?'live_mode':'test_mode';
 // Dashboard keys can be opaque, without a mode prefix. The explicit SDK endpoint
@@ -28,7 +29,7 @@ export function checkoutForm(row,appUrl){return {
  return_url:`${appUrl}/api/checkout/return?topup=${row.id}&lang=${row.locale}`,
  cancel_url:`${appUrl}/api/checkout/return?status=cancel&lang=${row.locale}`
 };}
-export async function incident(db,kind,id){await run(db,'INSERT INTO bw_operations(id,kind,reference) VALUES(?,?,?) ON CONFLICT(kind,reference) DO NOTHING',[crypto.randomUUID(),kind,id]);}
+export const incident=recordIncident;
 async function freeze(db,row,kind,id){await db.batch([
  statement(db,'UPDATE bw_wallets SET frozen=1 WHERE user_id=?',[row.user_id]),
  statement(db,"UPDATE bw_topups SET state='review',checkout_url=NULL WHERE id=?",[row.id]),
@@ -130,11 +131,11 @@ export async function processEvents(db,env,limit=2){
   catch{await run(db,"UPDATE bw_webhooks SET state=CASE WHEN attempts>=9 THEN 'review' ELSE 'pending' END,attempts=attempts+1,next_check=? WHERE id=?",[Date.now()+Math.min(3600000,30000*2**Math.min(7,event.attempts)),event.id]);if(event.attempts>=9)await incident(db,'webhook_review',event.resource_id);}
  }
 }
-export async function recoverTopups(db,env){
+export async function recoverTopups(db,env,{topups=4,orders=2}={}){
  if(!env.DODO_PAYMENTS_API_KEY)return;
  // Recheck rejected checkouts during their 24h retry window, even if a webhook
  // is lost. Keep their terminal status visible without polling them forever.
- for(const row of await rows(db,"SELECT * FROM bw_topups WHERE provider='dodo' AND environment=? AND (state='open' OR (state IN('failed','cancelled') AND created_at>strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day'))) AND next_check<=? ORDER BY next_check,created_at LIMIT 4",[paymentEnvironment(env),Date.now()]))try{
+ for(const row of await rows(db,"SELECT * FROM bw_topups WHERE provider='dodo' AND environment=? AND (state='open' OR (state IN('failed','cancelled') AND created_at>strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day'))) AND next_check<=? ORDER BY next_check,created_at LIMIT ?",[paymentEnvironment(env),Date.now(),topups]))try{
   const checkout=await dodoClient(env).checkoutSessions.retrieve(row.checkout_id);
   if(checkout.id!==row.checkout_id)throw Error('payment_mismatch');
   if(checkout.payment_id)await reconcilePayment(db,env,checkout.payment_id);
@@ -143,7 +144,7 @@ export async function recoverTopups(db,env){
   await run(db,"UPDATE bw_topups SET next_check=?,errors=0,state=CASE WHEN state='accepted' OR state='review' THEN state WHEN ? THEN 'expired' ELSE state END WHERE id=?",[Date.now()+900000,expired?1:0,row.id]);
  }catch{await run(db,"UPDATE bw_topups SET errors=errors+1,next_check=?,state=CASE WHEN errors>=9 THEN 'review' ELSE state END WHERE id=?",[Date.now()+900000,row.id]);}
  await run(db,"UPDATE bw_topups SET state='review' WHERE provider='dodo' AND environment=? AND state='creating' AND created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-5 minutes')",[paymentEnvironment(env)]);
- for(const order of await rows(db,"SELECT id,external_id FROM bw_orders WHERE provider='dodo' AND environment=? AND next_check<=? ORDER BY next_check LIMIT 2",[paymentEnvironment(env),Date.now()]))try{await reconcilePayment(db,env,order.external_id);}catch{await run(db,'UPDATE bw_orders SET next_check=? WHERE id=?',[Date.now()+3600000,order.id]);await incident(db,'payment_recovery_review',order.id);}
+ for(const order of await rows(db,"SELECT id,external_id FROM bw_orders WHERE provider='dodo' AND environment=? AND next_check<=? ORDER BY next_check LIMIT ?",[paymentEnvironment(env),Date.now(),orders]))try{await reconcilePayment(db,env,order.external_id);}catch{await run(db,'UPDATE bw_orders SET next_check=? WHERE id=?',[Date.now()+3600000,order.id]);await incident(db,'payment_recovery_review',order.id);}
 }
 export async function billingAccounts(db,env,userId){return rows(db,"SELECT customer_id,created_at FROM bw_payment_customers WHERE user_id=? AND provider='dodo' AND environment=? ORDER BY created_at DESC,customer_id",[userId,paymentEnvironment(env)]);}
 export async function billingPortalUrl(db,env,userId,customerId){

@@ -6,12 +6,12 @@ Estado del **19 de octubre de 2026**: adaptación publicada en https://badgewars
 
 | Elemento | Resultado |
 |---|---|
-| Worker publicado | Versión final: `33175f1e-6f72-4823-ad90-28e01b189012`; 363,46 KiB / 98,16 KiB gzip; arranque comunicado por Cloudflare: 8 ms. |
-| Base de datos | Once migraciones en D1 remota. Exportación de seguridad previa guardada localmente y excluida de Git. |
+| Worker publicado | Última versión operativa: `4e2feb12-c2cf-4ee4-be0b-b274bc6201ab`; incluye los controles del [bloque C](block-c-verification.md). |
+| Base de datos | Trece migraciones en D1 remota; 0012/0013 añaden control operativo e índices. Exportación protegida localmente y restauración aislada comprobada. [Bloque C](block-c-verification.md). |
 | Configuración desplegada | `DODO_PAYMENTS_ENVIRONMENT=test_mode`; Workers Free, correo/contraseña desactivado. Sin credenciales de cobro en producción. Productos EUR/USD, clave y webhook configurados solo para QA aislado. |
 | API pública y documentos | `/api/legal` devuelve condiciones `2026-10-19-r8` y Dodo Payments. `/terms`, `/refunds`, `/privacy`, `/legal`, `/cookies`: HTTP 200, ES/EN en HTML sin JavaScript. |
 | Webhooks | `/api/dodo/webhook` rechaza cuerpos sin firma con 403; ver las entregas firmadas en el informe de test. |
-| Pruebas automáticas | **62 correctas** tras retirar pruebas del proveedor descartado; **49 comprobaciones de sintaxis**. Incluye reversiones, aislamiento y suspensión de SVG cacheados. |
+| Pruebas automáticas | **76 correctas** y **61 comprobaciones de sintaxis** tras B/C. Incluye reversiones, aislamiento, suspensión de SVG cacheados y controles operativos. |
 | Runtime | Compilación y ejecución local en workerd con bindings nativos, además de comprobaciones HTTP en el dominio público. |
 | Pruebas reales Dodo | **Ejecutadas**: compra EUR/USD de 5 BC, IVA, webhook firmado y reentrega, gasto/renovación, SVG, portal, factura, emails y devolución total/parcial. [Informe y límites](dodo-test-verification.md). |
 | Verificación comercial | Ficha de producto corregida y guardada; el titular realizó el último envío que confirma la cuenta bancaria. Dodo muestra revisión en curso, sin decisión final ni referencia de aprobación. |
@@ -68,13 +68,13 @@ El texto pegado por el usuario se revisó como propuesta, no como prueba de apro
 | Configuración | Condición de cierre |
 |---|---|
 | Verificación Dodo | Decisión comercial y condiciones reales sobre el modelo presentado; guardar referencia auténtica. El plazo de hasta 72 horas es orientativo del panel. |
-| Cuenta y productos de test mode | Crear/verificar productos EUR/USD con las propiedades anteriores. Confirmar el entorno antes de cualquier escritura por el conector Dodo. |
+| Cuenta y productos | EUR/USD comprobados en test; crear/verificar los equivalentes live después de la aceptación. Confirmar el entorno antes de cualquier escritura por el conector Dodo. |
 | Secretos | `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`; las claves del panel pueden ser opacas y sin prefijo de entorno; solo en archivos ignorados para pruebas y secretos de Cloudflare en producción. |
 | Identificadores | `DODO_BUSINESS_ID`, `DODO_PRODUCT_ID_EUR`, `DODO_PRODUCT_ID_USD`, del mismo entorno. |
-| Avisos externos | Configurar el endpoint permanente o un relay local autorizado y probar los eventos con su firma real, reintentos y recuperación. |
-| QA Dodo | Compra en EUR/USD, impuestos, abandono, reintento, duplicado, factura/portal/email, devolución parcial/total y después de consumo; las pruebas que generen una operación financiera requieren la intervención/autorización correspondiente. |
+| Avisos externos | Webhook temporal de QA probado y desactivado. Registrar el endpoint permanente live tras la aceptación y comprobar entrega firmada e idempotencia. |
+| QA Dodo | Circuito test y ampliación B comprobados. Verificar un cobro y sus documentos definitivos en live con intervención del titular, según E. |
 | Turnstile y producción | Claves reales, aprobación documentada en `DODO_LIVE_APPROVAL_REFERENCE`, `DODO_PAYMENTS_ENVIRONMENT=live_mode` y API key live. No usar un acuse de recepción como aprobación. |
-| Otros pendientes | Google general, correo/contraseña, alertas, restauración y revisión legal/fiscal final permanecen en la [tabla de lanzamiento](review-and-launch.md#tabla-de-pendientes). |
+| Estado global | Google/GitHub públicos y bloques B/C comprobados. Correo/contraseña diferido hasta Paid; revisión legal/fiscal D y activación live E en el [plan A–E](review-and-launch.md). |
 
 Las comprobaciones externas de Dodo se detallan en [dodo-test-verification.md](dodo-test-verification.md). Ningún cobro real se ha habilitado.
 

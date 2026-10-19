@@ -59,7 +59,7 @@ La revisión del Word se documenta en [docs/payments-and-operations.md](docs/pay
 
 ## Preparación del despliegue
 
-Consultar [docs/review-and-launch.md](docs/review-and-launch.md), [docs/dodo-migration.md](docs/dodo-migration.md), [docs/oauth-cloudflare.md](docs/oauth-cloudflare.md) y [docs/migration-d1.md](docs/migration-d1.md). Worker publicado en [badgewars.com](https://badgewars.com), con once migraciones D1, KV inicializado, cron y accesos sociales probados. Workers Free se conserva; correo/contraseña y cobros públicos siguen pendientes. Estado y activación del correo: [email-auth-and-domain.md](docs/email-auth-and-domain.md).
+Consultar [plan A–E](docs/review-and-launch.md), [pagos Dodo](docs/dodo-migration.md), [OAuth](docs/oauth-cloudflare.md) y [D1](docs/migration-d1.md). Worker publicado en [badgewars.com](https://badgewars.com), con trece migraciones D1, KV inicializado, cron y accesos sociales probados. [Operación y recuperación](docs/operations-runbook.md): alertas agregadas, cuotas de solo lectura, monitor externo y restauración aislada comprobados en el [bloque C](docs/block-c-verification.md). Workers Free se conserva; correo/contraseña y cobros públicos siguen desactivados. [Activación del correo](docs/email-auth-and-domain.md).
 
 Las pruebas de pagos Dodo en test mode, webhooks firmados, SVG, portal y facturas se documentan en [verificación Dodo](docs/dodo-test-verification.md). Las credenciales, bases de QA, exportaciones, facturas y capturas permanecen fuera de Git.
 

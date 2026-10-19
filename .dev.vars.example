@@ -22,6 +22,12 @@ DODO_PRODUCT_ID_EUR=pdt_replace_eur
 DODO_PAYMENTS_WEBHOOK_KEY=whsec_replace
 # Only a real written acceptance of the complete model enables live checkout.
 DODO_LIVE_APPROVAL_REFERENCE=
+# Operations: analytics-only token; never use a deployment key in the Worker.
+CF_ACCOUNT_ID=replace_with_cloudflare_account_id
+CF_ANALYTICS_TOKEN=replace_with_account_analytics_read_token
+OPS_EMAIL_TO=replace_with_verified_email_routing_destination
+OPS_EMAIL_FROM=support@badgewars.com
+MAINTENANCE_MODE=false
 # Seller identification defaults to the verified/user-provided SergioTech data
 # in public/terms.js. Optional overrides: SELLER_LEGAL_NAME, SELLER_COUNTRY,
 # SELLER_CITY, SELLER_ADDRESS, SELLER_SUPPORT_EMAIL, SELLER_TAX_ID.

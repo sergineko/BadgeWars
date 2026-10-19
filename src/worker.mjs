@@ -15,6 +15,8 @@ import {requestDeliveryRefund} from './refunds.mjs';
 import {emailRoute} from './email-auth.mjs';
 import {legalPage} from './legal-page.mjs';
 import {suspendedBadgeSvg} from '../public/badge-status.js';
+import {runtime,recordIncident,operationalStatus,operationSignals,notifyOperations,serviceHealth} from './operations.mjs';
+import {monitorQuota} from './quota.mjs';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 async function readBody(request,limit){
  if(Number(request.headers.get('Content-Length')||0)>limit)throw Error('body_too_large');
@@ -137,6 +139,10 @@ export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url),path=url.pathname;
   try{
+   if(path==='/api/health'&&request.method==='GET')return serviceHealth(env);
+   // Recovery pauses financial delivery and public projections. Signed incoming
+   // webhooks remain durable so they can be reconciled after recovery.
+   if(env.MAINTENANCE_MODE==='true'&&(path.startsWith('/badges/')||path==='/api/arena'||(['/api/wallet/topup','/api/wallet/spend','/api/checkout','/api/me/refund-request'].includes(path)&&request.method==='POST')))return Response.json({error:'maintenance'},{status:503,headers:{'Cache-Control':'no-store','Retry-After':'300'}});
    if(path.startsWith('/api/auth/')){const response=await emailRoute(request,env)||await authRoute(request,env);if(response)return response;}
    if(path==='/api/legal'&&request.method==='GET')return json({version:TERMS_VERSION,operator:operatorDetails(env),merchantOfRecord:paymentSeller});
    if(['/api/legal/terms/es.txt','/api/legal/terms/en.txt'].includes(path)&&request.method==='GET'){
@@ -160,7 +166,7 @@ export default {
    if(path==='/api/dodo/webhook'&&request.method==='POST'){
     const body=await readBody(request,65536);
     let event;try{event=await unwrapWebhook(body,request.headers,env);}catch{return json({error:'invalid_signature'},403);}
-    const db=primary(env);await receiveEvent(db,env,event,request.headers.get('webhook-id'));ctx.waitUntil(processEvents(db,env).catch(()=>{}));return json({received:true},202);
+    const db=primary(env);await receiveEvent(db,env,event,request.headers.get('webhook-id'));if(env.MAINTENANCE_MODE!=='true')ctx.waitUntil(processEvents(db,env).catch(()=>{console.error('BadgeWars webhook reconciliation failed');}));return json({received:true},202);
    }
    if((path.startsWith('/api/me/')&&request.method==='GET')||(['/api/me/visibility','/api/me/refund-request','/api/me/billing-portal','/api/wallet/topup','/api/wallet/spend','/api/checkout'].includes(path)&&request.method==='POST')){
     if(!env.DB)return json({error:'database_unavailable'},503);return await privateRoute(request,env,ctx);
@@ -191,7 +197,17 @@ export default {
   }
  },
  async scheduled(event,env,ctx){ctx.waitUntil((async()=>{
-  const db=primary(env);await processEvents(db,env);await recoverTopups(db,env);await publishDirty(db,env);
-  const time=new Date(event.scheduledTime||Date.now());if(time.getUTCHours()%6===0&&time.getUTCMinutes()<5){await run(db,'DELETE FROM bw_sessions WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_oauth_states WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_throttle WHERE expires<?',[Math.floor(Date.now()/1000)-86400]);await run(db,'DELETE FROM bw_email_codes WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_email_accounts WHERE verified=0 AND created_at<?',[Date.now()-604800000]);}
+  const db=primary(env);
+  if(event.cron==='2,17,32,47 * * * *'){
+   const status=await operationalStatus(db);await runtime(db,'operations',status);
+   await notifyOperations(db,env,'incidencias',operationSignals(status));await monitorQuota(db,env);return;
+  }
+  const startedAt=Date.now(),failed=[],publication=event.cron==='1-59/5 * * * *';
+  const jobs=publication?[['projections',publishDirty]]:[['webhooks',(db,env)=>processEvents(db,env,1)],['payments',(db,env)=>recoverTopups(db,env,{topups:1,orders:1})]];
+  if(env.MAINTENANCE_MODE!=='true')for(const [name,job]of jobs)try{await job(db,env);}catch{
+   failed.push(name);console.error('BadgeWars scheduled stage failed',name);await recordIncident(db,'scheduled_stage_failed',name).catch(()=>{});
+  }
+  await runtime(db,publication?'publisher':'scheduler',{startedAt,finishedAt:Date.now(),failed,maintenance:env.MAINTENANCE_MODE==='true'});
+  const time=new Date(event.scheduledTime||Date.now());if(!publication&&time.getUTCHours()%6===0&&time.getUTCMinutes()<5){await run(db,'DELETE FROM bw_sessions WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_oauth_states WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_throttle WHERE expires<?',[Math.floor(Date.now()/1000)-86400]);await run(db,'DELETE FROM bw_email_codes WHERE expires<?',[Date.now()]);await run(db,'DELETE FROM bw_email_accounts WHERE verified=0 AND created_at<?',[Date.now()-604800000]);}
  })());}
 };

@@ -1,6 +1,6 @@
 # Pagos y operación · Dodo Payments 0.10
 
-Estado actual: verificación de Dodo enviada y en revisión; cobros públicos desactivados. La integración activa es Dodo y el saldo reside únicamente en D1. [Implementación, pruebas, variables y límites](dodo-migration.md) · [pendientes de lanzamiento](review-and-launch.md#tabla-de-pendientes) · [ficha comercial presentada](dodo-model-review.md).
+Estado actual: verificación de Dodo enviada y en revisión; cobros públicos desactivados. La integración activa es Dodo y el saldo reside únicamente en D1. [Implementación, pruebas, variables y límites](dodo-migration.md) · [plan A–E](review-and-launch.md) · [ficha comercial presentada](dodo-model-review.md) · [operación e incidencias](operations-runbook.md).
 
 ## Servicio y partes
 
@@ -26,9 +26,9 @@ Para devoluciones parciales por API, usar la forma vigente por `items`, consulta
 
 ## Facturas y evidencias
 
-El portal se crea en servidor para una referencia de cliente del usuario autenticado y del entorno actual. No vincular cuentas por email ni publicar enlaces privados en KV. Si una compra simultánea creó varios perfiles propios, el área permite elegirlos. Antes de lanzamiento comprobar factura, recibo, rectificación, emails y perfil de empresa en Dodo con una compra real de test mode.
+El portal se crea en servidor para una referencia de cliente del usuario autenticado y del entorno actual. No vincular cuentas por email ni publicar enlaces privados en KV. Si una compra simultánea creó varios perfiles propios, el área permite elegirlos. Factura, recibo, emails, portal y perfil de empresa se comprobaron en Dodo test; los documentos definitivos se verifican con la compra live del bloque E. [Resultados de B](block-b-verification.md).
 
-Conservar documentos aceptados, referencias, estados y resultado de revisiones. No escribir cuerpos completos de webhook, CVC, tarjetas, tokens o datos bancarios en logs. La copia previa de D1 y las credenciales se excluyen de Git. Ensayar una restauración aislada y reconciliar con el proveedor: restaurar D1 no deshace un cobro externo.
+Conservar documentos aceptados, referencias, estados y resultado de revisiones. No escribir cuerpos completos de webhook, CVC, tarjetas, tokens o datos bancarios en logs. La copia previa de D1 y las credenciales se excluyen de Git. La restauración aislada ya se ensayó; restaurar D1 no deshace un cobro externo. El [procedimiento operativo](operations-runbook.md) define avisos, responsable, CLI de revisión y recuperación; [resultados de C](block-c-verification.md).
 
 
 ## Estado público tras incidencias
