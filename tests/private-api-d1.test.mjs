@@ -75,6 +75,17 @@ test('action confirmations preserve separate consent and terms; only their owner
  }finally{ctx.env.DB.close();}
 });
 
+test('publishing new terms preserves accepted historical confirmations and rejects stale consent without spending',async()=>{
+ const ctx=await setup();try{
+  const id=crypto.randomUUID(),version='2026-10-19-r8',historical={version,locale:'en',sections:[{title:'Previously accepted conditions',text:'Preserve this exact accepted document.'}]};
+  ctx.env.DB.sqlite.prepare("INSERT INTO bw_topups(id,user_id,credits,currency,product_id,terms_version,terms_snapshot,immediate_delivery,adult_confirmed,provider,environment) VALUES(?,?,5,'eur','pdt_historical',?,?,1,1,'dodo','test_mode')").run(id,ctx.user,version,JSON.stringify(historical));
+  const response=await call(ctx,'/api/me/confirmation/'+id),document=await response.json();assert.equal(response.status,200);assert.equal(document.terms_version,version);assert.deepEqual(document.terms_snapshot,historical);
+  const before=ctx.env.DB.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(ctx.user).balance;
+  const spend=await call(ctx,'/api/wallet/spend','POST',{...consent,termsVersion:version,badge:'bait',owner:'mine',amount:500},{'Idempotency-Key':crypto.randomUUID()});assert.equal(spend.status,400);
+  assert.equal(ctx.env.DB.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(ctx.user).balance,before);
+ }finally{ctx.env.DB.close();}
+});
+
 test('Dodo billing portals are restricted to customer ids owned by the signed-in account and current mode',async()=>{
  const previous=globalThis.fetch,ctx=await setup();try{
   Object.assign(ctx.env,dodoEnv);let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({link:'https://test.customer.dodopayments.com/session/mine'});};

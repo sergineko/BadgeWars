@@ -6,12 +6,12 @@ Estado del **19 de octubre de 2026**: adaptación publicada en https://badgewars
 
 | Elemento | Resultado |
 |---|---|
-| Worker publicado | Última versión operativa: `2e06ca6b-0298-41d9-b3e3-4f33c418c8c2`; incluye los controles del [bloque C](block-c-verification.md). |
+| Worker publicado | Última versión operativa: `075aa4bf-948e-4de3-ae0b-e69a25021591`; incluye los controles de [C](block-c-verification.md) y la adaptación legal de [D](block-d-legal-review.md). |
 | Base de datos | Trece migraciones en D1 remota; 0012/0013 añaden control operativo e índices. Exportación protegida localmente y restauración aislada comprobada. [Bloque C](block-c-verification.md). |
 | Configuración desplegada | `DODO_PAYMENTS_ENVIRONMENT=test_mode`; Workers Free, correo/contraseña desactivado. Sin credenciales de cobro en producción. Productos EUR/USD, clave y webhook configurados solo para QA aislado. |
-| API pública y documentos | `/api/legal` devuelve condiciones `2026-10-19-r8` y Dodo Payments. `/terms`, `/refunds`, `/privacy`, `/legal`, `/cookies`: HTTP 200, ES/EN en HTML sin JavaScript. |
+| API pública y documentos | `/api/legal` devuelve condiciones `2026-10-19-r9` y Dodo Payments. `/terms`, `/refunds`, `/privacy`, `/legal`, `/cookies`: ES/EN en HTML sin JavaScript. Los justificantes aceptados antes conservan su versión. |
 | Webhooks | `/api/dodo/webhook` rechaza cuerpos sin firma con 403; ver las entregas firmadas en el informe de test. |
-| Pruebas automáticas | **76 correctas** y **61 comprobaciones de sintaxis** tras B/C. Incluye reversiones, aislamiento, suspensión de SVG cacheados y controles operativos. |
+| Pruebas automáticas | **78 correctas** y **61 comprobaciones de sintaxis** tras B/C y adaptación D. Incluye reversiones, aislamiento, suspensión de SVG cacheados, controles operativos y conservación de condiciones históricas. |
 | Runtime | Compilación y ejecución local en workerd con bindings nativos, además de comprobaciones HTTP en el dominio público. |
 | Pruebas reales Dodo | **Ejecutadas**: compra EUR/USD de 5 BC, IVA, webhook firmado y reentrega, gasto/renovación, SVG, portal, factura, emails y devolución total/parcial. [Informe y límites](dodo-test-verification.md). |
 | Verificación comercial | Ficha de producto corregida y guardada; el titular realizó el último envío que confirma la cuenta bancaria. Dodo muestra revisión en curso, sin decisión final ni referencia de aprobación. |
@@ -28,7 +28,7 @@ El Worker importa `src/billing.mjs`, que expone exclusivamente `src/dodo.mjs`. S
 - Antes del checkout se verifica el producto remoto: negocio e ID correctos, precio fijo, moneda, impuestos exclusivos, sin descuentos, PPP, precio editable ni concesión automática de créditos Dodo.
 - `checkoutSessions.create` envía la cantidad y moneda validadas, metadatos de referencia y retorno a `/api/checkout/return`. Se desactivan selección de moneda y cupones en checkout. Los retornos limpian la URL y nunca acreditan saldo.
 - **D1 es la única autoridad de BC**. No se mantiene un segundo saldo de entitlements Dodo ni se deducen créditos mediante contadores remotos asíncronos. El ledger y los triggers mantienen gasto, actualización e inventario atómicos.
-- Cada recarga conserva consentimiento, condiciones r8 completas, suministro inmediato y mayoría de edad. Las condiciones aceptadas anteriores no se reescriben.
+- Cada recarga conserva consentimiento, su documento completo y versión, suministro inmediato y mayoría de edad. La versión actual es r9; las condiciones aceptadas anteriores no se reescriben.
 - Los identificadores de pedidos, eventos y ledger incorporan proveedor/entorno. La recuperación nueva solo consulta Dodo del entorno actual.
 
 ### Avisos, recuperación y devoluciones

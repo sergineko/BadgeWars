@@ -2,7 +2,7 @@ import {TERMS_VERSION} from './terms.js';
 import {escapeXml as e} from './badges.js';
 import {request,checkoutKey,forgetCheckout,paymentError} from './flow.js';
 export const demoWallet={balance:15,frozen:false,debt:0,termsVersion:TERMS_VERSION,environment:'test_mode',paymentsAvailable:false};
-export const walletStrip=(wallet,t,demo=false)=>`<div class="wallet-strip"><div><small>${t('walletTitle')}${demo?' · DEMO':''}</small><strong>${Number(wallet?.balance||0).toLocaleString()} BC</strong><p>${t(wallet?.frozen?'walletFrozen':'walletRate')}</p></div><div class="wallet-tools">${demo?'':`<button class="text-link" data-action="refund-request">${t('refundRequestTitle')}</button>`}<button class="outline" data-action="billing-portal">${t('billingPortal')} ↗</button><button class="primary" data-action="wallet">${t('topup')} ↗</button></div></div>`;
+export const walletStrip=(wallet,t,demo=false)=>`<div class="wallet-strip"><div><small>${t('walletTitle')}${demo?' · DEMO':''}</small><strong>${Number(wallet?.balance||0).toLocaleString()} BC</strong><p>${t(wallet?.frozen?'walletFrozen':'walletRate')}${wallet?.frozen?` <a class="text-link" href="/refunds">${t('reviewConditions')} ↗</a>`:''}</p></div><div class="wallet-tools">${demo?'':`<button class="text-link" data-action="refund-request">${t('refundRequestTitle')}</button>`}<button class="outline" data-action="billing-portal">${t('billingPortal')} ↗</button><button class="primary" data-action="wallet">${t('topup')} ↗</button></div></div>`;
 let turnstileScript;
 export async function turnstile(){
  if(window.turnstile)return window.turnstile;

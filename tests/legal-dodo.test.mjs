@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {legalRoutes,legalSections} from '../public/legal.js';
-import {termsDocument} from '../public/terms.js';
+import {TERMS_VERSION,termsDocument} from '../public/terms.js';
 import {internalRoute} from '../public/routes.js';
 import {legalPageHtml} from '../src/legal-page.mjs';
 import worker from '../src/worker.mjs';
@@ -23,6 +23,20 @@ test('reviewers can read every legal page and its ES/EN content without executin
   const assets={fetch:async()=>new Response(template)};const response=await worker.fetch(new Request('https://badgewars.com'+path),{ASSETS:assets},{});assert.equal(response.status,200);assert.ok((await response.text()).includes(legalSections(path,'en')[0].title));
   const head=await worker.fetch(new Request('https://badgewars.com'+path,{method:'HEAD'}),{ASSETS:assets},{});assert.equal(await head.text(),'');
  }
+});
+
+test('refund pages retain review and reactivation safeguards in both languages after terms sections move',()=>{
+ const expected=['reversals','account-review','reactivation','complaints','seller','consumer-rights'];
+ for(const locale of ['es','en']){
+  const sections=legalSections('/refunds',locale),ids=termsDocument({},locale).sections.map(s=>s.id);
+  assert.equal(new Set(ids).size,ids.length);assert.ok(ids.every(Boolean));
+  for(const id of expected)assert.ok(sections.some(s=>s.id===id),locale+' missing '+id);
+  assert.ok(!sections.some(s=>s.id==='flex'));
+  const review=sections.find(s=>s.id==='account-review').text;
+  assert.ok(review.includes('SVG'));assert.ok(review.includes('Genesis'));assert.ok(review.includes('Trust Bag'));
+  assert.ok(sections.find(s=>s.id==='reactivation').text.includes('support@badgewars.com'));
+ }
+ assert.notEqual(TERMS_VERSION,'2026-10-19-r8');
 });
 test('Dodo SDK verifies raw signatures, rejects stale or foreign-business events',async()=>{
  const key=Buffer.from('long-dodo-sdk-signature-test-key'),secret='whsec_'+key.toString('base64'),config={...env,DODO_PAYMENTS_WEBHOOK_KEY:secret},body=JSON.stringify({business_id:business,type:'payment.succeeded',data:{payment_id:'pay_signed'}}),id='evt_sdk';

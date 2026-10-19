@@ -1,4 +1,8 @@
 const copy={
+ "reviewConditions": [
+  "Qué ocurre durante una revisión",
+  "What happens during a review"
+ ],
  "maintenanceText": [
   "Estamos realizando tareas de mantenimiento. Los consumos y recargas están pausados; vuelve a intentarlo más tarde.",
   "Maintenance is in progress. Spending and top-ups are paused; please try again later."
@@ -1323,8 +1327,8 @@ const copy={
   "The wallet could not be loaded. Please try again."
  ],
  "walletFrozen": [
-  "Cuenta suspendida por una incidencia o revisión de pago. El uso y los SVG de tus badges están bloqueados. Contacta con soporte para regularizar la situación; no se permiten nuevos gastos.",
-  "Account suspended due to a payment issue or review. Badge use and SVG endpoints are blocked. Contact support to resolve it; new spending is disabled."
+  "Cuenta en revisión por una incidencia de pago, incluso una devolución parcial con saldo positivo. Nuevos usos, recargas y SVG activos están pausados. Conservas acceso a tu colección y justificantes. Contacta con soporte para una revisión humana; no es una declaración de fraude.",
+  "Account under payment review, including partial refunds with a positive balance. New use, top-ups and active SVGs are paused. Your collection and confirmations remain accessible. Contact support for human review; this is not a finding of fraud."
  ],
  "paymentsSetup": [
   "Las recargas no están activadas. Faltan la configuración y la revisión del proveedor.",
@@ -1411,8 +1415,8 @@ const copy={
   "Suspended"
  ],
  "badgeReviewNote": [
-  "Este badge y su endpoint SVG están suspendidos por una incidencia o revisión de pago. Para volver a usarlos debes estar al corriente de pago y contactar con soporte para revisar su reactivación. Conservas esta ficha y su URL.",
-  "This badge and its SVG endpoint are suspended due to a payment issue or review. To use them again, you must be up to date with payments and contact support to review reactivation. This entry and its URL are retained."
+  "El diseño activo de este badge está en pausa por revisión de pago o de los apoyos recibidos. Su endpoint muestra una tarjeta neutra. Conservas esta ficha, su URL y, en Genesis, tu número. Soporte debe confirmar la conciliación y las causas pendientes antes de reactivarlo; un saldo positivo no basta por sí solo.",
+  "This badge’s active design is paused while its payment or received support is reviewed. Its endpoint shows a neutral card. This entry, URL and Genesis number are retained. Support must confirm reconciliation and outstanding causes before reactivation; a positive balance alone is not enough."
  ],
  "badgeCodeDisabled": [
   "Código y SVG bloqueados hasta regularizar el pago",
