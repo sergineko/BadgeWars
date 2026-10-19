@@ -19,3 +19,36 @@ test('official Turnstile dummy keys work only in loopback Sandbox and never enab
   globalThis.fetch=async()=>Response.json({success:false});assert.equal(await verifyChallenge(request,env,token,'user'),false);
  }finally{globalThis.fetch=previous;}
 });
+
+test('Turnstile binds a successful token to the exact hostname, action and user',async()=>{
+ const previous=globalThis.fetch,env={APP_URL:'https://badgewars.com',TURNSTILE_SITE_KEY:'production-site',TURNSTILE_SECRET_KEY:'production-secret'},request=new Request(env.APP_URL+'/api/wallet/topup',{headers:{'CF-Connecting-IP':'192.0.2.1'}});
+ let result={success:true,hostname:'badgewars.com',action:'wallet-topup',cdata:'account-a'},calls=0;
+ globalThis.fetch=async(url,options)=>{
+  calls++;assert.equal(url,'https://challenges.cloudflare.com/turnstile/v0/siteverify');assert.equal(options.method,'POST');
+  assert.equal(options.body.get('secret'),env.TURNSTILE_SECRET_KEY);assert.equal(options.body.get('response'),'valid-looking-token');assert.equal(options.body.get('remoteip'),'192.0.2.1');assert.ok(options.signal instanceof AbortSignal);
+  return Response.json(result);
+ };
+ try{
+  assert.equal(await verifyChallenge(request,env,'valid-looking-token','account-a'),true);
+  for(const extra of [{hostname:'www.badgewars.com'},{hostname:'attacker.example'},{action:'auth-register'},{cdata:'account-b'},{success:false},{success:'true'}]){
+   result={success:true,hostname:'badgewars.com',action:'wallet-topup',cdata:'account-a',...extra};assert.equal(await verifyChallenge(request,env,'valid-looking-token','account-a'),false);
+  }
+  const completed=calls;
+  for(const token of [undefined,{},'short','x'.repeat(2049)])assert.equal(await verifyChallenge(request,env,token,'account-a'),false);
+  assert.equal(await verifyChallenge(new Request('https://other.example/api/wallet/topup'),env,'valid-looking-token','account-a'),false);
+  assert.equal(await verifyChallenge(request,{...env,APP_URL:'invalid'},'valid-looking-token','account-a'),false);
+  assert.equal(await verifyChallenge(request,env,'valid-looking-token',''),false);assert.equal(calls,completed);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('Turnstile rejects replays and fails closed on upstream errors and malformed responses',async()=>{
+ const previous=globalThis.fetch,env={APP_URL:'https://badgewars.com',TURNSTILE_SITE_KEY:'production-site',TURNSTILE_SECRET_KEY:'production-secret'},request=new Request(env.APP_URL+'/api/wallet/topup');
+ try{
+  for(const fetcher of [
+   async()=>Response.json({success:false,'error-codes':['timeout-or-duplicate']}),
+   async()=>Response.json({success:true,hostname:'badgewars.com',action:'wallet-topup',cdata:'account-a'},{status:503}),
+   async()=>new Response('not json'),async()=>Response.json(null),
+   async()=>{throw new DOMException('Timed out','TimeoutError');}
+  ]){globalThis.fetch=fetcher;assert.equal(await verifyChallenge(request,env,'valid-looking-token','account-a'),false);}
+ }finally{globalThis.fetch=previous;}
+});
