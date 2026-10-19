@@ -19,7 +19,12 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": [
       "/api/*",
-      "/badges/*"
+      "/badges/*",
+      "/terms",
+      "/refunds",
+      "/privacy",
+      "/legal",
+      "/cookies"
     ]
   },
   "vars": {
@@ -27,7 +32,7 @@
     "EMAIL_AUTH_ENABLED": "false",
     "EMAIL_FROM": "no-reply@badgewars.com",
     "AUTH_PROVIDERS": "google,github",
-    "POLAR_ENVIRONMENT": "sandbox"
+    "DODO_PAYMENTS_ENVIRONMENT": "test_mode"
   },
   "kv_namespaces": [
     {

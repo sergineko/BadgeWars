@@ -36,6 +36,6 @@ export function internalRoute(value,origin){
   const url=new URL(value,origin);
   if(url.origin!==new URL(origin).origin||!['https:','http:'].includes(url.protocol)||url.pathname.replace(/\/+$/,'')==='/account/email')return null;
   const route=routeState(url.href);
-  return ['/','/leaderboard','/collection','/terms','/privacy','/legal','/cookies'].includes(route.page)?route:null;
+  return ['/','/leaderboard','/collection','/terms','/refunds','/privacy','/legal','/cookies'].includes(route.page)?route:null;
  }catch{return null;}
 }

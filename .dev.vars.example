@@ -12,15 +12,15 @@ GITHUB_CLIENT_ID=replace
 GITHUB_CLIENT_SECRET=replace
 TURNSTILE_SITE_KEY=replace
 TURNSTILE_SECRET_KEY=replace
-POLAR_ENVIRONMENT=sandbox
-POLAR_ACCESS_TOKEN=replace
-POLAR_PRODUCT_ID=replace_with_sandbox_product_uuid
-POLAR_ORGANIZATION_ID=replace_with_sandbox_organization_uuid
-POLAR_ORGANIZATION_SLUG=replace-with-organization-slug
-# New Standard Webhooks secret: whsec_ followed by base64-encoded key bytes.
-POLAR_WEBHOOK_SECRET=whsec_replace
-# Production stays disabled without documented acceptance of the actual model.
-POLAR_LIVE_APPROVAL_REFERENCE=
+DODO_PAYMENTS_ENVIRONMENT=test_mode
+DODO_PAYMENTS_API_KEY=dodo_test_replace
+DODO_BUSINESS_ID=bus_replace
+# Two fixed-price products: 1 BC at 100 minor units, tax exclusive, no discounts/PPP.
+DODO_PRODUCT_ID_USD=pdt_replace_usd
+DODO_PRODUCT_ID_EUR=pdt_replace_eur
+DODO_PAYMENTS_WEBHOOK_KEY=whsec_replace
+# Only a real written acceptance of the complete model enables live checkout.
+DODO_LIVE_APPROVAL_REFERENCE=
 # Seller identification defaults to the verified/user-provided SergioTech data
 # in public/terms.js. Optional overrides: SELLER_LEGAL_NAME, SELLER_COUNTRY,
 # SELLER_CITY, SELLER_ADDRESS, SELLER_SUPPORT_EMAIL, SELLER_TAX_ID.

@@ -1,6 +1,22 @@
 import {request} from './flow.js';
 import {turnstile} from './wallet.js';
 import {TERMS_VERSION} from './terms.js';
+import {escapeXml as e} from './badges.js';
+export async function billingDialog(ctx){
+ const {t,open}=ctx;
+ async function access(customerId){
+  try{
+   const response=await request('/api/me/billing-portal',{method:'POST',...(customerId?{headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId})}:{})});
+   const result=await response.json();if(!response.ok)throw Error();
+   if(ctx.isCurrent&&!ctx.isCurrent())return;
+   if(result.url){location.assign(result.url);return;}
+   if(!Array.isArray(result.accounts)||!result.accounts.length)throw Error();
+   open(`<h2>${t('billingPortal')}</h2><p>${t('billingAccountsNote')}</p><div>${result.accounts.map((account,i)=>`<p><button class="outline" data-billing-account="${e(account.customer_id)}">${t('billingAccount',{n:i+1})} · ${e(new Date(account.created_at).toLocaleDateString(ctx.locale))} ↗</button></p>`).join('')}</div><p id="billing-status" role="status"></p>`);
+   document.querySelectorAll('[data-billing-account]').forEach(button=>button.onclick=()=>access(button.dataset.billingAccount));
+  }catch{open(`<h2>${t('billingPortal')}</h2><p>${t('billingUnavailable')}</p>`);}
+ }
+ await access();
+}
 let activeWidget=null;
 export function clearEmailChallenge(){if(activeWidget!==null){window.turnstile?.remove(activeWidget);activeWidget=null;}}
 

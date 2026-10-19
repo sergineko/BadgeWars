@@ -1,6 +1,7 @@
-import {first,rows,run,statement} from './db.mjs';
-import {uuid} from './collection.mjs';
-import {TERMS_VERSION,termsDocument,operatorReady} from '../public/terms.js';
+// Historical test adapter only. Not imported by the active Worker.
+import {first,rows,run,statement} from '../../src/db.mjs';
+import {uuid} from '../../src/collection.mjs';
+import {TERMS_VERSION,termsDocument,operatorReady} from '../../public/terms.js';
 export {TERMS_VERSION};
 export const polarHost=env=>env.POLAR_ENVIRONMENT==='production'?'https://api.polar.sh':'https://sandbox-api.polar.sh';
 export function billingPortalUrl(env){const slug=env.POLAR_ORGANIZATION_SLUG;if(!/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug||''))return null;return `https://${env.POLAR_ENVIRONMENT==='production'?'polar.sh':'sandbox.polar.sh'}/${slug}/portal`;}

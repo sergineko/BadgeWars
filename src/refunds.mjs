@@ -1,6 +1,6 @@
 import {first,run} from './db.mjs';
 import {uuid} from './collection.mjs';
-import {polar,orderMatches} from './polar.mjs';
+import {verifiedPayment,paymentEnvironment} from './billing.mjs';
 
 export async function refundPolicy(db,userId,topupId){
  const row=await first(db,`SELECT t.*,w.balance,w.debt,w.frozen,
@@ -17,14 +17,10 @@ export async function requestDeliveryRefund(db,env,userId,topupId){
  const {row,pending,reason}=await refundPolicy(db,userId,topupId);
  if(pending)return {id:pending.id,status:pending.state};
  if(reason)throw Error(reason);
- if(!uuid(row.checkout_id))throw Error('refund_payment_unverified');
- const list=await polar(env,'orders/?'+new URLSearchParams({checkout_id:row.checkout_id,limit:'10'}));
- const candidates=(list.items||[]).filter(o=>o.metadata?.app==='badgewars'&&o.metadata?.topup_id===row.id&&uuid(o.id));
- if(candidates.length!==1)throw Error('refund_payment_unverified');
- const order=await polar(env,'orders/'+candidates[0].id);
- if(!orderMatches(order,row,env)||order.paid!==true||order.refunded_amount!==0)throw Error('refund_payment_unverified');
+ const payment=await verifiedPayment(db,env,row);
+ if(payment.status!=='succeeded'||payment.refunds.some(r=>r.status!=='failed')||payment.disputes.length)throw Error('refund_payment_unverified');
  const id=crypto.randomUUID();
- try{await run(db,'INSERT INTO bw_refund_requests(id,topup_id,user_id,order_id,amount) VALUES(?,?,?,?,?) ON CONFLICT(topup_id) DO NOTHING',[id,row.id,userId,order.id,row.credits*100]);}
+ try{await run(db,'INSERT INTO bw_refund_requests(id,topup_id,user_id,order_id,amount) VALUES(?,?,?,?,?) ON CONFLICT(topup_id) DO NOTHING',[id,row.id,userId,`dodo:${paymentEnvironment(env)}:${payment.payment_id}`,row.credits*100]);}
  catch(error){const code=['refund_already_credited','refund_service_used','refund_wallet_unavailable'].find(c=>String(error.message).includes(c));throw Error(code||'refund_review_unavailable');}
  const result=await first(db,'SELECT id,state FROM bw_refund_requests WHERE topup_id=? AND user_id=?',[row.id,userId]);
  return {id:result.id,status:result.state};

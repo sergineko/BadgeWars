@@ -18,12 +18,13 @@ const checks={
  'Secreto independiente de contraseñas':real(vars.PASSWORD_PEPPER)&&vars.PASSWORD_PEPPER.length>=32,
  'Presupuesto CPU para scrypt (requiere Paid)':config.compatibility_flags?.includes('nodejs_compat')&&config.limits?.cpu_ms>=1000,
  'Turnstile de producción (sin claves de prueba)':real(vars.TURNSTILE_SITE_KEY)&&real(vars.TURNSTILE_SECRET_KEY)&&!(/^[123]x0+/.test(vars.TURNSTILE_SITE_KEY)||/^[123]x0+/.test(vars.TURNSTILE_SECRET_KEY)),
- 'Polar token':real(vars.POLAR_ACCESS_TOKEN),
- 'Polar producto y organización':uuid(vars.POLAR_PRODUCT_ID)&&uuid(vars.POLAR_ORGANIZATION_ID),
- 'Portal de facturas Polar':real(vars.POLAR_ORGANIZATION_SLUG)&&/^[a-z0-9][a-z0-9-]{0,62}$/.test(vars.POLAR_ORGANIZATION_SLUG||''),
- 'Polar Standard Webhooks':real(vars.POLAR_WEBHOOK_SECRET)&&/^whsec_[A-Za-z0-9+/=]+$/.test(vars.POLAR_WEBHOOK_SECRET||''),
+ 'Dodo entorno explícito':vars.DODO_PAYMENTS_ENVIRONMENT===(production?'live_mode':'test_mode'),
+ 'Dodo API key del entorno':real(vars.DODO_PAYMENTS_API_KEY)&&vars.DODO_PAYMENTS_API_KEY.startsWith(production?'dodo_live_':'dodo_test_'),
+ 'Dodo negocio':/^bus_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_BUSINESS_ID||'')&&real(vars.DODO_BUSINESS_ID),
+ 'Dodo productos USD/EUR':/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_USD||'')&&/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_EUR||'')&&real(vars.DODO_PRODUCT_ID_USD)&&real(vars.DODO_PRODUCT_ID_EUR),
+ 'Dodo Standard Webhooks':real(vars.DODO_PAYMENTS_WEBHOOK_KEY),
  'Titular legal completo':operatorReady(vars),
- 'Aceptación expresa del proveedor para producción':real(vars.POLAR_LIVE_APPROVAL_REFERENCE)
+ 'Aceptación expresa del proveedor para producción':real(vars.DODO_LIVE_APPROVAL_REFERENCE)
 };
 console.log(production?'Configuración de producción (.dev.vars.production + wrangler).':'Configuración local (.dev.vars + wrangler).');
 for(const [label,ok] of Object.entries(checks))console.log((ok?'OK':'PENDING')+'  '+label);

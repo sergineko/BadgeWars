@@ -1,6 +1,8 @@
 import {termsDocument,operatorDetails,TERMS_VERSION,paymentSeller} from '../public/terms.js';
 import {routeState} from '../public/routes.js';
 import {normalizedBadgeUrl} from '../src/badge-url.mjs';
+import {legalPageHtml} from '../src/legal-page.mjs';
+import {legalRoutes} from '../public/legal.js';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
@@ -22,7 +24,8 @@ createServer(async(req,res)=>{
    const claim=badgeUrl.searchParams.get('claim');const state=claim?demoArena.states[id].claims.find(p=>p.id===claim||p.aliases?.includes(claim)):demoArena.states[id];if(!state)throw Error();
    res.writeHead(200,{'Content-Type':'image/svg+xml','Access-Control-Allow-Origin':'*'});res.end(badgeSvg(id,state,badgeUrl.searchParams.get('style')==='compact',badgeUrl.searchParams.get('lang')||'en'));return;
   }
-  const path=resolve(root,'.'+decodeURIComponent(['/','/leaderboard','/collection','/terms','/privacy','/legal','/cookies'].includes(routeState(url.href).page)?'/index.html':url.pathname));
+  if(legalRoutes.includes(url.pathname)){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(legalPageHtml(await readFile(resolve(root,'index.html'),'utf8'),url.pathname));return;}
+  const path=resolve(root,'.'+decodeURIComponent(['/','/leaderboard','/collection',...legalRoutes].includes(routeState(url.href).page)?'/index.html':url.pathname));
   if(!path.startsWith(root+'\\')&&!path.startsWith(root+'/'))throw Error();
   const file=await readFile(path);res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream'});res.end(file);
  }catch{const url=new URL(req.url,'http://localhost:8787');if(!extname(url.pathname)&&!url.pathname.startsWith('/api/')){res.writeHead(404,{'Content-Type':'text/html; charset=utf-8'});res.end(await readFile(resolve(root,'index.html')));}else{res.writeHead(404);res.end('Not found');}}

@@ -1,4 +1,64 @@
 const copy={
+ "billingAccount": [
+  "Facturación {n}",
+  "Billing account {n}"
+ ],
+ "billingAccountsNote": [
+  "Selecciona el perfil de facturación de tus compras. Solo aparecen perfiles asociados a tu cuenta de BadgeWars.",
+  "Select the billing profile used for your purchases. Only profiles linked to your BadgeWars account appear."
+ ],
+ "paymentNote": [
+  "Créditos de software mediante Dodo Payments · Sin recarga automática",
+  "Software credits through Dodo Payments · No automatic top-ups"
+ ],
+ "walletSpendNote": [
+  "Solo se descuenta el coste indicado. Si cambia el nivel antes de confirmar, no se gastan BC y debes revisar el nuevo coste. Recargar nunca compra ni actualiza un badge automáticamente.",
+  "Only the quoted cost is deducted. If the level changes before confirmation, no BC are spent and you must review the new cost. A top-up never buys or upgrades a badge automatically."
+ ],
+ "supportDemo": [
+  "Demostración: el apoyo consume BC ya recargados, añade puntos y actualiza el badge. No paga al titular. Aquí no se descuenta saldo real.",
+  "Demo: support consumes previously purchased BC, adds points and updates the badge. No payment goes to its holder. No real credits are spent here."
+ ],
+ "walletRefundPolicy": [
+  "Sin canje por efectivo, transferencias ni cashback. Recargas sin reembolso voluntario salvo cobro no abonado correctamente y sin consumo posterior, tras revisión. Se respetan los derechos obligatorios y las decisiones de Dodo Payments.",
+  "No cash redemption, transfers or cashback. No voluntary top-up refunds except for a charge not correctly credited with no subsequent use, subject to review. Mandatory rights and Dodo Payments decisions remain protected."
+ ],
+ "walletRate": [
+  "1 USD o 1 EUR de precio base compra 1 BC para funciones del software. Un único saldo, sin decimales.",
+  "1 USD or 1 EUR of base price buys 1 BC for software features. One balance, whole credits only."
+ ],
+ "topupDodo": [
+  "Comprar créditos con Dodo Payments",
+  "Buy credits with Dodo Payments"
+ ],
+ "walletSandbox": [
+  "Dodo Payments · modo de pruebas. No se cobra dinero real.",
+  "Dodo Payments · test mode. No real money is charged."
+ ],
+ "refundIntro": [
+  "Sin canje por efectivo ni reembolsos voluntarios, con excepción comercial por falta de entrega y respeto a los derechos obligatorios.",
+  "No cash redemption or voluntary refunds, with a commercial non-delivery exception and mandatory rights protected."
+ ],
+ "refundEyebrow": [
+  "BADGEWARS / REEMBOLSOS",
+  "BADGEWARS / REFUNDS"
+ ],
+ "refundTitle": [
+  "Política de reembolsos",
+  "Refund policy"
+ ],
+ "baseTopupPrice": [
+  "{credits} BC = {amount} {currency} de precio base. Impuestos y total en el checkout antes de pagar.",
+  "{credits} BC = {amount} {currency} base price. Taxes and final total appear at checkout before payment."
+ ],
+ "creditsUtility": [
+  "BC solo permite usar funciones de BadgeWars. Sin valor monetario externo, canje por efectivo, transferencias ni cashback. Se respetan los reembolsos obligatorios.",
+  "BC unlocks BadgeWars features only. No external monetary value, cash redemption, transfers or cashback. Mandatory refunds remain protected."
+ ],
+ "softwareProduct": [
+  "Créditos de software · SVG dinámico por API",
+  "Software credits · Dynamic SVG via API"
+ ],
  "fivePersonalities": [
   "Cinco personalidades. Una colección.",
   "Five personalities. One collection."
@@ -80,12 +140,12 @@ const copy={
   "Top-up confirmed. Your credits are available; return to the badge to confirm spending."
  ],
  "receiptRefunded": [
-  "Reembolso procesado por Polar. Tu banco puede tardar en reflejarlo.",
-  "Refund processed by Polar. Your bank may take time to show it."
+  "Reembolso procesado por Dodo Payments. Tu banco puede tardar en reflejarlo.",
+  "Refund processed by Dodo Payments. Your bank may take time to show it."
  ],
  "receiptRefundPending": [
-  "El pago no pudo aplicarse y tu reembolso sigue pendiente en Polar.",
-  "The payment could not be applied and your refund is still pending with Polar."
+  "El pago no pudo aplicarse y tu reembolso sigue pendiente en Dodo Payments.",
+  "The payment could not be applied and your refund is still pending with Dodo Payments."
  ],
  "receiptExpired": [
   "La sesión de recarga ha caducado.",
@@ -388,12 +448,8 @@ const copy={
   "Claim your place"
  ],
  "footer": [
-  "Hecho para presumir. Sin excusas.",
-  "Built for the flex. Not the utility."
- ],
- "paymentNote": [
-  "Créditos mediante Polar · Sin recargas automáticas",
-  "Credits through Polar · No automatic top-ups"
+  "Badges personales. Rankings dinámicos. Tu perfil.",
+  "Personal badges. Dynamic ranks. Your profile."
  ],
  "rules": [
   "Reglas del juego",
@@ -776,12 +832,12 @@ const copy={
   "A perfectly untouched badge. It would be a shame if someone ruined it."
  ],
  "fundedDescription": [
-  "Un pequeño flex para ti. Un gran impulso para el próximo commit.",
-  "A small flex for you. A big boost for the next commit."
+  "Patrocinio visual para tu README. El pago sostiene BadgeWars; no se envía al repositorio.",
+  "Visual sponsorship for your README. Payment funds BadgeWars; it is not sent to the repository."
  ],
  "qualityDescription": [
-  "Una bolsa de puntos que crece con el apoyo de tu comunidad. Más puntos, mejor posición en fiabilidad.",
-  "A points bag that grows with your community’s support. More points mean a higher trust rank."
+  "Puntos de apoyo pagado de la comunidad, sin pagos al titular. Más puntos, mejor puesto; no es una auditoría técnica.",
+  "Paid community support points, with no payouts to the holder. More points, higher rank; not a technical audit."
  ],
  "genesisDescription": [
   "Diez piezas numeradas. 1.000 BC cada una. Una por cuenta; nunca habrá más ediciones.",
@@ -1027,10 +1083,6 @@ const copy={
   "El propietario verá tu alias y los puntos que aportas. Puede mostrar tu alias entre sus 5 principales apoyos. Todo el pago va a la plataforma; no compra un badge para tu cuenta.",
   "The owner will see your handle and contributed points. They may show your handle among their top 5 supporters. All payment goes to the platform; it does not buy a badge for your account."
  ],
- "supportDemo": [
-  "Demostración: en producción se abre Polar y el apoyo se suma una vez confirmado el pago. Aquí no se cobra ni se cambia el total.",
-  "Demo: in production Polar opens and support is added after payment confirmation. No charge or total change is made here."
- ],
  "targetUnavailable": [
   "No podemos encontrar esta bolsa ahora. Comprueba el enlace o vuelve a intentarlo.",
   "We can’t find this bag right now. Check the link or try again."
@@ -1231,10 +1283,6 @@ const copy={
   "Créditos disponibles",
   "Available credits"
  ],
- "walletRate": [
-  "1 USD o 1 EUR de importe base = 1 BC. Un único saldo, sin decimales.",
-  "1 USD or 1 EUR of base price = 1 BC. One balance, whole credits only."
- ],
  "creditsNeeded": [
   "Esta operación necesita {n} BC.",
   "This action needs {n} BC."
@@ -1244,24 +1292,16 @@ const copy={
   "The minimum top-up is 5 BC. Whole numbers only."
  ],
  "walletTax": [
-  "Polar es el vendedor de la recarga y emite la factura. Elige USD o EUR; el checkout muestra impuestos y total antes de pagar. Los créditos siempre son enteros.",
-  "Polar is the top-up seller and invoice issuer. Choose USD or EUR; checkout shows taxes and the total before payment. Credits are always whole numbers."
+  "Dodo Payments es el vendedor de la recarga y emite la factura. Elige USD o EUR; el checkout muestra impuestos y total antes de pagar. Los créditos siempre son enteros.",
+  "Dodo Payments is the top-up seller and invoice issuer. Choose USD or EUR; checkout shows taxes and the total before payment. Credits are always whole numbers."
  ],
  "walletConsent": [
   "He leído y acepto las reglas y condiciones de BadgeWars.",
   "I have read and accept BadgeWars rules and terms."
  ],
- "walletRefundPolicy": [
-  "No hay retiros ni transferencias entre usuarios. La devolución comercial se limita a recargas cobradas pero no abonadas correctamente, tras revisar la incidencia. Se respetan los derechos obligatorios y las decisiones de Polar. Consulta las condiciones.",
-  "No withdrawals or transfers between users. Commercial refunds are limited to charged top-ups that were not correctly credited, following incident review. Mandatory rights and Polar’s decisions remain applicable. See the terms."
- ],
  "walletDemo": [
   "Demostración: no se cobra dinero ni se crean créditos reales.",
   "Demo: no money is charged and no real credits are created."
- ],
- "walletSandbox": [
-  "Polar sandbox: solo pagos de prueba.",
-  "Polar sandbox: test payments only."
  ],
  "walletUnavailable": [
   "No se pudo consultar el monedero. Inténtalo de nuevo.",
@@ -1279,10 +1319,6 @@ const copy={
   "Créditos a recargar · mínimo 5 BC",
   "Credits to add · minimum 5 BC"
  ],
- "topupPolar": [
-  "Continuar a Polar",
-  "Continue to Polar"
- ],
  "challengeError": [
   "Completa la verificación de seguridad o vuelve a intentarlo.",
   "Complete the security check or try again."
@@ -1298,10 +1334,6 @@ const copy={
  "creditQuote": [
   "Nivel: {level} BC · Nivel ya adquirido: {previous} BC · Descuento del saldo: {cost} BC · Disponible: {balance} BC",
   "Level: {level} BC · Previously acquired level: {previous} BC · Wallet charge: {cost} BC · Available: {balance} BC"
- ],
- "walletSpendNote": [
-  "Solo se descuenta el coste indicado. Si otra persona cambia el precio antes de confirmar, no se gasta saldo y tendrás que revisar la nueva oferta. Recargar nunca ejecuta una puja automáticamente.",
-  "Only the quoted cost is deducted. If someone changes the price before confirmation, no credits are spent and you must review the new offer. A top-up never places a bid automatically."
  ],
  "creditsLow": [
   "No tienes suficientes créditos. Recarga el saldo para continuar.",
@@ -1324,16 +1356,16 @@ const copy={
   "Purchase seller · Merchant of Record"
  ],
  "morSummary": [
-  "Polar cobra y emite la factura y el recibo. SergioTech.es proporciona BadgeWars y atiende el soporte del servicio.",
-  "Polar collects payment and issues the invoice and receipt. SergioTech.es provides BadgeWars and service support."
+  "Dodo Payments cobra y emite la factura y el recibo. SergioTech.es proporciona BadgeWars y atiende el soporte del servicio.",
+  "Dodo Payments collects payment and issues the invoice and receipt. SergioTech.es provides BadgeWars and service support."
  ],
  "morTerms": [
-  "Condiciones de compra de Polar",
-  "Polar buyer terms"
+  "Condiciones de compra de Dodo Payments",
+  "Dodo Payments buyer terms"
  ],
  "morPrivacy": [
-  "Privacidad de Polar",
-  "Polar privacy"
+  "Privacidad de Dodo Payments",
+  "Dodo Payments privacy"
  ],
  "downloadConfirmation": [
   "Guardar confirmación y condiciones (no es una factura)",
@@ -1348,16 +1380,16 @@ const copy={
   "Save spending confirmation (not an invoice)"
  ],
  "billingPortal": [
-  "Facturas y recibos · Polar",
-  "Invoices and receipts · Polar"
+  "Facturas y recibos · Dodo Payments",
+  "Invoices and receipts · Dodo Payments"
  ],
  "billingDemo": [
   "El portal de facturas solo está disponible para cuentas con compras reales.",
   "The billing portal is available for accounts with actual purchases."
  ],
  "billingUnavailable": [
-  "No se ha podido abrir el portal. Si ya has comprado, usa el enlace del email de Polar o contacta con soporte.",
-  "The portal could not be opened. If you already purchased, use the link in Polar’s email or contact support."
+  "No se ha podido abrir el portal. Si ya has comprado, usa el enlace del email de Dodo Payments o contacta con soporte.",
+  "The portal could not be opened. If you already purchased, use the link in Dodo Payments’s email or contact support."
  ],
  "badgeSuspended": [
   "En revisión",
@@ -1568,8 +1600,8 @@ const copy={
   "Top-up delivery issue"
  ],
  "refundRequestPolicy": [
-  "Solo se revisan devoluciones comerciales por pagos confirmados sin BC abonados. Se bloquean si hubo consumo posterior, deuda o saldo insuficiente. Si se admite la solicitud, el monedero se pausa durante la revisión; esto no confirma una devolución. Se mantienen los derechos obligatorios y las decisiones de Polar.",
-  "Commercial refund reviews cover confirmed payments with no BC delivered. Later spending, debt or insufficient balance blocks a request. An accepted request pauses the wallet for review and does not confirm a refund. Mandatory rights and Polar’s decisions remain applicable."
+  "Solo se revisan devoluciones comerciales por pagos confirmados sin BC abonados. Se bloquean si hubo consumo posterior, deuda o saldo insuficiente. Si se admite la solicitud, el monedero se pausa durante la revisión; esto no confirma una devolución. Se mantienen los derechos obligatorios y las decisiones de Dodo Payments.",
+  "Commercial refund reviews cover confirmed payments with no BC delivered. Later spending, debt or insufficient balance blocks a request. An accepted request pauses the wallet for review and does not confirm a refund. Mandatory rights and Dodo Payments’s decisions remain applicable."
  ],
  "refundReference": [
   "Referencia de la recarga",
@@ -1600,8 +1632,8 @@ const copy={
   "This top-up was not found in your account."
  ],
  "refundUnverified": [
-  "Todavía no se ha podido verificar un pago válido sin devolución previa en Polar. Contacta con soporte si el cobro aparece confirmado.",
-  "A valid payment without a previous refund could not yet be verified with Polar. Contact support if the charge is confirmed."
+  "Todavía no se ha podido verificar un pago válido sin devolución previa en Dodo Payments. Contacta con soporte si el cobro aparece confirmado.",
+  "A valid payment without a previous refund could not yet be verified with Dodo Payments. Contact support if the charge is confirmed."
  ],
  "refundRequestFailed": [
   "No se pudo registrar la revisión. Conserva tu referencia y contacta con soporte.",

@@ -1,82 +1,60 @@
-# Consulta del modelo de BadgeWars a Dodo Payments
+# Revisión del modelo de BadgeWars por Dodo Payments
 
-Estado del **19 de octubre de 2026**: **precedente de Outbid comprobado; consulta preparada, todavía no enviada**. No existe respuesta ni aprobación de Dodo para BadgeWars. Los cobros siguen desactivados y la integración continúa siendo Polar Sandbox.
+Estado del **19 de octubre de 2026**: **verificación enviada; Dodo revisa los datos**. El panel muestra un plazo orientativo de hasta 72 horas. Producto y datos bancarios figuran registrados e identidad aprobada; no hay aceptación comercial del modelo ni cobros live habilitados. [Migración publicada y pruebas](dodo-migration.md) · [pendientes](review-and-launch.md#tabla-de-pendientes).
 
-## Evidencia y valoración
-
-Los [términos del dominio exacto outbid.lol](https://outbid.lol/terms) identifican a Dodo Payments como procesador del checkout. Describen posiciones públicas determinadas por importes pagados y mejoras pagando la diferencia. Es un precedente pertinente para solicitar evaluación de los niveles competitivos de BadgeWars; no acredita qué condiciones privadas tiene Outbid ni supone aprobación de nuestro producto.
-
-Dodo documenta [créditos para compras únicas y consumo posterior](https://docs.dodopayments.com/features/credit-based-billing). Por tanto, los créditos de consumo propios no deben descartarse automáticamente como si toda recarga fuese una cuenta financiera. Su [política de aceptación](https://docs.dodopayments.com/miscellaneous/merchant-acceptance) requiere evaluar el producto completo y distingue servicios admitidos de categorías restringidas. Esa misma política indica **compliance@dodopayments.com** para consultas de elegibilidad.
-
-**Valoración actual:** merece la pena priorizar una revisión concreta con Dodo. Deben clasificar expresamente BC, SVG alojados, niveles competitivos y apoyos de Trust Bag; no basta una respuesta genérica sobre packs de créditos. Si BC fuese el único impedimento, se puede preguntar por compras directas de badges/mejoras como alternativa. Esto sería un cambio real del producto que requeriría decisión del titular e implementación posterior.
-
-| Aspecto | Outbid, según sus términos | BadgeWars que debe evaluar Dodo |
-|---|---|---|
-| Producto | Posición de una web/perfil en un ranking público | SVG personal dinámico por API, colección y ranking por familia |
-| Pago | Checkout de posición/mejora | Recarga única BC; consumo posterior en nuestra aplicación |
-| Competencia | Otro importe puede superar la posición | Niveles pagados; solo el primer intento atómico válido consume saldo |
-| Apoyo y edición limitada | No se asume equivalencia | Trust Bag sin pagos al titular y diez Genesis de 1.000 BC |
-
-## Canal y estado de entrega
+## Presentación comprobada
 
 | Dato | Estado |
 |---|---|
-| Contacto público | [Página oficial](https://dodopayments.com/contact): support@dodopayments.com y comunidad Discord. No se observó formulario público ni chat abierto sin sesión. |
-| Revisión del modelo | compliance@dodopayments.com, indicado expresamente por su política. |
-| Chat del panel | El [panel de Dodo](https://app.dodopayments.com/login) solicita iniciar sesión. No se ha creado cuenta ni aceptado contrato. No se ha comprobado aún la disponibilidad de un agente humano. |
-| Remitente propuesto | Sergio Moreno García, SergioTech.es / BadgeWars; support@badgewars.com. |
-| Consulta enviada | **No**. Texto preparado debajo; sin ticket, acuse ni decisión. |
-| Respuesta que cerraría la duda | Decisión escrita sobre el modelo completo y condiciones/cambios exigidos, o instrucciones concretas para una revisión formal. |
-| Otros proveedores | [Freemius](freemius-model-review.md): consulta recibida, respuesta pendiente. [Polar](polar-model-review.md): onboarding rechazó el caso. |
+| Canal | Formulario de verificación de la cuenta Dodo, https://app.dodopayments.com/verification. |
+| Producto | BadgeWars / SergioTech.es, https://badgewars.com, categoría Software SaaS/IA. |
+| Entrega declarada | Acceso instantáneo, sin intervención humana en la prestación principal; compras únicas, no suscripción. |
+| Integración | API/SDK/Adapters. SDK Dodo, checkout en servidor, firma, inbox, consulta autoritativa, D1 atómica y recuperación. |
+| Etapa / proveedor actual | Beta; NINGUNA como plataforma de cobros activa. Polar solo se usó en Sandbox y se rechazó su onboarding live. |
+| Revisión de contenido | Se corrigieron y guardaron las dos descripciones del producto y flujo técnico, incluidas las cinco familias, precios BC, posiciones pagadas, apoyos, ausencia de pagos a titulares y pruebas externas pendientes. |
+| URLs | Web normalizada a badgewars.com. Se conservó el perfil profesional que ya había facilitado el titular. |
+| Último envío | El titular confirmó personalmente el destino bancario y pulsó el envío final. Después se comprobó el estado de revisión en el panel. |
+| Resultado visible | «Estamos revisando tus datos». Producto: Registrado; información personal: Aprobado; verificación bancaria: Registrado. |
+| Decisión / referencia | Pendiente. No se mostró una aprobación comercial ni número de expediente. |
+| Correo o chat de Compliance | No se envió una consulta adicional por correo ni se obtuvo respuesta humana por chat. La presentación efectiva fue el formulario de verificación. |
 
-El alias support@badgewars.com recibe mediante Cloudflare Email Routing; esto no demuestra que exista un buzón de salida. No se deben simular envíos mediante APIs privadas del soporte ni presentar una consulta preparada como enviada. Una respuesta automática o de un chatbot tampoco equivale a aceptación comercial.
+Evidencia local excluida de Git: `artifacts/dodo-verification-submitted-2026-10-19.png`. No publicar IBAN, documentos de identidad, teléfono, capturas bancarias ni credenciales. La ficha comercial y técnica incluida debajo no contiene esos datos.
 
-## Consulta preparada en inglés
+## Precedente y alcance de la consulta
 
-Destinatario: **compliance@dodopayments.com**, con copia a **support@dodopayments.com** si se envía por correo. Para el chat, pedir que lo derive al equipo que evalúe elegibilidad.
+Los [términos del dominio exacto outbid.lol](https://outbid.lol/terms) identifican a Dodo como procesador de su ranking pagado. Dodo también documenta [créditos para compras únicas y consumo posterior](https://docs.dodopayments.com/features/credit-based-billing). Estas referencias justificaron priorizar la revisión; no acreditan condiciones privadas de otro comercio ni una autorización para BadgeWars.
 
-La siguiente es nuestra propuesta de consulta, no una respuesta de Dodo.
+La [política de aceptación](https://docs.dodopayments.com/miscellaneous/merchant-acceptance) evalúa el servicio completo e indica compliance@dodopayments.com para dudas de elegibilidad. No se ocultaron funciones ni se presentó Trust Bag como una certificación de seguridad o un mero coste criptográfico contra bots. La ficha describe los niveles y apoyos pagados, el SVG/API y las recargas sin canje monetario.
+
+La propuesta inicial de email, preparada antes de crear la cuenta, **no se envió**. Fue sustituida por las descripciones de verificación que se guardaron y cuyo expediente se envió después. [Freemius](freemius-model-review.md) sigue con una consulta recibida sin respuesta comercial registrada; [Polar](polar-model-review.md) rechazó el onboarding anterior.
+
+## Descripción del producto guardada
+
+Este texto es la declaración de BadgeWars, no una respuesta o aprobación de Dodo.
 
 ```text
-Subject: BadgeWars eligibility review — dynamic SVG/API badges, prepaid credits and paid rankings; Outbid precedent
-
-Hello Dodo Payments team,
-
-I am Sergio Moreno Garcia, operating BadgeWars through SergioTech.es in Spain. Our English/Spanish website is https://badgewars.com. It is operational, but real payments remain disabled pending provider review. Could your eligibility/compliance team assess the complete model below?
-
-Relevant precedent: https://outbid.lol/terms publicly identifies Dodo Payments as its checkout provider for a paid public ranking. We are not assuming that another merchant's arrangement approves our business. It suggests that paid competitive placement may be supportable, so we would like a specific assessment rather than inferring a blanket prohibition. We also read your Credit-Based Billing documentation for one-time products.
-
-Product delivered:
-Customers acquire personal dynamic SVG badges backed by our hosted software, a private collection and a stable public endpoint/API. They can obtain their own HTML/Markdown embed code and display their badge on any website, profile or repository README they choose. The same URL updates the SVG's level, position or support points as its state changes, subject to CDN/third-party caching. It is an ongoing software-powered badge service, not just a static image download.
-
-Proposed checkout and consumption:
-Dodo would process one-time BadgeCredit (BC) packs, starting at 5 BC. EUR 1 or USD 1 of base price buys 1 BC, with applicable taxes shown at checkout. A verified payment credits a single balance in our Cloudflare D1 database exactly once. Later badge purchases/upgrades consume BC in our application. BC have no programmed expiry and cannot be transferred between users, withdrawn as cash, resold or spent at outside merchants. They do not generate returns. All payments are revenue for BadgeWars; badge holders receive no money or spendable credits from others.
-
-Actual badge mechanics:
-- Apex Flex starts at 1 BC, Don't Click This / Bait at 5 BC and Build Funded at 50 BC. A new leading badge level must exceed the current leader by at least 1 BC. An upgrade costs only the difference from that buyer's own previous level. The buyer receives or updates their personal badge; another user can subsequently overtake its ranking. The badge remains available with its current rank, without a commercial refund for being overtaken. For simultaneous conflicting purchases, only the first valid atomic transaction consumes BC; the unsuccessful attempt is not charged. Build Funded uses sponsorship-style wording but does not transfer funds to a repository owner.
-- Trust Bag activation costs 20 BC. Other users can spend BC to add support points to the holder's badge, at 1 BC per point. The SVG displays its current support/reliability rank. This is disclosed as paid community support, not independent certification, verified code quality or an organic review. The holder receives points only, never funds or spendable BC. The complete contributor list is private, with at most five aliases optionally made public.
-- Genesis has exactly ten numbered editions at 1,000 BC each, at most one per account, with no transfers or resale.
-
-There are no cash prizes, random rewards, user payouts, investments, cryptocurrency or NFTs. Our requested commercial refund policy covers a paid top-up that was not correctly credited and has not been followed by BC consumption. Mandatory consumer rights and the MoR's refund/chargeback decisions remain applicable; reversals must be reconciled even after consumption.
-
-Rules and operator information:
-https://badgewars.com/terms
-https://badgewars.com/legal
-
-Please confirm:
-1. Can Dodo support this complete dynamic SVG/API product, including BC packs, competitive paid levels, Build Funded, Trust Bag and limited Genesis editions?
-2. Would these non-transferable own-service consumption credits fall within supported credit-based billing, rather than a prohibited financial wallet/stored-value product? We need your classification, not a conclusion based only on the name of the pack.
-3. If any feature is unsupported, which one and why? Would direct per-badge/per-upgrade checkout instead of prepaid BC resolve the issue, or would the underlying feature still be unsupported?
-4. What onboarding, genuine product changes, limits or refund terms would you require? Please provide a written decision/reference, or tell us the formal review steps, before we enable live payments.
-
-We can provide a walkthrough or demo access for review. We are seeking approval for the actual service, not just a generic credit-pack listing. Please reply to support@badgewars.com.
-
-Thank you,
-Sergio Moreno Garcia
-SergioTech.es / BadgeWars
-support@badgewars.com
+BadgeWars is a hosted software service (SaaS) for gamification and API-based profile customization, operated through SergioTech.es in Spain. Customers buy non-transferable BadgeCredits (BC) to activate personal dynamic SVG badges, upgrade competitive badge levels, and use paid community-support interactions. Owners get a private collection and a stable public SVG endpoint/API with HTML/Markdown embed code for any website or README. The same URL reflects the current badge level, rank or support points, subject to CDN/third-party caching. Rankings are explicitly paid levels or paid community support, not independent reviews, professional certifications or guaranteed code quality. BC can only be consumed by BadgeWars software: no monetary value outside it, cash redemption, withdrawals, resale, user-to-user credit transfers or user payouts. There are no cash prizes, random rewards, investments, crypto or NFTs. Please assess all five badge families and their consumption rules described in the delivery flow.
 ```
 
-## Si Dodo acepta el modelo
+## Flujo comercial y técnico guardado
 
-La aceptación no activa por sí sola los cobros. Habrá que completar alta/verificación y adaptar checkout, firma/eventos de webhook, conciliación, reembolsos, portal, facturas, pruebas y textos ES/EN. La integración actual importa funciones y referencias de Polar; cambiar solo el nombre del proveedor o una clave no basta. No usar una referencia de Dodo como `POLAR_LIVE_APPROVAL_REFERENCE`.
+```text
+Customers sign in through Google or GitHub. Email/password is implemented locally but disabled in production pending CPU plan and transactional-email activation. Dodo will process one-time BC purchases: minimum 5 BC; EUR 1 or USD 1 base price buys 1 BC, with tax and final total displayed before payment. Both currencies feed one internal balance with no programmed expiry. We use two allowlisted fixed-price products (EUR/USD), each representing one BC, with quantity selected server-side. Currency changes, discounts and editable prices are disabled.
+
+After a signed payment.succeeded notification, our Cloudflare Worker re-fetches the authoritative payment using the Dodo SDK. It checks business, environment, metadata/account reference, product, quantity, currency, pre-tax amount and checkout session before crediting BC exactly once in Cloudflare D1. A browser return never credits the account. Customers separately confirm the badge action and its BC cost. Atomic D1 validation/debit prevents double spending and conflicting claims. A durable webhook inbox and scheduled reconciliation handle retries and missed events. Refunds/disputes are reconciled, accounts can be frozen for review, and negative balances cannot be spent. Money is never paid out to a badge holder.
+
+Badge rules:
+- Apex Flex starts at 1 BC, Don't Click This / Bait at 5 BC, and Build Funded at 50 BC. Within each independent family, a new leading level must exceed the leader by at least 1 BC. Renewing costs the difference from that account's previous acquired level. Another user can overtake the position; the customer's badge remains and displays its current rank, without a commercial refund just for being overtaken. For simultaneous conflicting attempts, only the first valid atomic transaction spends BC; the second is rejected without a debit. Build Funded is visual sponsorship wording for an embed, not a payout to a repository or creator.
+- Trust Bag activation costs 20 BC and adds no points. Other accounts can consume BC for paid support points (1 BC = 1 point), increasing the holder's support rank and updating the SVG. The holder receives points only, not funds or spendable credits. This is paid community support, not independent certification. The full contributor list is private; at most five aliases can be optionally public. Charging BC is not presented as identity verification or a guarantee against bots; access/rate/abuse controls are separate.
+- Genesis: ten numbered editions at 1,000 BC each, one per account, no transfers/resale.
+
+Owners generate their own embed code in their authenticated collection. SVGs are public for embedding; full contributor/payment records remain private. KV/HTTP caches serve public rankings and SVGs, so updates are not guaranteed to refresh instantly on every external site.
+
+No cashback or cash redemption. Commercial refunds are limited to a charged top-up not correctly credited, subject to review and no subsequent BC use; mandatory consumer rights and Dodo's refund/chargeback decisions remain applicable. Policies ES/EN: https://badgewars.com/terms , /refunds , /privacy , /legal and /cookies, readable without JavaScript. Dodo is identified as the intended MoR and invoice issuer; BadgeWars operating confirmations are not duplicate tax invoices.
+
+Integration is implemented with the official Dodo SDK and tested locally against API-shaped fixtures, including verified signatures, duplicate/out-of-order events, refunds and disputes. Live payments remain disabled. Dodo product/key/webhook setup and real test-mode end-to-end payments are still to be completed before commercial activation. We have no live sales or current production payment provider.
+```
+
+## Siguiente paso
+
+Esperar la decisión o los requerimientos de Dodo. Su plazo de hasta 72 horas no es una garantía de resolución. No activar recargas hasta completar productos, claves, webhook, Turnstile, pruebas reales de test mode y aceptación comercial. La implementación ya sustituyó a Polar; no se usa una aprobación de otro proveedor como `DODO_LIVE_APPROVAL_REFERENCE`.

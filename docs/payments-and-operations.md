@@ -1,72 +1,35 @@
-# Pagos, facturas y operación
+# Pagos y operación · Dodo Payments 0.10
 
-## Qué se ha aplicado del Word
+Estado actual: verificación de Dodo enviada y en revisión; cobros públicos desactivados. La integración activa es Dodo y el saldo reside únicamente en D1. [Implementación, pruebas, variables y límites](dodo-migration.md) · [pendientes de lanzamiento](review-and-launch.md#tabla-de-pendientes) · [ficha comercial presentada](dodo-model-review.md).
 
-`Propuesta de cobros.docx` propone Polar como MoR, recargas en lugar de un checkout por puja, créditos enteros, sugerencias de 5/15/50 y renovación por diferencia. El usuario confirmó saldo único: 1 USD o 1 EUR de base = 1 BC. Se ha implementado sin rehacer el frontend en Astro: el proyecto real usa módulos ESM.
+## Servicio y partes
 
-Se descartan sus afirmaciones de que un monedero evita automáticamente bloqueos, permite posponer obligaciones fiscales o elimina disputas. La AUP vigente de Polar restringe saldos de clientes, patrocinios/donaciones y prueba social pagada. Hace falta aceptación expresa del modelo real; no basta cambiar sus nombres. Sandbox permanece separado de producción. El 19 de octubre de 2026 se presentó la descripción completa en el onboarding de producción, que rechazó BC prepago, rankings pagados, Build Funded y Trust Bag con «Use case not supported». No hay aprobación ni cobros reales habilitados; ver [resultado y alcance](polar-model-review.md).
+SergioTech.es opera BadgeWars, su SaaS de SVG dinámicos por API y el consumo de BC. Dodo será el Merchant of Record de la recarga según la entidad identificada en checkout/factura; gestiona el cobro, los impuestos de esa venta y los documentos del comprador. El titular conserva sus obligaciones propias de actividad, ingresos, privacidad y soporte. BadgeWars solo emite justificantes operativos, sin duplicar la factura fiscal de Dodo.
 
-## Quién vende y quién factura
+Los BC solo sirven para funciones del software. El precio de adquisición no implica canje por efectivo. No hay retirada, cashback, transferencias entre cuentas, reventa ni pagos a titulares de badges. Las excepciones legales de reembolso y las decisiones del MoR se respetan. Trust Bag refleja apoyo pagado, no una auditoría o certificación independiente.
 
-| Parte | Papel |
-|---|---|
-| SergioTech.es, titular identificado en `/legal` | Operador de BadgeWars, proveedor del uso, soporte funcional y responsable de sus propios tratamientos de datos. Sus datos no se sustituyen por los de Polar en el aviso legal. |
-| Polar | Merchant of Record y revendedor autorizado de la compra. Cobra al comprador, gestiona impuestos de esa venta y expide factura/recibo. Prevalece la entidad identificada en el checkout y documento fiscal. |
-| Comprador | Facilita en Polar email de compra y datos de facturación correctos; usa los enlaces de confirmación para acceder a sus documentos. |
+## Conciliación y entrega
 
-Las condiciones de Polar prohíben que el proveedor emita otra factura al comprador o solicite un segundo pago por la misma transacción. BadgeWars solo ofrece justificantes operativos con créditos, referencia y condiciones; se etiquetan como documentos que **no son facturas fiscales**. El consumo posterior de saldo no provoca otra factura de BadgeWars por el mismo cobro. Los reembolsos monetarios se tramitan por Polar, no por transferencias directas del titular.
+El retorno del navegador no acredita saldo. Un webhook se verifica por sus bytes originales y negocio, se conserva en D1 y provoca la consulta del pago actual. Validar entorno, referencia/cuenta, producto, cantidad, moneda, base, sesión y estado. El abono y su referencia son idempotentes. Cron recupera eventos y revisa pagos acreditados en lotes. Proveedor/entorno forman parte de la identidad de los registros; no procesar un pago Polar como si fuera Dodo.
 
-Polar envía sus confirmaciones transaccionales con enlace a su portal; allí el comprador descarga facturas y recibos y gestiona los datos admitidos por el proveedor. No prometemos que todo email lleve un PDF adjunto. El botón privado «Facturas y recibos · Polar» lleva al portal de la organización configurada en `POLAR_ORGANIZATION_SLUG`. Polar verifica el email usado en la compra; puede ser distinto del perfil social. No se almacenan enlaces autenticados permanentes ni PDFs en KV y no se desarrolla un emisor fiscal duplicado.
+No cambiar el importe o los metadatos de una recarga local para hacerla coincidir con un pago extraño. Registrar la incidencia en `bw_operations`, mantener el estado de revisión y comprobar el proveedor. Una creación de checkout incierta no debe repetirse con una clave nueva para forzar el resultado.
 
-La factura PDF de una compra simulada en Polar Sandbox se ha descargado y revisado: identifica a BadgeWars via Polar Software, Inc. como emisor, con base, IVA y total separados. Antes del lanzamiento queda probar recepción real de emails, spam/reenvío por soporte, acceso del comprador al portal, datos de empresa/NIF-IVA y reembolsos/documentos rectificativos. No se ha verificado aún un envío de email real. Las obligaciones del proveedor con sus propios ingresos, facturación a Polar si procede, impuestos y actividad deben verificarse con su asesor; MoR se refiere a la venta al comprador, no a una exención general del titular.
+## Revisión comercial por recarga no entregada
 
-Fuentes oficiales: [Buyer Terms](https://polar.sh/legal/checkout-buyer-terms), [Master Services Terms, apartado 10](https://polar.sh/legal/master-services-terms), [portal y emails](https://polar.sh/docs/features/customer-portal/navigate-customers), [facturas y recibos](https://polar.sh/docs/features/orders).
+La API privada `/api/me/refund-request` solo reserva una revisión: exige sesión/propiedad, pago real, falta de abono, ausencia de consumo desde el inicio de la recarga, deuda o saldo insuficiente. La reserva vuelve a comprobar estas condiciones en D1 y bloquea gasto y entrega concurrentes. No devuelve dinero ni sustituye los derechos legales del consumidor.
 
-## Desistimiento y evidencias
+Antes de decidir, volver a consultar el pago, los reembolsos/disputas, el ledger y `bw_refund_requests`. Si procede corregir la entrega, cerrar de forma controlada la reserva y conciliar el pago, evitando que compita con una devolución. Si procede devolver, efectuar la operación desde el panel autorizado de Dodo, conservar la referencia y confirmar su resultado antes de cerrar. Una respuesta incierta se investiga antes de volver a ejecutarla. No restablecer el acceso mientras existan otras deudas, reversiones, solicitudes o apoyos impugnados. No hay consola administrativa ni ejecución automática de devoluciones en BadgeWars.
 
-Versión de condiciones `2026-10-18-r3`, íntegra en ES/EN. El punto 17 trata reclamaciones y ley; el punto 14 explica los requisitos y excepciones de los artículos 103.a) y 103.m) del TRLGCU. No se declara que el mero abono de un saldo sin consumir extinga automáticamente el desistimiento. La guía CPC sobre monedas virtuales distingue ese saldo del contenido adquirido con él; es una referencia relevante, sin afirmar que por sí sola resuelva la calificación de BadgeWars.
+Una reversión obligatoria se concilia incluso tras consumo: el saldo gastable queda en cero como mínimo, el faltante se registra como deuda y se congela la cuenta para revisión. Los badges propios y los apoyos financiados pueden suspenderse; Genesis conserva su número. Las fracciones y monedas de reembolso que no se puedan conciliar exactamente permanecen en revisión. Una disputa ganada no elimina otros bloqueos automáticamente.
 
-En la recarga se registran aceptación, solicitud de asignación inmediata y mayoría de edad, con texto/versiones inmutables por intento. En cada consumo se recogen separadamente la aceptación de reglas y la solicitud de ejecución inmediata/reconocimiento para los supuestos legalmente aplicables. D1 conserva esas declaraciones, fecha, idioma y una copia de condiciones por versión/idioma, sin actualizar documentos anteriores. El propietario puede descargar el justificante de esa operación.
+Advertencia operativa concreta: la API Dodo expresa el `amount` de entrada de devoluciones parciales en céntimos de USD, también para pagos en otras monedas. `bw_refund_requests.amount` es la base original de la recarga y no debe pasarse directamente a ese parámetro. Revisar la vista previa de Dodo con base, impuestos y total; ver su [guía oficial](https://docs.dodopayments.com/features/transactions/refunds).
 
-La excepción de desistimiento exige también que corresponda materialmente al producto y se cumpla la confirmación contractual en soporte duradero. **Una casilla, un registro interno o un mero enlace no prueban por sí solos todos esos requisitos.** Antes de basar una denegación en esa excepción se debe validar la clasificación, la ejecución y la entrega documental del flujo concreto de Polar/BadgeWars. El sistema no rechaza automáticamente derechos obligatorios. No se presenta un justificante de BadgeWars como factura ni se promete una inmunidad frente a contracargos.
+## Facturas y evidencias
 
-Fuentes: [TRLGCU, arts. 98 y 103](https://www.boe.es/buscar/act.php?id=BOE-A-2007-20555#a103), [CPC, principio 5, página 5](https://commission.europa.eu/document/download/8af13e88-6540-436c-b137-9853e7fe866a_en?filename=Key%20principles%20on%20in-game%20virtual%20currencies.pdf).
+El portal se crea en servidor para una referencia de cliente del usuario autenticado y del entorno actual. No vincular cuentas por email ni publicar enlaces privados en KV. Si una compra simultánea creó varios perfiles propios, el área permite elegirlos. Antes de lanzamiento comprobar factura, recibo, rectificación, emails y perfil de empresa en Dodo con una compra real de test mode. Las facturas anteriores de Polar Sandbox no verifican Dodo.
 
-## Estados y recuperación
+Conservar documentos aceptados, referencias, estados y resultado de revisiones. No escribir cuerpos completos de webhook, CVC, tarjetas, tokens o datos bancarios en logs. La copia previa de D1 y las credenciales se excluyen de Git. Ensayar una restauración aislada y reconciliar con el proveedor: restaurar D1 no deshace un cobro externo.
 
-- Se guarda el intento antes de llamar a Polar. Reintentos idénticos devuelven el checkout ya conocido. Una respuesta incierta pasa a `review`: no se inventa una idempotencia del proveedor ni se crea otra sesión a ciegas.
-- Checkout utiliza precio fijo por recarga, moneda, producto, organización y cliente vinculado en servidor. Sin descuentos ni cobros automáticos. La referencia de retorno solo consulta el estado; nunca acredita saldo.
-- Firma Standard Webhooks con clave base64 decodificada y ventana de cinco minutos. Inbox D1 antes de responder 202; no conserva cuerpos con datos de facturación. Dos eventos por ejecución HTTP; cron recupera pendientes y sesiones conocidas.
-- Solo una orden autoritativa pagada, del producto/organización/cliente/moneda/importe esperados, crea saldo una vez. `order.created` no basta. Orden y recarga tienen restricciones de unicidad; su ledger es inmutable.
-- Débito, validación competitiva, inventario y puntos son atómicos en D1. Si cambia el precio o falta saldo, no se gasta nada. El número de Genesis nunca se vuelve a emitir.
-- Devolución: se revierte el total acumulado de créditos enteros devueltos, una vez. Si falta saldo se registra la diferencia y se congela. Fracciones de crédito pasan a revisión sin redondear en perjuicio del comprador. También se revisan las bolsas receptoras del apoyo relacionado, preservando evidencias. La ficha suspendida sigue visible a su titular; se retira de proyecciones públicas y se bloquea nuevo código de inserción.
-- No se ha asumido un webhook de disputas inexistente en la documentación consultada. Vigilar el panel/notificaciones de Polar y tratar las disputas manualmente. Polar puede devolver pagos por su propia política incluso si BadgeWars no ofrece devoluciones voluntarias.
+## Historial
 
-## Revisión operativa
-
-No actuar solo sobre el evento entrante. Consultar orden, cobro y reembolso actuales en Polar; contrastar la recarga, ledger y acciones. Resolver expedientes con trazabilidad; nunca borrar ledger/acciones o reutilizar referencias para «arreglar» saldos. Los ajustes de compensación y reactivaciones requieren una actuación administrativa documentada y no están expuestos como API pública.
-
-Consultas de diagnóstico (sin escrituras):
-
-```sql
-SELECT id,kind,reference,created_at FROM bw_operations ORDER BY created_at DESC LIMIT 100;
-SELECT id,type,resource_id,state,attempts FROM bw_webhooks WHERE state<>'complete';
-SELECT id,state,credits,currency,errors FROM bw_topups WHERE state IN('creating','open','review');
-SELECT user_id,balance,frozen,debt FROM bw_wallets WHERE frozen=1 OR debt>0;
-SELECT id,dirty,revision,published_revision,published_at FROM bw_badges;
-SELECT day,writes FROM bw_kv_budget ORDER BY day DESC LIMIT 7;
-```
-
-Para una devolución/cierre lícito, determinar qué derechos y saldo quedan, qué acciones se consumieron y qué apoyos afectan a terceros. No reactivar automáticamente bolsas con puntos impugnados ni considerar fraudulenta una reclamación por el mero hecho de existir. `bw_operations` es una cola interna de incidencias sin sistema externo de notificación todavía; el titular debe revisarla y observar las alertas del proveedor.
-
-La política comercial del punto 14 se ha adaptado de la cobertura de [Outbid](https://outbid.lol/terms) al modelo de BadgeWars: no hay reembolsos voluntarios por ser superado o por resultados esperados, pero no se incorpora su ranking diario, un supuesto de compra directa de posición al recargar ni una exclusión de derechos obligatorios. Polar conserva sus facultades propias de devolución.
-
-## Solicitudes por recarga no entregada
-
-`POST /api/me/refund-request` exige sesión propietaria, Origin correcto y una referencia de recarga válida. Consulta el pedido autoritativo de Polar y comprueba aplicación, usuario, producto, moneda, importe y ausencia de reembolso previo. La SQL revalida dentro de la reserva: una recarga ya abonada, un gasto desde su inicio o deuda impiden la solicitud. La reserva congela el monedero y frena el abono de esa recarga mientras el expediente siga en review/submitted.
-
-No hay endpoint público que ejecute dinero, cierre expedientes o descongele saldos. Revisar `bw_refund_requests` junto con `bw_operations`. Una devolución comercial se tramita manualmente en Polar solo tras verificar elegibilidad inmediatamente antes de ejecutarla; no basta la aprobación antigua de una solicitud. Guardar la referencia del resultado y conciliar su estado real. Mantener congelado hasta descartar otras deudas, reversiones, expedientes o apoyos impugnados.
-
-Si se rechaza la solicitud por un fallo de entrega subsanable, documentar la decisión, cerrar el expediente y reanudar la conciliación del pedido correcto. Nunca editar/borrar el ledger ni añadir un segundo crédito manual. La reactivación requiere revisión administrativa de todas las incidencias y publicación de proyecciones. Esta revisión es manual; no hay todavía consola administrativa ni alertas externas automatizadas.
-
-Una devolución obligatoria o impuesta por Polar debe conciliarse incluso si el usuario gastó BC: el saldo gastable no baja de cero, se registra deuda por el faltante y se suspende la cuenta para revisión. El control comercial de la app no puede impedir un chargeback o una decisión del MoR.
+El Word original proponía Polar y un saldo único. Se mantuvo el modelo BC confirmado por el titular; Polar rechazó su onboarding. La versión anterior de este procedimiento está archivada en [legacy/payments](../legacy/payments/operations-polar.md), junto al adaptador histórico. Las pruebas reales de Polar se conservan como evidencia de aquella integración, no como autorización ni pruebas externas de Dodo.

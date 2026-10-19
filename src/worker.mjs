@@ -1,5 +1,5 @@
 import {catalog,badgeSvg} from '../public/badges.js';
-import {verifyPolar,verifyChallenge,validCheckout} from './security.mjs';
+import {verifyChallenge,validCheckout} from './security.mjs';
 import {settle,quote} from './settlement.mjs';
 import {authRoute,identity,privateJson,siteReturn,hash} from './auth.mjs';
 import {normalizedBadgeUrl} from './badge-url.mjs';
@@ -9,10 +9,11 @@ import {publicEntry,privateSupporters,setVisibility} from './inventory.mjs';
 import {personalEmbed} from './embed.mjs';
 import {trustState} from './trust-state.mjs';
 import {publish,publishDirty} from './projection.mjs';
-import {createTopup,receiveEvent,processEvents,recoverTopups,TERMS_VERSION,paymentsReady,billingPortalUrl} from './polar.mjs';
+import {createTopup,receiveEvent,processEvents,recoverTopups,TERMS_VERSION,paymentsReady,billingPortalUrl,billingAccounts,unwrapWebhook,paymentEnvironment} from './billing.mjs';
 import {termsDocument,operatorDetails,paymentSeller} from '../public/terms.js';
 import {requestDeliveryRefund} from './refunds.mjs';
 import {emailRoute} from './email-auth.mjs';
+import {legalPage} from './legal-page.mjs';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 async function readBody(request,limit){
  if(Number(request.headers.get('Content-Length')||0)>limit)throw Error('body_too_large');
@@ -58,13 +59,16 @@ async function privateRoute(request,env,ctx){
  const db=primary(env),userId=auth.user.id,reply=(value,status=200)=>privateJson(value,status,auth.cookies);
  if(request.method==='POST'&&request.headers.get('Origin')!==new URL(env.APP_URL).origin)return reply({error:'origin_forbidden'},403);
  if(url.pathname==='/api/me/badges')return reply(await collectionPage(db,userId));
- if(url.pathname==='/api/me/wallet')return reply({...await first(db,'SELECT balance,frozen,debt FROM bw_wallets WHERE user_id=?',[userId]),termsVersion:TERMS_VERSION,paymentsAvailable:paymentsReady(env),environment:env.POLAR_ENVIRONMENT||'sandbox'});
+ if(url.pathname==='/api/me/wallet')return reply({...await first(db,'SELECT balance,frozen,debt FROM bw_wallets WHERE user_id=?',[userId]),termsVersion:TERMS_VERSION,paymentsAvailable:paymentsReady(env),provider:'dodo',environment:paymentEnvironment(env)});
  if(url.pathname==='/api/me/refund-request'&&request.method==='POST'){
   if(!await throttle(db,'refund:'+userId,5,3600))return reply({error:'rate_limited'},429);
   const input=await readInput(request);return reply(await requestDeliveryRefund(db,env,userId,input.topupId));
  }
  if(url.pathname==='/api/me/billing-portal'&&request.method==='POST'){
-  const portal=billingPortalUrl(env);return reply(portal?{url:portal}:{error:'billing_unavailable'},portal?200:503);
+  if(!await throttle(db,'portal:'+userId,20))return reply({error:'rate_limited'},429);
+  const input=request.body?await readInput(request):{},accounts=await billingAccounts(db,env,userId);
+  if(!input.customerId&&accounts.length>1)return reply({accounts});
+  const portal=await billingPortalUrl(db,env,userId,input.customerId||accounts[0]?.customer_id);return reply(portal?{url:portal}:{error:'billing_unavailable'},portal?200:503);
  }
  if(url.pathname.startsWith('/api/me/action-confirmation/')){
   const id=url.pathname.split('/').pop();if(!uuid(id))return reply({error:'invalid_request'},400);
@@ -99,7 +103,7 @@ async function privateRoute(request,env,ctx){
   const id=url.searchParams.get('session');if(!uuid(id))return reply({error:'invalid_session'},400);
   const result=await first(db,'SELECT id AS reference,state AS status,credits,currency FROM bw_topups WHERE id=? AND user_id=?',[id,userId]);return reply(result||{error:'not_found'},result?200:404);
  }
- if(url.pathname==='/api/me/attempts')return reply({attempts:await rows(db,"SELECT id,'wallet' AS badge,credits*100 AS amount,currency,state,checkout_url FROM bw_topups WHERE user_id=? AND state IN('open','creating','review') ORDER BY created_at DESC LIMIT 20",[userId])});
+ if(url.pathname==='/api/me/attempts')return reply({attempts:await rows(db,"SELECT id,'wallet' AS badge,credits*100 AS amount,currency,state,checkout_url FROM bw_topups WHERE user_id=? AND provider='dodo' AND environment=? AND state IN('open','creating','review') ORDER BY created_at DESC LIMIT 20",[userId,paymentEnvironment(env)])});
  if(url.pathname==='/api/wallet/topup'){
   if(!paymentsReady(env))return reply({error:'payments_unavailable'},503);
   if(!await throttle(db,'topup:'+userId,5))return reply({error:'rate_limited'},429);
@@ -127,11 +131,10 @@ export default {
     if(!uuid(url.searchParams.get('topup'))&&url.searchParams.get('status')!=='cancel')return json({error:'invalid_session'},400);
     return await siteReturn({checkout:url.searchParams.get('status')==='cancel'?'cancel':url.searchParams.get('topup'),locale:url.searchParams.get('lang')},env);
    }
-   if(path==='/api/polar/webhook'&&request.method==='POST'){
+   if(path==='/api/dodo/webhook'&&request.method==='POST'){
     const body=await readBody(request,65536);
-    if(!await verifyPolar(body,request.headers,env.POLAR_WEBHOOK_SECRET))return json({error:'invalid_signature'},403);
-    if(request.headers.get('webhook-api-version')&&request.headers.get('webhook-api-version')!=='2026-10')return json({error:'unsupported_webhook_version'},400);
-    const db=primary(env),event=JSON.parse(body);await receiveEvent(db,env,event,request.headers.get('webhook-id'));ctx.waitUntil(processEvents(db,env).catch(()=>{}));return json({received:true},202);
+    let event;try{event=await unwrapWebhook(body,request.headers,env);}catch{return json({error:'invalid_signature'},403);}
+    const db=primary(env);await receiveEvent(db,env,event,request.headers.get('webhook-id'));ctx.waitUntil(processEvents(db,env).catch(()=>{}));return json({received:true},202);
    }
    if((path.startsWith('/api/me/')&&request.method==='GET')||(['/api/me/visibility','/api/me/refund-request','/api/me/billing-portal','/api/wallet/topup','/api/wallet/spend','/api/checkout'].includes(path)&&request.method==='POST')){
     if(!env.DB)return json({error:'database_unavailable'},503);return await privateRoute(request,env,ctx);
@@ -149,6 +152,7 @@ export default {
    if(path.startsWith('/badges/')&&path.endsWith('.svg')&&request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, HEAD, OPTIONS','Access-Control-Allow-Headers':'If-None-Match','Access-Control-Max-Age':'86400'}});
    if(path.startsWith('/badges/')&&path.endsWith('.svg')&&['GET','HEAD'].includes(request.method))return await svg(request,env,ctx);
    if(path.startsWith('/api/')||path.startsWith('/badges/'))return json({error:'not_found'},404);
+   if(['GET','HEAD'].includes(request.method)){const document=await legalPage(request,env);if(document)return document;}
    return env.ASSETS.fetch(request);
   }catch(error){
    if(error.message==='refund_not_found')return privateJson({error:error.message},404);

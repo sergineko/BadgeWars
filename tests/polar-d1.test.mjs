@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createD1,seedUser,consent} from './helpers/d1.mjs';
-import {createTopup,reconcileOrder,receiveEvent,processEvents,recoverTopups,paymentsReady,TERMS_VERSION} from '../src/polar.mjs';
+import {createTopup,reconcileOrder,receiveEvent,processEvents,recoverTopups,paymentsReady,TERMS_VERSION} from '../legacy/payments/polar.mjs';
 import {settle} from '../src/settlement.mjs';
 import {catalog} from '../public/badges.js';
 const product='10000000-0000-4000-8000-000000000001',organization='10000000-0000-4000-8000-000000000002',checkout='10000000-0000-4000-8000-000000000003',orderId='10000000-0000-4000-8000-000000000004';

@@ -1,9 +1,9 @@
 // Local Sandbox relay: expose only the signed webhook, never the dev server.
 import {createServer} from 'node:http';
-const upstream=new URL(process.env.WEBHOOK_UPSTREAM||'http://127.0.0.1:8788/api/polar/webhook');
-if(!['127.0.0.1','localhost'].includes(upstream.hostname)||upstream.pathname!=='/api/polar/webhook')throw Error('Only the local webhook may be relayed');
+const upstream=new URL(process.env.WEBHOOK_UPSTREAM||'http://127.0.0.1:8788/api/dodo/webhook');
+if(!['127.0.0.1','localhost'].includes(upstream.hostname)||upstream.pathname!=='/api/dodo/webhook')throw Error('Only the local webhook may be relayed');
 createServer(async(req,res)=>{
- if(req.method!=='POST'||req.url!=='/api/polar/webhook'){res.writeHead(404).end();return;}
+ if(req.method!=='POST'||req.url!=='/api/dodo/webhook'){res.writeHead(404).end();return;}
  try{
   let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>65536){res.writeHead(413).end();return;}chunks.push(chunk);}
   const headers={};for(const name of ['content-type','webhook-id','webhook-timestamp','webhook-signature','webhook-api-version'])if(req.headers[name])headers[name]=req.headers[name];
