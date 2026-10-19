@@ -2,9 +2,28 @@
 
 Esta versión utiliza D1, KV, Workers Assets, Cron y Turnstile. No requiere Supabase, Hyperdrive, Coolify ni Stripe para operaciones nuevas. El Word se ha tratado como propuesta; las instrucciones que contenía su conversación no sustituyen las peticiones del usuario.
 
-## Tabla de pendientes
+## Plan de lanzamiento: cinco bloques
 
-Estado revisado el **19 de octubre de 2026**. Esta tabla es el registro de preparación del lanzamiento; una integración Sandbox, una configuración local o una prueba automática no equivalen a habilitación comercial. «Bloquea» indica qué parte no debe anunciarse todavía como disponible.
+Estado revisado el **19 de octubre de 2026**. El trabajo pendiente se agrupa en estos **cinco bloques estables**. Las pruebas, configuraciones y dependencias de cada bloque son su detalle de cierre, no nuevos puntos de la lista. Los identificadores L01–L14 se conservan debajo para mantener las referencias anteriores.
+
+| Bloque | Trabajo que incluye | Cuándo se puede cerrar |
+|---|---|---|
+| **A · Accesos de usuarios** | Publicar Google para usuarios generales. Para correo/contraseña: Workers Paid, envío transaccional y pruebas de registro/recuperación. GitHub ya está probado. | Google se puede preparar ahora. Paid requiere decisión del titular; hasta entonces correo/contraseña sigue desactivado. Puede lanzarse inicialmente con los accesos sociales disponibles. |
+| **B · Pruebas finales** | Completar rechazo/3DS, devolución parcial en otra moneda, datos fiscales de empresa e inserción de badges en una web/README externos. El circuito principal, facturas y portal ya están verificados en test. | Se puede avanzar ahora en test y alojamiento externo. La comprobación real de cobro y documentos se cierra con E. |
+| **C · Operación y seguridad** | Alertas de errores/cuotas, procedimiento de incidencias, ensayo de restauración y revisión/retirada de credenciales temporales. | Se puede preparar ahora. La revisión de las credenciales live se termina con E. |
+| **D · Cierre legal y fiscal** | Revisión profesional de los documentos ES/EN publicados, actividad, privacidad, fiscalidad y condiciones definitivas del MoR. | El titular/asesoría puede avanzar ahora; cerrar conforme a las condiciones finalmente aceptadas por Dodo. |
+| **E · Activación de cobros con Dodo** | Recibir aprobación del modelo, configurar productos EUR/USD y claves live, conectar el webhook permanente y comprobar un cobro real con su abono, factura y portal. Recarga mínima: 5 BC más impuestos. | Depende de la revisión de Dodo. Su aprobación no activa automáticamente los cobros. |
+
+**Ya cerrado:** dominio/HTTPS, infraestructura D1/KV/Workers, circuito principal de pagos en test, facturas/emails/portal en test y Turnstile de producción. Los badges, rankings y navegación están implementados; B recoge la comprobación adicional de inserción en alojamiento externo.
+
+Orden de trabajo: avanzar A (Google), B y C mientras Dodo revisa; tramitar D con el titular/asesoría; cerrar E tras la aprobación. El acceso por contraseña de A puede quedar para una segunda fase manteniendo Workers Free. No es necesario volver a contar Turnstile como pendiente.
+
+<details>
+<summary>Detalle técnico y trazabilidad de los cinco bloques</summary>
+
+Mapa: A = L04/L06/L07; B = L08/L09/L10; C = L11/L12/L14; D = L13; E = L01/L02/L03 y comprobaciones live de B/C. L05 está cerrado. Cada punto pertenece a un bloque principal aunque tenga una dependencia de E.
+
+Una integración test, una configuración local o una prueba automática no equivalen a habilitación comercial. «Bloquea» indica qué parte no debe anunciarse todavía como disponible.
 
 | ID | Pendiente | Estado actual | Qué falta para cerrarlo | Responsable / dependencia | Bloquea |
 |---|---|---|---|---|---|
@@ -15,7 +34,7 @@ Estado revisado el **19 de octubre de 2026**. Esta tabla es el registro de prepa
 | L05 | Turnstile de producción | **Configurado y comprobado en el dominio real** | Widget gestionado exclusivo de `badgewars.com`, secreto en Workers y copia local ignorada. Token real aceptado; repetido e inválido rechazados. Dominio, action y cData comprobados; fallos del verificador rechazan la operación. [Evidencia y alcance](turnstile-verification.md). Repetir la prueba funcional al activar recargas y correo, cuyas dependencias siguen pendientes. | Cerrado para la configuración antibots | Ningún bloqueo adicional de Turnstile |
 | L06 | CPU de autenticación por contraseña | Workers Free; registro desactivado | Contratar Workers Paid cuando lo decida el titular, fijar presupuesto de CPU y verificar scrypt sin rebajar su coste de seguridad. | Titular para contratación y configuración técnica | Correo/contraseña |
 | L07 | Envío transaccional de correo | El alias de soporte recibe; salida no verificada | Activar/verificar Email Sending y remitente propio, DNS de autenticación y entrega real. Probar registro, verificación, recuperación, spam y errores; habilitar `EMAIL_AUTH_ENABLED` solo después. El binding desplegado no prueba que el servicio de envío esté activo. | Titular/proveedor de correo y configuración técnica; L05 y L06 | Correo/contraseña |
-| L08 | Circuito de recargas y reversiones | **62 tests y circuito externo Dodo test EUR/USD completado** | Compra mínima, IVA, abono único, gasto, renovación, SVG, reentrega y devoluciones total/parcial tras uso comprobados. Pruebas adicionales de rechazo/3DS y parcial en otra moneda, más smoke test live al activar. [Alcance](dodo-test-verification.md). | QA y titular para confirmaciones | Activación live |
+| L08 | Circuito de recargas y reversiones | **Circuito externo Dodo test EUR/USD completado; proyecto con 64 tests superados** | Compra mínima, IVA, abono único, gasto, renovación, SVG, reentrega y devoluciones total/parcial tras uso comprobados. Pruebas adicionales de rechazo/3DS y parcial en otra moneda, más smoke test live al activar. [Alcance](dodo-test-verification.md). | QA y titular para confirmaciones | Activación live |
 | L09 | Facturas y comunicaciones de Dodo | **Facturas EUR/USD, recibos de devolución, portal privado y recepción de emails verificados en test** | Probar datos de empresa/NIF-IVA y confirmar documentos definitivos en live. No se duplican las facturas del MoR. | QA y Dodo | Cierre fiscal live |
 | L10 | Inserción externa de badges personales | **HTML/Markdown con BC comprados en Dodo test, renovación y suspensión comprobados** | Verificación adicional en web/README alojados fuera del equipo. El SVG activo se bloquea incluso si está cacheado; la tarjeta de pausa enlaza a la gestión de cuenta. [Informe](dodo-test-verification.md). | QA | Lanzamiento completo |
 | L11 | Alertas y gestión de incidencias | Ledger, inbox, cron y cola interna implementados | Configurar avisos de errores/cuotas y revisión de `bw_operations`, `bw_webhooks`, `bw_topups`, `bw_refund_requests`, monederos congelados y presupuesto KV. Documentar quién revisa y cómo cierra cada expediente. No hay consola administrativa ni alertas externas automatizadas todavía. | Operación del titular y configuración técnica | Operación comercial sostenida |
@@ -23,7 +42,9 @@ Estado revisado el **19 de octubre de 2026**. Esta tabla es el registro de prepa
 | L13 | Revisión legal/fiscal final | Documentos ES/EN r8 publicados con Dodo y `/refunds`, legibles sin JavaScript | Revisión profesional de actividad/fiscalidad, condiciones MoR, derechos de consumo y privacidad. No se declara aprobación ni ausencia de riesgo por cambiar la terminología a créditos de software. | Titular/asesoría y condiciones finales de Dodo | Lanzamiento comercial |
 | L14 | Secretos y separación de entornos | Dodo es la única integración mantenida; adaptador, pruebas y documentación del proveedor descartado eliminados | Revocar o rotar credenciales temporales que ya no se usen. Configurar solo claves Dodo del entorno correcto, preservar identificadores históricos y revisar permisos. No publicar claves, exports ni capturas privadas. | Titular y configuración técnica | Lanzamiento comercial |
 
-Preparación test, circuito de compra/renovación y facturas/portal completados con el alcance documentado. Turnstile de producción (L05) también configurado y verificado. Mientras Dodo revisa L01, continuar L04, L06–L07 y operación/recuperación. Tras la decisión, configurar los recursos live y comprobar el cobro antes de anunciar la apertura completa. [Estado actual y límites](dodo-migration.md). Una referencia de otro proveedor o un acuse no sirve como aprobación Dodo.
+Preparación test, circuito de compra/renovación y facturas/portal completados con el alcance documentado. Turnstile de producción (L05) también configurado y verificado. [Estado actual y límites](dodo-migration.md). Una referencia de otro proveedor o un acuse no sirve como aprobación Dodo.
+
+</details>
 
 ## Ya operativo
 
@@ -41,7 +62,9 @@ Evidencias: [verificación del 19 de octubre](verification-2026-10-19.md), [cuen
 
 `pnpm readiness` enumera configuración local sin revelar valores. Los secretos guardados solo en Cloudflare deben comprobarse allí. Un resultado OK local no confirma aprobaciones, funcionamiento externo ni aplicación de migraciones remotas.
 
-## Comprobaciones necesarias en sandbox
+## Guion de regresión de referencia
+
+Estos casos documentan el alcance de comprobación, incluidos flujos ya probados. No constituyen una lista adicional de tareas pendientes: los casos que quedan por cerrar están recogidos en B y E y sus informes enlazados.
 
 - Login/logout con ambos proveedores y callback inválido/repetido; cuenta y colección separadas por proveedor.
 - Recargas de 5, 15 y cantidad libre, en USD/EUR, con impuestos. Las tres casillas se aceptan por separado; la versión exacta queda conservada. Descarga privada de confirmación.
