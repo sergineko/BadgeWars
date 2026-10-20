@@ -9,6 +9,7 @@ export const paymentEnvironment=env=>env.DODO_PAYMENTS_ENVIRONMENT==='live_mode'
 // and Dodo's authentication bind credentials to their environment.
 export const apiKeyReady=(key,mode)=>configured(key)&&!(/^(?:dodo_test_|dodo_live_)/.test(key)&&!key.startsWith(mode==='live_mode'?'dodo_live_':'dodo_test_'));
 export const providerId=(value,prefix)=>typeof value==='string'&&new RegExp(`^${prefix}_[A-Za-z0-9_-]{3,120}$`).test(value);
+export const paymentEvents=Object.freeze(['payment.succeeded','payment.failed','payment.cancelled','payment.processing','refund.succeeded','refund.failed','dispute.opened','dispute.expired','dispute.accepted','dispute.cancelled','dispute.challenged','dispute.won','dispute.lost']);
 const reference=(env,id)=>`dodo:${paymentEnvironment(env)}:${id}`;
 const configured=value=>typeof value==='string'&&value.length>3&&!/replace|example|placeholder/i.test(value);
 export function dodoClient(env){
@@ -17,15 +18,23 @@ export function dodoClient(env){
 }
 export function paymentsReady(env){
  const mode=paymentEnvironment(env),dummy=/^[123]x0+/.test(env.TURNSTILE_SITE_KEY||'')||/^[123]x0+/.test(env.TURNSTILE_SECRET_KEY||'');
+ // Approval and installed credentials never open live checkout on their own.
+ // Pausing new purchases must not stop webhooks, reconciliation or billing access.
+ if(env.DODO_CHECKOUT_ENABLED!=='true'&&!(mode==='test_mode'&&env.DODO_CHECKOUT_ENABLED===undefined))return false;
  let local=false;try{local=['localhost','127.0.0.1','[::1]'].includes(new URL(env.APP_URL).hostname);}catch{}
- return Boolean(['test_mode','live_mode'].includes(env.DODO_PAYMENTS_ENVIRONMENT)&&apiKeyReady(env.DODO_PAYMENTS_API_KEY,mode)&&[env.DODO_BUSINESS_ID,env.DODO_PRODUCT_ID_USD,env.DODO_PRODUCT_ID_EUR,env.TURNSTILE_SITE_KEY,env.TURNSTILE_SECRET_KEY].every(configured)&&providerId(env.DODO_BUSINESS_ID,'bus')&&providerId(env.DODO_PRODUCT_ID_USD,'pdt')&&providerId(env.DODO_PRODUCT_ID_EUR,'pdt')&&configured(env.DODO_PAYMENTS_WEBHOOK_KEY)&&env.TURNSTILE_SITE_KEY&&env.TURNSTILE_SECRET_KEY&&(!dummy||local&&mode==='test_mode')&&(mode!=='live_mode'||configured(env.DODO_LIVE_APPROVAL_REFERENCE)&&operatorReady(env)));
+ return Boolean(['test_mode','live_mode'].includes(env.DODO_PAYMENTS_ENVIRONMENT)&&apiKeyReady(env.DODO_PAYMENTS_API_KEY,mode)&&[env.DODO_BUSINESS_ID,env.DODO_PRODUCT_ID_EUR,env.TURNSTILE_SITE_KEY,env.TURNSTILE_SECRET_KEY].every(configured)&&providerId(env.DODO_BUSINESS_ID,'bus')&&providerId(env.DODO_PRODUCT_ID_EUR,'pdt')&&configured(env.DODO_PAYMENTS_WEBHOOK_KEY)&&env.TURNSTILE_SITE_KEY&&env.TURNSTILE_SECRET_KEY&&(!dummy||local&&mode==='test_mode')&&(mode!=='live_mode'||configured(env.DODO_LIVE_APPROVAL_REFERENCE)&&operatorReady(env)));
 }
+export function productMatches(product,env,currency){
+ const price=product?.price;
+ return Boolean(currency==='eur'&&product?.business_id===env.DODO_BUSINESS_ID&&product?.product_id===env.DODO_PRODUCT_ID_EUR&&!product.is_recurring&&product.pricing_mode==null&&price?.type==='one_time_price'&&price.price===100&&price.currency==='EUR'&&!price.pay_what_you_want&&!price.tax_inclusive&&!price.purchasing_power_parity&&!price.discount&&!price.discount_bps&&!product.credit_entitlements?.length);
+}
+const adaptive=row=>row.pricing_model==='eur_fx_v1';
 export function checkoutForm(row,appUrl){return {
- product_cart:[{product_id:row.product_id,quantity:row.credits}],billing_currency:row.currency.toUpperCase(),
+ product_cart:[{product_id:row.product_id,quantity:row.credits}],...(!adaptive(row)?{billing_currency:row.currency.toUpperCase()}:{}),
  ...(row.customer_id?{customer:{customer_id:row.customer_id}}:{}),
- feature_flags:{allow_currency_selection:false,allow_discount_code:false,allow_phone_number_collection:false,allow_tax_id:true,always_create_new_customer:!row.customer_id,...(row.customer_id?{allow_customer_editing_email:false}:{})},
+ feature_flags:{allow_currency_selection:adaptive(row),allow_discount_code:false,allow_phone_number_collection:false,allow_tax_id:true,always_create_new_customer:!row.customer_id,...(row.customer_id?{allow_customer_editing_email:false}:{})},
  customization:{theme:'dark',force_language:row.locale},
- metadata:{app:'badgewars',topup_id:row.id,user_id:row.user_id,credits:String(row.credits),terms_version:row.terms_version,environment:row.environment},
+ metadata:{app:'badgewars',topup_id:row.id,user_id:row.user_id,credits:String(row.credits),terms_version:row.terms_version,environment:row.environment,...(adaptive(row)?{pricing_model:row.pricing_model,base_currency:'EUR',base_amount:String(row.credits*100)}:{})},
  return_url:`${appUrl}/api/checkout/return?topup=${row.id}&lang=${row.locale}`,
  cancel_url:`${appUrl}/api/checkout/return?status=cancel&lang=${row.locale}`
 };}
@@ -38,18 +47,17 @@ async function freeze(db,row,kind,id){await db.batch([
  ]);await incident(db,kind,id);}
 export async function createTopup(db,env,input,userId,id){
  if(!paymentsReady(env))throw Error('payments_unavailable');
- if(!uuid(id)||!Number.isInteger(input.credits)||input.credits<5||input.credits>100000||!['usd','eur'].includes(input.currency)||input.accepted!==true||input.immediateDelivery!==true||input.adultConfirmed!==true||input.termsVersion!==TERMS_VERSION)throw Error('invalid_topup');
+ if(!uuid(id)||!Number.isInteger(input.credits)||input.credits<5||input.credits>100000||![undefined,'auto','eur'].includes(input.currency)||input.accepted!==true||input.immediateDelivery!==true||input.adultConfirmed!==true||input.termsVersion!==TERMS_VERSION)throw Error('invalid_topup');
  if((await first(db,'SELECT frozen FROM bw_wallets WHERE user_id=?',[userId]))?.frozen)throw Error('wallet_frozen');
- const product=input.currency==='eur'?env.DODO_PRODUCT_ID_EUR:env.DODO_PRODUCT_ID_USD,mode=paymentEnvironment(env);
- const inserted=await statement(db,`INSERT INTO bw_topups(id,user_id,credits,currency,product_id,locale,terms_version,next_check,terms_snapshot,immediate_delivery,adult_confirmed,provider,environment) VALUES(?,?,?,?,?,?,?,?,?,1,1,'dodo',?) ON CONFLICT(id) DO NOTHING RETURNING id`,[id,userId,input.credits,input.currency,product,input.locale==='en'?'en':'es',TERMS_VERSION,Date.now()+300000,JSON.stringify(termsDocument(env,input.locale)),mode]).first();
+ const product=env.DODO_PRODUCT_ID_EUR,mode=paymentEnvironment(env);
+ const inserted=await statement(db,`INSERT INTO bw_topups(id,user_id,credits,currency,product_id,locale,terms_version,next_check,terms_snapshot,immediate_delivery,adult_confirmed,provider,environment,pricing_model) VALUES(?,?,?,'eur',?,?,?,?,?,1,1,'dodo',?,'eur_fx_v1') ON CONFLICT(id) DO NOTHING RETURNING id`,[id,userId,input.credits,product,input.locale==='en'?'en':'es',TERMS_VERSION,Date.now()+300000,JSON.stringify(termsDocument(env,input.locale)),mode]).first();
  const row=await first(db,'SELECT * FROM bw_topups WHERE id=?',[id]);
- if(row.user_id!==userId||row.credits!==input.credits||row.currency!==input.currency||row.product_id!==product||row.provider!=='dodo'||row.environment!==mode)throw Error('idempotency_conflict');
+ if(row.user_id!==userId||row.credits!==input.credits||row.currency!=='eur'||row.product_id!==product||row.provider!=='dodo'||row.environment!==mode||!adaptive(row))throw Error('idempotency_conflict');
  if(!inserted){if(row.state==='open'&&row.checkout_url)return {url:row.checkout_url,id:row.id};throw Error(row.state==='creating'?'checkout_recovering':'checkout_'+row.state);}
  try{
   const client=dodoClient(env),catalogProduct=await client.products.retrieve(product);
-  // Fixed 1-BC units in each currency. No FX, editable prices, coupons or automatic grants.
-  const price=catalogProduct.price;
-  if(catalogProduct.business_id!==env.DODO_BUSINESS_ID||catalogProduct.product_id!==product||catalogProduct.is_recurring||price?.type!=='one_time_price'||price.price!==100||price.currency!==row.currency.toUpperCase()||price.pay_what_you_want||price.tax_inclusive||price.purchasing_power_parity||price.discount||price.discount_bps||catalogProduct.credit_entitlements?.length)throw Error('invalid_product');
+  // One fixed EUR base product; only Dodo converts it to supported payment currencies.
+  if(!productMatches(catalogProduct,env,row.currency))throw Error('invalid_product');
   const customer=await first(db,"SELECT customer_id FROM bw_payment_customers WHERE user_id=? AND provider='dodo' AND environment=? ORDER BY created_at DESC LIMIT 1",[userId,mode]);
   if(customer){row.customer_id=customer.customer_id;await run(db,'UPDATE bw_topups SET customer_id=? WHERE id=?',[row.customer_id,row.id]);}
   const checkout=await client.checkoutSessions.create(checkoutForm(row,env.APP_URL),{headers:{'Idempotency-Key':reference(env,row.id)}});
@@ -61,7 +69,11 @@ export async function createTopup(db,env,input,userId,id){
 }
 export function paymentMatches(payment,row,env){
  const meta=payment.metadata,cart=payment.product_cart;
- return Boolean(row&&row.provider==='dodo'&&row.environment===paymentEnvironment(env)&&payment.business_id===env.DODO_BUSINESS_ID&&meta?.app==='badgewars'&&meta.topup_id===row.id&&meta.user_id===row.user_id&&meta.credits===String(row.credits)&&meta.terms_version===row.terms_version&&meta.environment===row.environment&&payment.currency===row.currency.toUpperCase()&&Number.isSafeInteger(payment.total_amount)&&Number.isSafeInteger(payment.tax??0)&&(payment.tax??0)>=0&&payment.total_amount-(payment.tax??0)===row.credits*100&&Array.isArray(cart)&&cart.length===1&&cart[0].product_id===row.product_id&&cart[0].quantity===row.credits&&!payment.discount_id&&(!payment.discounts||payment.discounts.length===0)&&!payment.subscription_id&&(!payment.subscription_ids||payment.subscription_ids.length===0)&&payment.is_multi_subscription!==true&&payment.is_update_payment_method!==true&&providerId(payment.payment_id,'pay')&&providerId(payment.checkout_session_id,'cks')&&providerId(payment.customer?.customer_id,'cus')&&(!row.customer_id||row.customer_id===payment.customer.customer_id)&&(!row.checkout_id||payment.checkout_session_id===row.checkout_id)&&Array.isArray(payment.refunds)&&Array.isArray(payment.disputes));
+ if(!row||!Number.isSafeInteger(payment.total_amount)||payment.total_amount<=0||!Number.isSafeInteger(payment.tax??0)||(payment.tax??0)<0||(payment.tax??0)>payment.total_amount||!/^[A-Z]{3}$/.test(payment.currency||''))return false;
+ // Foreign totals come from Dodo's authenticated payment, never a client FX rate.
+ // Credit quantity is bound to our stored fixed-EUR cart and its server metadata.
+ const priceMatches=adaptive(row)?row.currency==='eur'&&meta?.pricing_model===row.pricing_model&&meta.base_currency==='EUR'&&meta.base_amount===String(row.credits*100)&&(payment.currency!=='EUR'||payment.total_amount-(payment.tax??0)===row.credits*100):payment.currency===row.currency.toUpperCase()&&payment.total_amount-(payment.tax??0)===row.credits*100;
+ return Boolean(priceMatches&&row.provider==='dodo'&&row.environment===paymentEnvironment(env)&&payment.business_id===env.DODO_BUSINESS_ID&&meta?.app==='badgewars'&&meta.topup_id===row.id&&meta.user_id===row.user_id&&meta.credits===String(row.credits)&&meta.terms_version===row.terms_version&&meta.environment===row.environment&&Array.isArray(cart)&&cart.length===1&&cart[0].product_id===row.product_id&&cart[0].quantity===row.credits&&!payment.discount_id&&(!payment.discounts||payment.discounts.length===0)&&!payment.subscription_id&&(!payment.subscription_ids||payment.subscription_ids.length===0)&&payment.is_multi_subscription!==true&&payment.is_update_payment_method!==true&&providerId(payment.payment_id,'pay')&&providerId(payment.checkout_session_id,'cks')&&providerId(payment.customer?.customer_id,'cus')&&(!row.customer_id||row.customer_id===payment.customer.customer_id)&&(!row.checkout_id||payment.checkout_session_id===row.checkout_id)&&Array.isArray(payment.refunds)&&Array.isArray(payment.disputes));
 }
 export async function verifiedPayment(db,env,row){
  if(row.provider!=='dodo'||row.environment!==paymentEnvironment(env)||!providerId(row.checkout_id,'cks'))throw Error('refund_payment_unverified');
@@ -73,23 +85,44 @@ export async function verifiedPayment(db,env,row){
 }
 export async function reconcilePayment(db,env,paymentId){
  if(!providerId(paymentId,'pay'))throw Error('invalid_event');
- const payment=await dodoClient(env).payments.retrieve(paymentId),meta=payment.metadata;
+ const client=dodoClient(env),payment=await client.payments.retrieve(paymentId),meta=payment.metadata;
  if(meta?.app!=='badgewars')return;
  const row=uuid(meta.topup_id)?await first(db,'SELECT * FROM bw_topups WHERE id=?',[meta.topup_id]):null,key=reference(env,paymentId);
  if(payment.payment_id!==paymentId||!paymentMatches(payment,row,env)){await incident(db,'payment_mismatch',key);throw Error('payment_mismatch');}
- const existing=await first(db,'SELECT id FROM bw_orders WHERE id=?',[key]);
+ const existing=await first(db,'SELECT * FROM bw_orders WHERE id=?',[key]);
+ if(existing?.charged_currency&&(existing.charged_currency!==payment.currency||existing.charged_total!==payment.total_amount||existing.charged_tax!==(payment.tax??0))){await freeze(db,row,'payment_changed_review',key);throw Error('payment_mismatch');}
+ let refundCurrency=existing?.refund_basis_currency||payment.currency,refundTotal=existing?.refund_basis_total||payment.total_amount,refundRemaining=refundTotal;
+ if(adaptive(row)&&payment.status==='succeeded'){
+  const session=await client.checkoutSessions.retrieve(row.checkout_id);
+  if(session.id!==row.checkout_id||session.payment_id!==paymentId){await freeze(db,row,'payment_session_review',key);throw Error('payment_mismatch');}
+  const lineItems=await client.payments.retrieveLineItems(paymentId),item=lineItems.items?.[0];
+  // Refunds use Dodo's line-item currency/basis, which may differ from the
+  // customer's currency and excludes non-refundable FX fees and rounding.
+  if(!/^[A-Z]{3}$/.test(lineItems.currency||'')||lineItems.items?.length!==1||item.items_id!==row.product_id||!Number.isSafeInteger(item.amount)||item.amount<=0||!Number.isSafeInteger(item.tax)||item.tax<0||item.tax>item.amount||!Number.isSafeInteger(item.refundable_amount)||item.refundable_amount<0||item.refundable_amount>item.amount){await freeze(db,row,'refund_basis_review',key);throw Error('payment_mismatch');}
+  // Dodo's item amount already includes its tax; never add tax a second time.
+  refundCurrency=lineItems.currency;refundTotal=item.amount;refundRemaining=item.refundable_amount;
+  if(existing?.refund_basis_currency&&(existing.refund_basis_currency!==refundCurrency||existing.refund_basis_total!==refundTotal)){await freeze(db,row,'refund_basis_changed_review',key);throw Error('payment_mismatch');}
+ }
  const unresolved=payment.disputes.some(d=>!['dispute_won','dispute_cancelled'].includes(d.dispute_status));
  const pending=payment.refunds.some(r=>['pending','review'].includes(r.status));
  if(unresolved||pending){await freeze(db,row,unresolved?'dispute_review':'pending_refund_review',key);if(!existing)return;}
- const fullRefund=payment.refund_status==='full';let refunded=fullRefund?payment.total_amount:0;
+ if(adaptive(row)&&pending)return;
+ const fullRefund=payment.refund_status==='full';let refunded=fullRefund?refundTotal:0;
  for(const refund of payment.refunds){
   if(fullRefund)break;
   if(refund.status!=='succeeded')continue;
-  if(!Number.isSafeInteger(refund.amount)||refund.amount<=0||refund.currency!==payment.currency||refund.payment_id!==paymentId){await freeze(db,row,'refund_amount_review',key);throw Error('payment_mismatch');}
-  refunded+=refund.amount;
+  if(!Number.isSafeInteger(refund.amount)||refund.amount<=0||!(adaptive(row)?[payment.currency,refundCurrency].includes(refund.currency):refund.currency===refundCurrency)||refund.payment_id!==paymentId){await freeze(db,row,'refund_amount_review',key);throw Error('payment_mismatch');}
+  if(!adaptive(row))refunded+=refund.amount;
+ }
+ if(adaptive(row)&&!fullRefund){
+  const successful=payment.refunds.some(r=>r.status==='succeeded');
+  if(successful)refunded=refundTotal-refundRemaining;
+  // Refund response currency can be the customer's currency at a later FX rate.
+  // Only the remaining line-item balance measures the original units reversed.
+  if(successful&&refunded<=0||!successful&&refundRemaining!==refundTotal){await freeze(db,row,'refund_snapshot_review',key);return;}
  }
  if(payment.refund_status==='partial'&&refunded===0){await freeze(db,row,'refund_amount_review',key);return;}
- if(!Number.isSafeInteger(refunded)||refunded>payment.total_amount){await freeze(db,row,'refund_amount_review',key);throw Error('payment_mismatch');}
+ if(!Number.isSafeInteger(refunded)||refunded>refundTotal){await freeze(db,row,'refund_amount_review',key);throw Error('payment_mismatch');}
  if(!existing&&(payment.status!=='succeeded'||refunded>0)){
   if(refunded>0)await freeze(db,row,'uncredited_refund',key);
   else if(!unresolved&&!pending){
@@ -100,11 +133,12 @@ export async function reconcilePayment(db,env,paymentId){
   }
   return;
  }
- // Dodo refunds are gross (including tax). Preserve fractions for review, never round BC up.
- const netRefund=Number(BigInt(refunded)*BigInt(row.credits*100)/BigInt(payment.total_amount));
+ // Compare like currencies in integer minor units, including zero-decimal ones.
+ // Preserve fractional BC for review and never round the reversal up.
+ const netRefund=Number(BigInt(refunded)*BigInt(row.credits*100)/BigInt(refundTotal));
  const reversed=Math.min(row.credits,Math.floor(netRefund/100));
  await db.batch([
-  statement(db,`INSERT INTO bw_orders(id,topup_id,user_id,credits,amount,currency,checkout_id,product_id,provider,environment,external_id) SELECT ?,?,?,?,?,?,?,?,'dodo',?,? WHERE NOT EXISTS(SELECT 1 FROM bw_orders WHERE id=?)`,[key,row.id,row.user_id,row.credits,row.credits*100,row.currency,payment.checkout_session_id,row.product_id,row.environment,paymentId,key]),
+  statement(db,`INSERT INTO bw_orders(id,topup_id,user_id,credits,amount,currency,checkout_id,product_id,provider,environment,external_id,charged_currency,charged_total,charged_tax,refund_basis_currency,refund_basis_total) SELECT ?,?,?,?,?,?,?,?,'dodo',?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM bw_orders WHERE id=?)`,[key,row.id,row.user_id,row.credits,row.credits*100,row.currency,payment.checkout_session_id,row.product_id,row.environment,paymentId,payment.currency,payment.total_amount,payment.tax??0,refundCurrency,refundTotal,key]),
   statement(db,'UPDATE bw_orders SET reversed=max(reversed,?),refunded_amount=max(refunded_amount,?),next_check=? WHERE id=?',[reversed,netRefund,Date.now()+43200000,key]),
   statement(db,"INSERT INTO bw_payment_customers(user_id,provider,environment,customer_id) VALUES(?,'dodo',?,?) ON CONFLICT DO NOTHING",[row.user_id,row.environment,payment.customer.customer_id])
  ]);
@@ -117,7 +151,7 @@ export async function unwrapWebhook(body,headers,env){
  return event;
 }
 export async function receiveEvent(db,env,event,eventId){
- if(!['payment.succeeded','payment.failed','payment.cancelled','payment.processing','refund.succeeded','refund.failed','dispute.opened','dispute.expired','dispute.accepted','dispute.cancelled','dispute.challenged','dispute.won','dispute.lost'].includes(event.type))return false;
+ if(!paymentEvents.includes(event.type))return false;
  const resource=event.data?.payment_id;
  if(event.business_id!==env.DODO_BUSINESS_ID||!providerId(resource,'pay')||!eventId||eventId.length>200)throw Error('invalid_event');
  await run(db,"INSERT INTO bw_webhooks(id,type,resource_id,provider,environment) VALUES(?,?,?,'dodo',?) ON CONFLICT(id) DO NOTHING",[reference(env,eventId),event.type,resource,paymentEnvironment(env)]);return true;

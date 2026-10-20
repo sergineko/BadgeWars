@@ -1,8 +1,8 @@
 # BadgeWars
 
-SaaS ES/EN de badges SVG dinámicos por API, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.11.0.
+SaaS ES/EN de badges SVG dinámicos por API, rankings independientes y colección privada. Frontend ESM sin framework, Worker de Cloudflare y una **D1 dedicada** a BadgeWars. Versión 0.11.1.
 
-**Lanzamiento:** [cinco bloques y criterios de cierre](docs/review-and-launch.md#plan-de-lanzamiento-cinco-bloques) · [consulta enviada a Freemius](docs/freemius-model-review.md) · [revisión de Dodo y precedente de Outbid](docs/dodo-model-review.md). Los cobros públicos permanecen desactivados hasta completar la aceptación del modelo y las verificaciones de producción.
+**Lanzamiento:** [cinco bloques y criterios de cierre](docs/review-and-launch.md#plan-de-lanzamiento-cinco-bloques) · [consulta enviada a Freemius](docs/freemius-model-review.md) · [revisión de Dodo y precedente de Outbid](docs/dodo-model-review.md). Dodo ya está aprobado. Los cobros públicos permanecen desactivados por decisión del titular hasta su autorización de lanzamiento. [Preparación y activación Live](docs/dodo-live-activation.md).
 
 ## Desarrollo
 
@@ -26,7 +26,7 @@ pnpm exec wrangler deploy --dry-run --outdir .wrangler/build
 
 ## Modelo actual
 
-- Un saldo de BadgeCredits (BC) para funciones del software: 1 USD o 1 EUR de precio base adquiere 1 BC. Recargas enteras desde 5; impuestos y total mostrados por Dodo Payments. Sin valor monetario externo, canje por efectivo, cashback, retiradas, transferencias ni pagos a titulares. Derechos obligatorios protegidos.
+- Un saldo de BadgeCredits (BC) para funciones del software: **1 BC = 1 EUR de precio base**, con pago en las monedas admitidas por Dodo mediante Adaptive Currency. Recargas enteras desde 5 BC; conversión, comisiones, impuestos y total mostrados por Dodo Payments. Sin valor monetario externo, canje por efectivo, cashback, retiradas, transferencias ni pagos a titulares. Derechos obligatorios protegidos.
 - Apex Flex: temporadas independientes desde 1 BC; la primera permanece abierta sin fecha de cierre. El cierre guarda posiciones inmutables y cada temporada adquirida conserva su SVG e identidad. Bait parte de 5 BC. En ambos, el mínimo competitivo supera al líder en 1 BC y renovar consume la diferencia frente al nivel propio (de esa temporada en Flex). Dos intentos del mismo nivel: gana el primero confirmado atómicamente; el segundo conserva íntegro su saldo, sin cargo ni devolución posterior.
 - Build Funded: adquisición personal única de 50 BC, sin límite de unidades, transferencias ni renovaciones. El directorio muestra titulares y fecha de adquisición.
 - Trust Bag: activación 20 BC. Otras cuentas aportan desde 1 BC por punto, sin límite de producto al total. Ranking exacto, incluso fuera de la precisión de Number. La lista de contribuidores es privada y su titular decide publicar de cero a cinco alias.
@@ -50,9 +50,9 @@ La caché de la API pública y del render interno de Trust Bag es corta (15 s, m
 
 ## Pagos y límites de lanzamiento
 
-Dodo Payments es el único proveedor de pagos integrado. SDK oficial **2.55.0**, `checkoutSessions.create`, productos fijos EUR/USD y verificación criptográfica mediante `webhooks.unwrap`. Inbox durable, comprobación autoritativa del pago, idempotencia y recuperación por cron; D1 sigue siendo la única autoridad del saldo. Volver del checkout no acredita nada y recargar nunca compra un badge automáticamente. Reembolsos y disputas congelan la cuenta cuando procede; el saldo gastable nunca es negativo. No hay retirada ni devolución monetaria automática desde la app. [Migración, arquitectura, pruebas y configuración pendiente](docs/dodo-migration.md).
+Dodo Payments es el único proveedor de pagos integrado. SDK oficial **2.55.0**, `checkoutSessions.create`, un producto de referencia EUR con Adaptive Currency y verificación criptográfica mediante `webhooks.unwrap`. Inbox durable, comprobación autoritativa del pago, idempotencia y recuperación por cron; D1 sigue siendo la única autoridad del saldo. Volver del checkout no acredita nada y recargar nunca compra un badge automáticamente. Reembolsos y disputas congelan la cuenta cuando procede; el saldo gastable nunca es negativo. No hay retirada ni devolución monetaria automática desde la app. [Migración, arquitectura, pruebas y configuración pendiente](docs/dodo-migration.md).
 
-La verificación de Dodo se envió el **19 de octubre de 2026** tras corregir y guardar la descripción del producto y su parte técnica. El panel confirma revisión en curso, con plazo orientativo de hasta 72 horas; no se ha recibido una aprobación comercial. El código exige entorno/key coherentes, productos, webhook, Turnstile y una referencia real en `DODO_LIVE_APPROVAL_REFERENCE` antes de permitir cobros live. **Los cobros públicos permanecen desactivados**; el modo test se ha verificado con compras simuladas reales, webhook, facturas, emails y portal; falta la activación live tras aprobación.
+La verificación de Dodo, enviada el 19 de octubre, está **aprobada** según el titular y el panel consultado el **20 de octubre de 2026**: producto, identidad y banco aprobados. Catálogo, clave y webhook Live instalados y verificados, con `DODO_CHECKOUT_ENABLED=false`. El código exige entorno/key coherentes, productos, firma, Turnstile, referencia auténtica de aprobación y el interruptor explícito `true` antes de permitir nuevas recargas Live. **Los cobros públicos permanecen desactivados**; quedan la autorización de lanzamiento, activar el interruptor y comprobar una compra real con su abono y documentos definitivos. El circuito test, incluidas facturas, emails y portal, ya está comprobado. [Procedimiento y estado](docs/dodo-live-activation.md).
 
 Ese mismo día se envió a Freemius una consulta del modelo completo, destacando la adquisición de un badge SVG personal actualizado por endpoint/API e incrustable en cualquier web con URL estable. El formulario confirmó la presentación; la respuesta comercial sigue pendiente. No se ha integrado ni contratado Freemius; [consulta y estado](docs/freemius-model-review.md).
 
@@ -60,7 +60,7 @@ La revisión del Word se documenta en [docs/payments-and-operations.md](docs/pay
 
 ## Preparación del despliegue
 
-Consultar [plan A–E](docs/review-and-launch.md), [pagos Dodo](docs/dodo-migration.md), [OAuth](docs/oauth-cloudflare.md) y [D1](docs/migration-d1.md). Worker publicado en [badgewars.com](https://badgewars.com), con trece migraciones D1, KV inicializado, cron y accesos sociales probados. [Operación y recuperación](docs/operations-runbook.md): alertas agregadas, cuotas de solo lectura, monitor externo y restauración aislada comprobados en el [bloque C](docs/block-c-verification.md). Workers Free se conserva; correo/contraseña y cobros públicos siguen desactivados. [Activación del correo](docs/email-auth-and-domain.md).
+Consultar [plan A–E](docs/review-and-launch.md), [pagos Dodo](docs/dodo-migration.md), [OAuth](docs/oauth-cloudflare.md) y [D1](docs/migration-d1.md). Worker publicado en [badgewars.com](https://badgewars.com), con catorce migraciones D1, KV inicializado, cron y accesos sociales probados. [Operación y recuperación](docs/operations-runbook.md): alertas agregadas, cuotas de solo lectura, monitor externo y restauración aislada comprobados en el [bloque C](docs/block-c-verification.md). Workers Free se conserva; correo/contraseña y cobros públicos siguen desactivados. [Activación del correo](docs/email-auth-and-domain.md).
 
 Las pruebas de pagos Dodo en test mode, webhooks firmados, SVG, portal y facturas se documentan en [verificación Dodo](docs/dodo-test-verification.md). La [adaptación legal ES/EN r9](docs/block-d-legal-review.md) explica las cuentas en revisión. El [expediente fiscal](docs/legal-tax-handover.md) y el [registro de tratamientos](docs/privacy-register.md) están preparados para completar la validación del titular. El soporte será por email y vía postal, sin teléfono. Las credenciales, bases de QA, exportaciones, facturas y capturas permanecen fuera de Git.
 

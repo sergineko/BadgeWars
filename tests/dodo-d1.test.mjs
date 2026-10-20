@@ -26,13 +26,13 @@ test('D1 rejects new payment rows from an unsupported provider or unspecified en
 test('Dodo fixed-price packs preserve consents, quantity, currency and idempotency without minting on redirect',async()=>{
  const previous=globalThis.fetch,{db,user,id,state}=await fixture();try{
   const call=state.calls.find(c=>c.path==='/checkouts'),body=JSON.parse(call.init.body);
-  assert.deepEqual(body.product_cart,[{product_id:product,quantity:15}]);assert.equal(body.billing_currency,'EUR');assert.equal(body.feature_flags.allow_currency_selection,false);assert.equal(body.feature_flags.allow_discount_code,false);assert.equal(body.metadata.credits,'15');assert.equal(body.metadata.environment,'test_mode');assert.equal(new Headers(call.init.headers).get('Idempotency-Key'),'dodo:test_mode:'+id);
+  assert.deepEqual(body.product_cart,[{product_id:product,quantity:15}]);assert.equal(body.billing_currency,undefined);assert.equal(body.feature_flags.allow_currency_selection,true);assert.equal(body.metadata.base_currency,'EUR');assert.equal(body.metadata.base_amount,'1500');assert.equal(body.feature_flags.allow_discount_code,false);assert.equal(body.metadata.credits,'15');assert.equal(body.metadata.environment,'test_mode');assert.equal(new Headers(call.init.headers).get('Idempotency-Key'),'dodo:test_mode:'+id);
   assert.equal(wallet(db,user).balance,0);await createTopup(db,env,input,user,id);assert.equal(state.calls.filter(c=>c.path==='/checkouts').length,1);
   const row=db.sqlite.prepare('SELECT * FROM bw_topups').get();assert.equal(row.provider,'dodo');assert.equal(row.immediate_delivery,1);assert.equal(row.adult_confirmed,1);assert.equal(JSON.parse(row.terms_snapshot).merchantOfRecord.name,'Dodo Payments');
   for(const bad of [{credits:4},{credits:5.5},{accepted:false},{immediateDelivery:false},{adultConfirmed:false},{termsVersion:'old'}])await assert.rejects(createTopup(db,env,{...input,...bad},user,crypto.randomUUID()),/invalid_topup/);
   await assert.rejects(createTopup(db,env,{...input,credits:16},user,id),/idempotency_conflict/);
   assert.equal(paymentsReady(env),true);assert.equal(paymentsReady({...env,DODO_PAYMENTS_ENVIRONMENT:'live_mode'}),false);assert.equal(paymentsReady({...env,DODO_PAYMENTS_ENVIRONMENT:'typo'}),false);
-  const live={...env,DODO_PAYMENTS_ENVIRONMENT:'live_mode',DODO_PAYMENTS_API_KEY:'dodo_live_verified_key'};assert.equal(paymentsReady(live),false);assert.equal(paymentsReady({...live,DODO_LIVE_APPROVAL_REFERENCE:'written decision 123'}),true);
+  const live={...env,DODO_PAYMENTS_ENVIRONMENT:'live_mode',DODO_PAYMENTS_API_KEY:'dodo_live_verified_key',DODO_CHECKOUT_ENABLED:'true'};assert.equal(paymentsReady(live),false);assert.equal(paymentsReady({...live,DODO_LIVE_APPROVAL_REFERENCE:'written decision 123'}),true);
  }finally{db.close();globalThis.fetch=previous;}
 });
 test('misconfigured products cannot create discounted, FX or pay-what-you-want topups',async()=>{
@@ -46,7 +46,7 @@ test('only authoritative matching successful Dodo payments credit once; webhooks
   state.payment.status='processing';await reconcilePayment(db,env,paymentId);assert.equal(wallet(db,user).balance,0);
   state.payment.status='succeeded';await reconcilePayment(db,env,paymentId);await reconcilePayment(db,env,paymentId);assert.equal(wallet(db,user).balance,15);
   assert.equal(db.sqlite.prepare('SELECT reference FROM bw_ledger').get().reference,'dodo:test_mode:'+paymentId);
-  for(const extra of [{business_id:'bus_foreign'},{currency:'USD'},{total_amount:1500},{product_cart:[{product_id:product,quantity:14}]},{checkout_session_id:'cks_foreign'},{discount_id:'dis_discount'},{subscription_ids:['sub_recurring']},{customer:{customer_id:'bad'}},{metadata:{...state.payment.metadata,user_id:'foreign'}}]){state.payment=makePayment(user,id,extra);await assert.rejects(reconcilePayment(db,env,paymentId),/payment_mismatch/);assert.equal(wallet(db,user).balance,15);}
+  for(const extra of [{business_id:'bus_foreign'},{currency:'XXX!'},{total_amount:1500},{product_cart:[{product_id:product,quantity:14}]},{checkout_session_id:'cks_foreign'},{discount_id:'dis_discount'},{subscription_ids:['sub_recurring']},{customer:{customer_id:'bad'}},{metadata:{...state.payment.metadata,user_id:'foreign'}}]){state.payment=makePayment(user,id,extra);await assert.rejects(reconcilePayment(db,env,paymentId),/payment_mismatch/);assert.equal(wallet(db,user).balance,15);}
   state.payment=makePayment(user,id);const event={business_id:business,type:'payment.succeeded',data:{payment_id:paymentId}};
   await receiveEvent(db,env,event,'event_one');await receiveEvent(db,env,event,'event_one');assert.equal(db.sqlite.prepare('SELECT count(*) n FROM bw_webhooks').get().n,1);await processEvents(db,env);assert.equal(db.sqlite.prepare('SELECT state FROM bw_webhooks').get().state,'complete');
   await assert.rejects(receiveEvent(db,env,{...event,business_id:'bus_other'},'bad'),/invalid_event/);

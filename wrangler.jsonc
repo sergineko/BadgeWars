@@ -37,12 +37,15 @@
     "EMAIL_AUTH_ENABLED": "false",
     "EMAIL_FROM": "no-reply@badgewars.com",
     "AUTH_PROVIDERS": "google,github",
-    "DODO_PAYMENTS_ENVIRONMENT": "test_mode",
+    "DODO_PAYMENTS_ENVIRONMENT": "live_mode",
+    "DODO_CHECKOUT_ENABLED": "false",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFbguuCDX9yAntxz",
     "OPS_EMAIL_TO": "smorgarc@sergiotech.es",
     "OPS_EMAIL_FROM": "support@badgewars.com",
     "CF_ACCOUNT_ID": "93d96c1211328e81e46cb2bc8af30d47",
-    "MAINTENANCE_MODE": "false"
+    "MAINTENANCE_MODE": "false",
+    "DODO_BUSINESS_ID": "bus_0Nq2W1t4evUWwRbmuQ0YT",
+    "DODO_PRODUCT_ID_EUR": "pdt_0NqACN2zz8xE9mJa7W70K"
   },
   "kv_namespaces": [
     {

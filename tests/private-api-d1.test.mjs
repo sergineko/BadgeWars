@@ -86,6 +86,19 @@ test('publishing new terms preserves accepted historical confirmations and rejec
  }finally{ctx.env.DB.close();}
 });
 
+test('private top-up confirmations distinguish the EUR reference from the actual foreign charge without impersonating a tax invoice',async()=>{
+ const ctx=await setup();try{
+  const id=crypto.randomUUID();
+  ctx.env.DB.sqlite.prepare("INSERT INTO bw_topups(id,user_id,credits,currency,product_id,terms_version,terms_snapshot,provider,environment,pricing_model) VALUES(?,?,5,'eur','pdt_fx',?,?,'dodo','test_mode','eur_fx_v1')").run(id,ctx.user,TERMS_VERSION,JSON.stringify(termsDocument()));
+  ctx.env.DB.sqlite.prepare("INSERT INTO bw_orders(id,topup_id,user_id,credits,amount,currency,checkout_id,product_id,provider,environment,external_id,charged_currency,charged_total,charged_tax) VALUES('dodo:test_mode:pay_fx',?,?,5,500,'eur','cks_fx','pdt_fx','dodo','test_mode','pay_fx','JPY',924,0)").run(id,ctx.user);
+  const response=await call(ctx,'/api/me/confirmation/'+id),document=await response.json();
+  assert.equal(response.status,200);assert.equal(document.isTaxInvoice,false);
+  assert.equal(document.currency,'eur');assert.equal(document.currencyRole,'base_reference');
+  assert.deepEqual(document.charge,{currency:'JPY',total_minor_units:924,tax_minor_units:0});
+  assert.equal((await call(ctx,'/api/me/confirmation/'+id,'GET',undefined,{Cookie:''})).status,401);
+ }finally{ctx.env.DB.close();}
+});
+
 test('Dodo billing portals are restricted to customer ids owned by the signed-in account and current mode',async()=>{
  const previous=globalThis.fetch,ctx=await setup();try{
   Object.assign(ctx.env,dodoEnv);let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({link:'https://test.customer.dodopayments.com/session/mine'});};

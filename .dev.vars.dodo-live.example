@@ -1,0 +1,11 @@
+# Copy to .dev.vars.dodo-live (ignored). Never use test IDs or credentials here.
+APP_URL=https://badgewars.com
+DODO_PAYMENTS_ENVIRONMENT=live_mode
+DODO_CHECKOUT_ENABLED=false
+DODO_LIVE_APPROVAL_REFERENCE=replace_with_actual_approval_reference
+DODO_BUSINESS_ID=bus_replace
+DODO_PRODUCT_ID_EUR=pdt_replace_eur
+DODO_PAYMENTS_API_KEY=replace_with_live_api_key
+DODO_PAYMENTS_WEBHOOK_KEY=whsec_replace
+# Used only by the private read-only preflight; no secret itself.
+DODO_WEBHOOK_ID=replace_with_permanent_live_webhook_id

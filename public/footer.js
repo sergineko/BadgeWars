@@ -1,0 +1,4 @@
+import {legalRoutes} from './legal.js';
+export function footerHtml(t,home,legalKeys){
+ return `<div class="footer-about"><a class="brand footer-brand" href="${home}" aria-label="BadgeWars"><span class="brand-icon" aria-hidden="true">✣</span><span class="footer-wordmark">badge<b>wars</b></span></a><p>${t('footer')}</p></div><div class="footer-details"><nav class="legal-footer" aria-label="${t('legalNav')}">${legalRoutes.map(path=>`<a class="text-link" href="${path}">${t(legalKeys[path][1])}</a>`).join('')}</nav><p class="footer-payment">${t('paymentNote')}</p></div>`;
+}

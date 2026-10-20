@@ -1,6 +1,6 @@
 {
   "name": "badgewars",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "check": "node scripts/check.mjs",
     "gallery": "node scripts/badge-gallery.mjs",
     "readiness": "node scripts/readiness.mjs",
+    "payments:preflight": "node scripts/dodo-launch.mjs",
     "db:migrate:local": "wrangler d1 migrations apply badgewars --local",
     "db:migrate:remote": "wrangler d1 migrations apply badgewars --remote",
     "dev:worker": "wrangler dev"

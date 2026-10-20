@@ -1,6 +1,6 @@
 # Revisión del modelo de BadgeWars por Dodo Payments
 
-Estado del **19 de octubre de 2026**: **verificación enviada; Dodo revisa los datos**. El panel muestra un plazo orientativo de hasta 72 horas. Producto y datos bancarios figuran registrados e identidad aprobada; no hay aceptación comercial del modelo ni cobros live habilitados. [Migración publicada y pruebas](dodo-migration.md) · [pendientes](review-and-launch.md#tabla-de-pendientes).
+Estado consultado el **20 de octubre de 2026**: **verificación completa y aprobada**. El titular confirmó el resultado y el panel muestra producto, identidad y cuenta bancaria aprobados. Los cobros públicos siguen deshabilitados por decisión del titular; no se confunde la aprobación de Dodo con el alta fiscal ni con el lanzamiento. [Preparación y activación](dodo-live-activation.md) · [plan A–E](review-and-launch.md).
 
 ## Presentación comprobada
 
@@ -14,8 +14,8 @@ Estado del **19 de octubre de 2026**: **verificación enviada; Dodo revisa los d
 | Revisión de contenido | Se corrigieron y guardaron las dos descripciones del producto y flujo técnico, incluidas las cinco familias, precios BC, posiciones pagadas, apoyos, ausencia de pagos a titulares y pruebas externas pendientes. |
 | URLs | Web normalizada a badgewars.com. Se conservó el perfil profesional que ya había facilitado el titular. |
 | Último envío | El titular confirmó personalmente el destino bancario y pulsó el envío final. Después se comprobó el estado de revisión en el panel. |
-| Resultado visible | «Estamos revisando tus datos». Producto: Registrado; información personal: Aprobado; verificación bancaria: Registrado. |
-| Decisión / referencia | Pendiente. No se mostró una aprobación comercial ni número de expediente. |
+| Resultado visible | «La verificación está completa». Información del producto, información personal y verificación bancaria: **Aprobado**. |
+| Decisión / referencia | Aprobación observada en el panel de BadgeWars el 20/10/2026 y confirmada por el titular. No se inventa un número de expediente ni una respuesta individual de Compliance. |
 | Correo o chat de Compliance | No se envió una consulta adicional por correo ni se obtuvo respuesta humana por chat. La presentación efectiva fue el formulario de verificación. |
 
 Evidencia local excluida de Git: `artifacts/dodo-verification-submitted-2026-10-19.png`. No publicar IBAN, documentos de identidad, teléfono, capturas bancarias ni credenciales. La ficha comercial y técnica incluida debajo no contiene esos datos.
@@ -39,6 +39,8 @@ BadgeWars is a hosted software service (SaaS) for gamification and API-based pro
 ## Flujo comercial y técnico guardado
 
 ```text
+**Historical description submitted for review; the pricing paragraph below records that submission. Current pricing since 21 October 2026 uses one EUR reference product with Adaptive Currency, as documented in [the FX report](dodo-fx-verification.md). It has not been represented as a separate new approval.**
+
 Customers sign in through Google or GitHub. Email/password is implemented locally but disabled in production pending CPU plan and transactional-email activation. Dodo will process one-time BC purchases: minimum 5 BC; EUR 1 or USD 1 base price buys 1 BC, with tax and final total displayed before payment. Both currencies feed one internal balance with no programmed expiry. We use two allowlisted fixed-price products (EUR/USD), each representing one BC, with quantity selected server-side. Currency changes, discounts and editable prices are disabled.
 
 After a signed payment.succeeded notification, our Cloudflare Worker re-fetches the authoritative payment using the Dodo SDK. It checks business, environment, metadata/account reference, product, quantity, currency, pre-tax amount and checkout session before crediting BC exactly once in Cloudflare D1. A browser return never credits the account. Customers separately confirm the badge action and its BC cost. Atomic D1 validation/debit prevents double spending and conflicting claims. A durable webhook inbox and scheduled reconciliation handle retries and missed events. Refunds/disputes are reconciled, accounts can be frozen for review, and negative balances cannot be spent. Money is never paid out to a badge holder.
@@ -58,7 +60,7 @@ Integration is implemented with the official Dodo SDK and tested locally against
 
 ## Siguiente paso
 
-Esperar la decisión o los requerimientos de Dodo. Su plazo de hasta 72 horas no es una garantía de resolución. No activar recargas hasta completar productos, claves, webhook, Turnstile, pruebas reales de test mode y aceptación comercial. No se usa una aprobación de otro proveedor como `DODO_LIVE_APPROVAL_REFERENCE`.
+La decisión favorable ya se ha recibido. Preparar catálogo, clave y webhook Live manteniendo las recargas bloqueadas; habilitarlas únicamente cuando el titular autorice el lanzamiento. [Estado y secuencia](dodo-live-activation.md). La referencia de aprobación procede del panel de Dodo, no de otro proveedor.
 
 ## Verificación técnica posterior al envío
 

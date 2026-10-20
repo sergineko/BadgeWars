@@ -1,0 +1,11 @@
+.site-footer{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);align-items:start;gap:32px 64px;padding:36px 5%;font-size:12px;line-height:1.7}
+.site-footer .footer-about,.site-footer .footer-details{min-width:0}
+.site-footer .footer-brand{display:inline-flex;flex-shrink:0;flex-wrap:nowrap;gap:8px;white-space:nowrap;font-size:23px;line-height:1.2;margin-bottom:14px;letter-spacing:-1px}
+.site-footer .footer-brand .brand-icon{font-size:31px;margin:0;line-height:1}
+.site-footer .brand>.footer-wordmark{color:#ded8e8}.site-footer .footer-wordmark b{color:var(--accent);font-weight:inherit}
+.site-footer p{margin:0;color:#9b92a7;font-size:12px;line-height:1.8}
+.site-footer nav.legal-footer{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px 22px;padding:0;margin:0 0 18px;background:none;border:0;border-radius:0}
+.site-footer .legal-footer a.text-link{display:inline-flex;white-space:nowrap;padding:0;border-radius:0;color:#c2b8cf;font-size:12px;line-height:1.7}
+.site-footer .legal-footer a:hover{color:var(--accent)}.site-footer .legal-footer a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+.site-footer .footer-payment{text-align:right;font-size:11px;color:#91889c}
+@media(max-width:800px){.site-footer{grid-template-columns:minmax(0,1fr);gap:25px;padding:30px 5%}.site-footer .footer-about p{max-width:380px}.site-footer nav.legal-footer{justify-content:flex-start;margin-bottom:14px;gap:12px 20px}.site-footer .footer-payment{text-align:left}}

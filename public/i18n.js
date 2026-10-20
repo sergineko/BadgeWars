@@ -138,8 +138,8 @@ const copy={
   "No cash redemption, transfers or cashback. No voluntary top-up refunds except for a charge not correctly credited with no subsequent use, subject to review. Mandatory rights and Dodo Payments decisions remain protected."
  ],
  "walletRate": [
-  "1 USD o 1 EUR de precio base compra 1 BC para funciones del software. Un único saldo, sin decimales.",
-  "1 USD or 1 EUR of base price buys 1 BC for software features. One balance, whole credits only."
+  "1 BC tiene un precio base de 1 €. Puedes pagar en las monedas disponibles en Dodo con su conversión. Un único saldo, sin decimales.",
+  "The base price of 1 BC is €1. Pay in the currencies available through Dodo at its conversion rate. One balance, whole credits only."
  ],
  "topupDodo": [
   "Comprar créditos con Dodo Payments",
@@ -1101,8 +1101,8 @@ const copy={
   "Activate your bag"
  ],
  "activationAmount": [
-  "Activación (USD)",
-  "Activation (USD)"
+  "Activación (BC)",
+  "Activation (BC)"
  ],
  "activateBag": [
   "Crear mi bolsa",
@@ -1417,8 +1417,8 @@ const copy={
   "The minimum top-up is 5 BC. Whole numbers only."
  ],
  "walletTax": [
-  "Dodo Payments es el vendedor de la recarga y emite la factura. Elige USD o EUR; el checkout muestra impuestos y total antes de pagar. Los créditos siempre son enteros.",
-  "Dodo Payments is the top-up seller and invoice issuer. Choose USD or EUR; checkout shows taxes and the total before payment. Credits are always whole numbers."
+  "Dodo Payments cobra y emite la factura. En su checkout puedes elegir entre las monedas disponibles: convierte el precio base en euros y muestra comisiones de conversión, impuestos y total antes de pagar. Los BC adquiridos no cambian por la moneda elegida.",
+  "Dodo Payments collects payment and issues the invoice. Choose from its available currencies at checkout: it converts the euro base price and shows conversion fees, taxes and the total before payment. The purchased BC quantity does not change with the selected currency."
  ],
  "walletConsent": [
   "He leído y acepto las reglas y condiciones de BadgeWars.",
@@ -1437,8 +1437,8 @@ const copy={
   "Account under payment review, including partial refunds with a positive balance. New use, top-ups and active SVGs are paused. Your collection and confirmations remain accessible. Contact support for human review; this is not a finding of fraud."
  ],
  "paymentsSetup": [
-  "Las recargas no están activadas. Faltan la configuración y la revisión del proveedor.",
-  "Top-ups are not enabled. Provider setup and review are still pending."
+  "Las recargas todavía no están disponibles.",
+  "Top-ups are not available yet."
  ],
  "topupAmount": [
   "Créditos a recargar · mínimo 5 BC",
@@ -1469,8 +1469,8 @@ const copy={
   "Too many requests. Please wait a moment."
  ],
  "pointRateMoney": [
-  "1 USD o 1 EUR de importe base compra 1 BC.",
-  "1 USD or 1 EUR of base price buys 1 BC."
+  "1 BC = 1 € de precio base. Pago en las monedas admitidas por Dodo, con conversión.",
+  "1 BC = €1 base price. Pay in Dodo-supported currencies with conversion."
  ],
  "termsOperator": [
   "Titular de la web y proveedor del servicio",

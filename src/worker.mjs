@@ -104,8 +104,9 @@ async function privateRoute(request,env,ctx){
  }
  if(url.pathname.startsWith('/api/me/confirmation/')){
   const id=url.pathname.split('/').pop();if(!uuid(id))return reply({error:'invalid_request'},400);
-  const topup=await first(db,'SELECT id,credits,currency,state,created_at,terms_version,terms_snapshot,immediate_delivery,adult_confirmed FROM bw_topups WHERE id=? AND user_id=?',[id,userId]);if(!topup)return reply({error:'not_found'},404);
-  const result=reply({...topup,terms_snapshot:JSON.parse(topup.terms_snapshot)});result.headers.set('Content-Disposition',`attachment; filename="badgewars-confirmation-${id}.json"`);return result;
+  const topup=await first(db,'SELECT id,credits,currency,pricing_model,state,created_at,terms_version,terms_snapshot,immediate_delivery,adult_confirmed FROM bw_topups WHERE id=? AND user_id=?',[id,userId]);if(!topup)return reply({error:'not_found'},404);
+  const charge=await first(db,'SELECT charged_currency AS currency,charged_total AS total_minor_units,charged_tax AS tax_minor_units FROM bw_orders WHERE topup_id=? AND user_id=?',[id,userId]);
+  const result=reply({...topup,isTaxInvoice:false,currencyRole:topup.pricing_model==='eur_fx_v1'?'base_reference':'fixed_price',charge:charge?.currency?charge:null,terms_snapshot:JSON.parse(topup.terms_snapshot)});result.headers.set('Content-Disposition',`attachment; filename="badgewars-confirmation-${id}.json"`);return result;
  }
  if(url.pathname==='/api/me/quote'){
   if(!catalog.some(b=>b.id===url.searchParams.get('badge')))return reply({error:'invalid_badge'},400);
@@ -149,6 +150,7 @@ export default {
   const url=new URL(request.url),path=url.pathname;
   try{
    if(path==='/api/health'&&request.method==='GET')return serviceHealth(env);
+   if(path==='/api/payments/status'&&request.method==='GET')return json({provider:'dodo',environment:paymentEnvironment(env),topupsEnabled:paymentsReady(env),minimumCredits:5,baseCurrency:'EUR',baseMinorUnitsPerCredit:100,billingCurrency:'adaptive'});
    // Recovery pauses financial delivery and public projections. Signed incoming
    // webhooks remain durable so they can be reconciled after recovery.
    if(env.MAINTENANCE_MODE==='true'&&(path.startsWith('/badges/')||path==='/api/arena'||(['/api/wallet/topup','/api/wallet/spend','/api/checkout','/api/me/refund-request'].includes(path)&&request.method==='POST')))return Response.json({error:'maintenance'},{status:503,headers:{'Cache-Control':'no-store','Retry-After':'300'}});

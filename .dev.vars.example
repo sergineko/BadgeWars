@@ -13,11 +13,14 @@ GITHUB_CLIENT_SECRET=replace
 TURNSTILE_SITE_KEY=replace
 TURNSTILE_SECRET_KEY=replace
 DODO_PAYMENTS_ENVIRONMENT=test_mode
+# Live always requires an explicit true. Keep false until the owner authorizes launch.
+# This only pauses NEW checkouts; signed webhooks and existing billing remain active.
+DODO_CHECKOUT_ENABLED=false
 # Dashboard keys may be opaque: always select and verify the environment explicitly.
 DODO_PAYMENTS_API_KEY=replace_with_test_mode_api_key
 DODO_BUSINESS_ID=bus_replace
-# Two fixed-price products: 1 BC at 100 minor units, tax exclusive, no discounts/PPP.
-DODO_PRODUCT_ID_USD=pdt_replace_usd
+# One EUR base product: 1 BC = EUR 1, tax exclusive, no discounts/PPP.
+# Adaptive Currency handles the supported charge currencies at Dodo checkout.
 DODO_PRODUCT_ID_EUR=pdt_replace_eur
 DODO_PAYMENTS_WEBHOOK_KEY=whsec_replace
 # Only a real written acceptance of the complete model enables live checkout.

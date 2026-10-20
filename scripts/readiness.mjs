@@ -3,7 +3,7 @@ import {operatorReady} from '../public/terms.js';
 import {apiKeyReady} from '../src/dodo.mjs';
 const config=JSON.parse(await readFile('wrangler.jsonc','utf8'));
 const production=process.argv.includes('--production');
-let file='';try{file=await readFile(production?'.dev.vars.production':'.dev.vars','utf8');}catch{}
+let file='';for(const path of production?['.dev.vars.production','.dev.vars.dodo-live']:['.dev.vars'])try{file+='\n'+await readFile(path,'utf8');}catch{}
 const vars={...config.vars,...Object.fromEntries(file.split(/\r?\n/).filter(line=>/^[A-Z_]+=/.test(line)).map(line=>{const i=line.indexOf('=');return [line.slice(0,i),line.slice(i+1).replace(/^['"]|['"]$/g,'')];})),...process.env};
 const real=v=>Boolean(v&&!/replace|example|placeholder/i.test(v));
 const uuid=v=>/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(v||'');
@@ -20,14 +20,15 @@ const checks={
  'Presupuesto CPU para scrypt (requiere Paid)':config.compatibility_flags?.includes('nodejs_compat')&&config.limits?.cpu_ms>=1000,
  'Turnstile de producción (sin claves de prueba)':real(vars.TURNSTILE_SITE_KEY)&&real(vars.TURNSTILE_SECRET_KEY)&&!(/^[123]x0+/.test(vars.TURNSTILE_SITE_KEY)||/^[123]x0+/.test(vars.TURNSTILE_SECRET_KEY)),
  'Dodo entorno explícito':vars.DODO_PAYMENTS_ENVIRONMENT===(production?'live_mode':'test_mode'),
+ 'Recargas autorizadas explícitamente (false durante la preparación)':vars.DODO_CHECKOUT_ENABLED==='true',
  'Dodo API key (autenticación remota pendiente)':apiKeyReady(vars.DODO_PAYMENTS_API_KEY,production?'live_mode':'test_mode'),
  'Dodo negocio':/^bus_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_BUSINESS_ID||'')&&real(vars.DODO_BUSINESS_ID),
- 'Dodo productos USD/EUR':/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_USD||'')&&/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_EUR||'')&&real(vars.DODO_PRODUCT_ID_USD)&&real(vars.DODO_PRODUCT_ID_EUR),
+ 'Dodo producto base EUR':/^pdt_[A-Za-z0-9_-]{3,120}$/.test(vars.DODO_PRODUCT_ID_EUR||'')&&real(vars.DODO_PRODUCT_ID_EUR),
  'Dodo Standard Webhooks':real(vars.DODO_PAYMENTS_WEBHOOK_KEY),
  'Titular legal completo':operatorReady(vars),
  'Aceptación expresa del proveedor para producción':real(vars.DODO_LIVE_APPROVAL_REFERENCE)
 };
-console.log(production?'Configuración de producción (.dev.vars.production + wrangler).':'Configuración local (.dev.vars + wrangler).');
+console.log(production?'Configuración de producción (.dev.vars.production + .dev.vars.dodo-live + wrangler).':'Configuración local (.dev.vars + wrangler).');
 for(const [label,ok] of Object.entries(checks))console.log((ok?'OK':'PENDING')+'  '+label);
 console.log('NO VERIFICADO POR ESTE DIAGNÓSTICO: recursos/migraciones remotos, dominio, callbacks OAuth, contratos de tratamiento, pruebas externas, cron y aceptación comercial real. Ver el informe de verificación para las pruebas manuales ya realizadas.');
 console.log('Este diagnóstico no imprime secretos ni modifica recursos remotos. Ver docs/review-and-launch.md.');
