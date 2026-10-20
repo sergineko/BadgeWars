@@ -1,6 +1,6 @@
 const badges=['flex','bait','funded','quality','genesis'];
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-export const rankingPath=(metric,badge='flex')=>'/leaderboard/'+(metric==='trust'||badge==='quality'?'trust':badges.includes(badge)?badge:'flex');
+export const rankingPath=(metric,badge='flex',season='')=>'/leaderboard/'+(metric==='trust'||badge==='quality'?'trust':badges.includes(badge)?badge:'flex')+(badge==='flex'&&/^[a-z0-9-]{1,64}$/.test(season)?'/'+season:'');
 export function cleanHref(path='/',extra={}){
  const url=new URL(path,'https://badgewars.invalid');
  if(url.pathname==='/leaderboard')return url.hash==='#genesis-owners'?'/leaderboard/genesis':rankingPath(extra.metric,extra.badge);
@@ -24,9 +24,10 @@ export function routeState(value){
  if(support&&uuid.test(support[1]))params.set('support',support[1]);
  if(path==='/collection/demo')params.set('demo','1');
  if(path==='/collection/sign-in-error')params.set('auth','error');
- const rankingBadge=path==='/leaderboard/trust'?'quality':path.match(/^\/leaderboard\/(flex|bait|funded|genesis)$/)?.[1];
+ const season=path.match(/^\/leaderboard\/flex\/([a-z0-9-]{1,64})$/)?.[1]||'';
+ const rankingBadge=season?'flex':path==='/leaderboard/trust'?'quality':path.match(/^\/leaderboard\/(flex|bait|funded|genesis)$/)?.[1];
  const page=rankingBadge?'/leaderboard':['/collection','/collection/demo','/collection/sign-in-error','/account/email'].includes(path)?'/collection':(badge&&badges.includes(badge[1])||support&&uuid.test(support[1]))?'/':path;
- return {path,page,params,scroll,rankingBadge,metric:rankingBadge==='quality'?'trust':'bids'};
+ return {path,page,params,scroll,rankingBadge,season,metric:rankingBadge==='quality'?'trust':'bids'};
 }
 
 // Only ordinary application pages use client navigation. Auth, payments and

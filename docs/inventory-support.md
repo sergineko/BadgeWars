@@ -1,8 +1,8 @@
 # Inventario y Trust Bag en D1
 
-Aplicar únicamente las migraciones actuales `0001` a `0009` a la D1 dedicada. Las tablas son `bw_*`; las migraciones de PostgreSQL conservadas en `legacy/` no pertenecen al despliegue actual.
+Aplicar únicamente las migraciones actuales `0001` a `0014` a la D1 dedicada. Las tablas son `bw_*`; las migraciones de PostgreSQL conservadas en `legacy/` no pertenecen al despliegue actual.
 
-`bw_user_badges` tiene `UNIQUE(user_id,badge)` e ID estable. Renovar un badge competitivo sube su nivel y conserva URL, sin generar una segunda ficha. La colección privada muestra la situación vigente, incluida una suspensión con motivo y contacto; no lista badges históricos. El libro de operaciones conserva evidencia financiera interna.
+`bw_user_badges` conserva IDs estables y unicidad por cuenta/tipo, salvo Apex Flex, cuya unicidad es por cuenta/temporada. [Temporadas y Build Funded](badge-seasons.md). Renovar un badge competitivo sube su nivel y conserva URL, sin generar una segunda ficha. La colección privada muestra la situación vigente, incluida una suspensión con motivo y contacto; conserva todos los badges de temporadas finalizadas de Apex Flex, sin duplicar renovaciones. Build Funded solo admite una adquisición personal de 50 BC y su listado público muestra titular y fecha. El libro de operaciones conserva evidencia financiera interna.
 
 Activar Trust Bag cuesta 20 BC y no otorga puntos. El apoyo de otras cuentas consume desde 1 BC por punto; no hay autoapoyo ni pagos al titular. Cada contribuidor se agrupa por cuenta con su alias vigente y acumulado. La lista completa solo se consulta con la sesión del propietario. Por defecto publica cero alias; se pueden mostrar hasta cinco principales, sin emails ni cantidades individuales.
 

@@ -3,7 +3,7 @@ export function validCheckout(input,catalog){
  if(!badge||typeof input.owner!=='string'||!/^[A-Za-z0-9_]{2,24}$/.test(input.owner)||!Number.isSafeInteger(input.amount)||input.amount>100000000000||input.amount%100!==0)return false;
  const kind=input.kind||'claim';
  if(kind==='support')return badge.id==='quality'&&input.amount<=10000000&&input.amount>=100&&typeof input.targetId==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.targetId);
- return kind==='claim'&&!input.targetId&&input.amount>=badge.base&&(!['genesis','quality'].includes(badge.id)||input.amount===badge.base);
+ return kind==='claim'&&!input.targetId&&input.amount>=badge.base&&(!['genesis','quality','funded'].includes(badge.id)||input.amount===badge.base)&&(badge.id!=='flex'||typeof input.seasonId==='string'&&/^[a-z0-9-]{1,64}$/.test(input.seasonId));
 }
 export async function verifyChallenge(request,env,token,userId,action='wallet-topup'){
  if(!env.TURNSTILE_SECRET_KEY||typeof token!=='string'||token.length<10||token.length>2048||typeof userId!=='string'||!userId||typeof action!=='string'||!action)return false;

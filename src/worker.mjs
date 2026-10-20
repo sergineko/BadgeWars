@@ -5,7 +5,8 @@ import {authRoute,identity,privateJson,siteReturn,hash} from './auth.mjs';
 import {normalizedBadgeUrl} from './badge-url.mjs';
 import {primary,first,rows,run,throttle} from './db.mjs';
 import {uuid,collectionPage} from './collection.mjs';
-import {publicEntry,privateSupporters,setVisibility} from './inventory.mjs';
+import {publicEntry,inventoryEntry,privateSupporters,setVisibility} from './inventory.mjs';
+import {closeDueSeasons} from './seasons.mjs';
 import {personalEmbed} from './embed.mjs';
 import {trustState} from './trust-state.mjs';
 import {publish,publishDirty} from './projection.mjs';
@@ -40,7 +41,7 @@ function imageResponse(response,request,personal=false){
 async function snapshot(env){
  const states={};for(const b of catalog){const state=await env.BADGES.get(`badge:${b.id}`,'json');if(!state)throw Error('Projection not initialized');states[b.id]=state;}
  const rankings=catalog.flatMap(b=>(states[b.id].entries||[]).map(p=>publicEntry({...p,badge:b.name,badgeId:b.id})));
- return {demo:false,states:Object.fromEntries(Object.entries(states).map(([id,{entries,...value}])=>[id,{...value,...(id==='genesis'?{owner:null}:{}),claims:entries.map((entry,i)=>({...publicEntry(entry),rank:id==='genesis'?undefined:i+1}))}])),rankings};
+ return {demo:false,states:Object.fromEntries(Object.entries(states).map(([id,{entries,...value}])=>[id,{...value,...(['genesis','funded'].includes(id)?{owner:null}:{}),claims:entries.map(entry=>publicEntry(entry))}])),rankings};
 }
 async function svg(request,env,ctx){
  const url=normalizedBadgeUrl(request.url);if(!url)return json({error:'invalid_parameters'},400);
@@ -49,10 +50,18 @@ async function svg(request,env,ctx){
  if([...url.searchParams.keys()].some(k=>!['style','claim','lang'].includes(k))||[...url.searchParams.keys()].some(k=>url.searchParams.getAll(k).length>1)||(url.searchParams.has('style')&&url.searchParams.get('style')!=='compact')||(url.searchParams.has('lang')&&!['es','en'].includes(url.searchParams.get('lang'))))return json({error:'invalid_parameters'},400);
  const claim=url.searchParams.get('claim');if(url.searchParams.has('claim')&&!uuid(claim))return json({error:'invalid_purchase'},400);
  const compact=url.searchParams.get('style')==='compact',locale=url.searchParams.get('lang')||'en';
+ let personalState=null;
  if(claim){
   if(!env.DB)return json({error:'badge_status_unavailable'},503);
   let eligibility;
-  try{eligibility=await first(primary(env),'SELECT b.status,w.frozen,w.debt FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=? AND b.badge=?',[claim,id]);}
+  try{
+   if(['flex','funded'].includes(id)){
+    eligibility=await inventoryEntry(primary(env),claim);
+    if(eligibility?.seasonEndsAt&&eligibility.seasonStatus==='open'&&Date.parse(eligibility.seasonEndsAt)<=Date.now()){await closeDueSeasons(primary(env));eligibility=await inventoryEntry(primary(env),claim);}
+    if(eligibility?.badgeId!==id)eligibility=null;
+    if(eligibility){personalState=publicEntry(eligibility);personalState.revision=[personalState.updated_at,personalState.amount,personalState.owner,personalState.rank,personalState.seasonId,personalState.seasonStatus,personalState.showSeason].join(':');}
+   }else eligibility=await first(primary(env),'SELECT b.status,w.frozen,w.debt FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=? AND b.badge=?',[claim,id]);
+  }
   catch{return json({error:'badge_status_unavailable'},503);}
   if(!eligibility)return json({error:'purchase_not_found'},404);
   if(eligibility.status!=='active'||eligibility.frozen||eligibility.debt>0){
@@ -62,13 +71,13 @@ async function svg(request,env,ctx){
   }
  }
  const keyUrl=new URL(`${url.origin}/badges/${id}.svg`);if(compact)keyUrl.searchParams.set('style','compact');if(claim)keyUrl.searchParams.set('claim',claim);if(locale!=='en')keyUrl.searchParams.set('lang',locale);
- let state=id==='quality'?await trustState(request,env,ctx):null;
+ let state=personalState||(id==='quality'?await trustState(request,env,ctx):null);
  if(id==='quality'&&!state)return json({error:'projection_pending'},503);
- keyUrl.searchParams.set('render','6');if(id==='quality')keyUrl.searchParams.set('revision',String(state.revision));
+ keyUrl.searchParams.set('render','7');if(state)keyUrl.searchParams.set('revision',String(personalState?[state.updated_at,state.rank,state.seasonId,state.seasonStatus].join(':'):state.revision));
  const key=new Request(keyUrl),cached=await caches.default.match(key);if(cached)return imageResponse(cached,request,Boolean(claim));
  if(!state)state=await env.BADGES.get(`badge:${id}`,'json');if(!state)return json({error:'projection_pending'},503);
- if(claim){const index=state.entries.findIndex(p=>p.id===claim||p.aliases?.includes(claim));if(index===-1)return json({error:'purchase_not_found'},404);state={...publicEntry(state.entries[index]),revision:state.revision,rank:id==='genesis'?undefined:index+1};}
- else if(id==='genesis')state={...state,owner:null};
+ if(claim&&!personalState){const index=state.entries.findIndex(p=>p.id===claim||p.aliases?.includes(claim));if(index===-1)return json({error:'purchase_not_found'},404);state={...publicEntry(state.entries[index]),revision:state.revision};}
+ else if(['genesis','funded'].includes(id)&&!claim)state={...state,owner:null};
  const response=new Response(badgeSvg(id,state,compact,locale),{headers:{'Content-Type':'image/svg+xml; charset=utf-8','Cache-Control':`public, max-age=0, s-maxage=${id==='quality'?15:300}, must-revalidate`,'Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff','Content-Language':locale,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox",'ETag':`W/"v6-${id}-${state.id||'arena'}-${state.revision}-${compact}-${state.rank||0}-${locale}"`}});
  ctx.waitUntil(caches.default.put(key,response.clone()));return imageResponse(response,request,Boolean(claim));
 }
@@ -90,7 +99,7 @@ async function privateRoute(request,env,ctx){
  }
  if(url.pathname.startsWith('/api/me/action-confirmation/')){
   const id=url.pathname.split('/').pop();if(!uuid(id))return reply({error:'invalid_request'},400);
-  const action=await first(db,'SELECT a.id,a.badge,a.kind,a.level,a.cost,a.created_at,a.terms_version,a.execution_requested,a.withdrawal_acknowledged,t.document FROM bw_actions a JOIN bw_terms_documents t ON t.version=a.terms_version AND t.locale=a.terms_locale WHERE a.id=? AND a.user_id=?',[id,userId]);if(!action)return reply({error:'not_found'},404);
+  const action=await first(db,'SELECT a.id,a.badge,a.kind,a.level,a.cost,a.created_at,a.terms_version,a.execution_requested,a.withdrawal_acknowledged,coalesce(a.season_id,u.season_id) AS seasonId,t.document FROM bw_actions a JOIN bw_terms_documents t ON t.version=a.terms_version AND t.locale=a.terms_locale LEFT JOIN bw_user_badges u ON u.id=a.holder_id WHERE a.id=? AND a.user_id=?',[id,userId]);if(!action)return reply({error:'not_found'},404);
   const result=reply({...action,document:JSON.parse(action.document)});result.headers.set('Content-Disposition',`attachment; filename="badgewars-action-${id}.json"`);return result;
  }
  if(url.pathname.startsWith('/api/me/confirmation/')){
@@ -157,10 +166,10 @@ export default {
    if(badgeLink&&['GET','HEAD'].includes(request.method)){
     if(!uuid(badgeLink[1]))return json({error:'badge_not_found'},404);
     if(!env.DB)return json({error:'badge_status_unavailable'},503);
-    const row=await first(primary(env),'SELECT b.badge,b.status,w.frozen,w.debt FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=?',[badgeLink[1]]);
+    const row=await first(primary(env),'SELECT b.badge,b.status,b.season_id,w.frozen,w.debt,(SELECT count(*)>1 FROM bw_flex_seasons) AS show_season FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=?',[badgeLink[1]]);
     if(!row)return json({error:'badge_not_found'},404);
     const paused=row.status!=='active'||row.frozen||row.debt>0;
-    const destination=paused?'/collection':row.badge==='quality'?'/support/'+badgeLink[1]:'/badge/'+row.badge;
+    const destination=paused?'/collection':row.badge==='quality'?'/support/'+badgeLink[1]:row.badge==='flex'?'/leaderboard/flex'+(row.show_season?'/'+row.season_id:''):row.badge==='funded'?'/leaderboard/funded':'/badge/'+row.badge;
     return new Response(null,{status:302,headers:{Location:new URL(destination,env.APP_URL).href,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
    }
    if(path==='/api/dodo/webhook'&&request.method==='POST'){
@@ -190,7 +199,7 @@ export default {
    if(error.message==='refund_not_found')return privateJson({error:error.message},404);
    if(/^refund_/.test(error.message))return privateJson({error:error.message},409);
    if(error.message==='body_too_large')return privateJson({error:'body_too_large'},413);
-   const code=['insufficient_credits','price_changed','genesis_sold_out','already_owned_or_invalid_price','invalid_support','wallet_frozen_or_invalid','idempotency_conflict','invalid_topup','invalid_request','checkout_recovering','checkout_open','checkout_accepted','checkout_review','checkout_expired','wallet_frozen','payments_unavailable'].find(code=>String(error.message).includes(code));
+   const code=['season_closed','invalid_season','insufficient_credits','price_changed','genesis_sold_out','already_owned_or_invalid_price','invalid_support','wallet_frozen_or_invalid','idempotency_conflict','invalid_topup','invalid_request','checkout_recovering','checkout_open','checkout_accepted','checkout_review','checkout_expired','wallet_frozen','payments_unavailable'].find(code=>String(error.message).includes(code));
    if(code)return privateJson({error:code},code==='payments_unavailable'?503:code.startsWith('invalid')?400:409,error.cookies||[]);
    if(error instanceof SyntaxError)return json({error:'invalid_json'},400);
    console.error('BadgeWars operation failed',error.name);return privateJson({error:'operation_unavailable'},503,error.cookies||[]);
@@ -203,7 +212,7 @@ export default {
    await notifyOperations(db,env,'incidencias',operationSignals(status));await monitorQuota(db,env);return;
   }
   const startedAt=Date.now(),failed=[],publication=event.cron==='1-59/5 * * * *';
-  const jobs=publication?[['projections',publishDirty]]:[['webhooks',(db,env)=>processEvents(db,env,1)],['payments',(db,env)=>recoverTopups(db,env,{topups:1,orders:1})]];
+  const jobs=publication?[['seasons',closeDueSeasons],['projections',publishDirty]]:[['webhooks',(db,env)=>processEvents(db,env,1)],['payments',(db,env)=>recoverTopups(db,env,{topups:1,orders:1})]];
   if(env.MAINTENANCE_MODE!=='true')for(const [name,job]of jobs)try{await job(db,env);}catch{
    failed.push(name);console.error('BadgeWars scheduled stage failed',name);await recordIncident(db,'scheduled_stage_failed',name).catch(()=>{});
   }

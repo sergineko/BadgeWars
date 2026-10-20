@@ -1,10 +1,11 @@
 import {collectibleSvg} from './badge-art.js';
 import {pointsOf,formatPoints,shortPoints,trustTier} from './points.js';
 import {translate as tr,language} from './i18n.js';
+import {flexDesigns} from './seasons.js';
 export const catalog=[
  {id:'flex',name:'The Apex Flex',color:'#bf8aff',tag:'THE ORIGINAL',base:100,currency:'credits'},
  {id:'bait',name:'Don’t Click This',color:'#ff9565',tag:'PLEASE, DON’T',base:500,currency:'credits'},
- {id:'funded',name:'Build Funded',color:'#6fdbbc',tag:'BACK THE BUILD',base:5000,currency:'credits'},
+ {id:'funded',name:'Build Funded',color:'#6fdbbc',tag:'DEVELOPER',base:5000,currency:'credits'},
  {id:'quality',name:'Trust Bag',color:'#6dcafa',tag:'SUPPORT SHOWS',base:2000,currency:'credits'},
  {id:'genesis',name:'Genesis Edition',color:'#e6c17c',tag:'ONLY 10. EVER.',base:100000,currency:'credits'}
 ];
@@ -12,12 +13,13 @@ export const money=(cents,currency='usd',locale='en')=>currency==='credits'?new 
 export function escapeXml(value){return String(value).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]));}
 export function badgeSvg(id,state={},compact=false,locale='en'){
  const b=catalog.find(x=>x.id===id);if(!b)throw Error('Unknown badge');
- const t=key=>tr(language(locale),key),e=escapeXml,c=id==='quality'?trustTier(state).color:b.color,owner=state.owner?'@'+state.owner:t('svgUnclaimed');
+ const t=key=>tr(language(locale),key),e=escapeXml,c=id==='quality'?trustTier(state).color:id==='flex'?flexDesigns[state.seasonDesign||'apex-1']?.color||b.color:b.color,owner=state.owner?'@'+state.owner:t('svgUnclaimed');
  const amount=money(state.amount||0,state.currency||b.currency,locale),displayAmount=money(state.amount||b.base,state.currency||b.currency,locale);
  let subtitle=state.owner?`${owner} · ${t('svgPaid')} ${amount}`:t('svgSupporter');
- if(state.rank>1)subtitle=`${t('svgRank')} #${state.rank} · ${t('svgOvertaken')} · ${owner}`;
+ if(state.rank>1)subtitle=`${t('svgRank')} #${state.rank} · ${t(state.seasonStatus==='closed'?'finalRank':'svgOvertaken')} · ${owner}`;
  if(id==='bait')subtitle=state.owner?`${t('svgRuined')} ${owner} ${t('svgFor')} ${amount}`:t('svgUntouched');
- if(id==='funded')subtitle=state.owner?`${t('svgFunded')} ${owner} ${t('svgFor')} ${amount}`:t('svgREADME');
+ if(id==='funded')subtitle=state.owner?`${t('svgDeveloper')} · ${owner}`:t('developerBadge');
+ if(id==='flex'){if(state.showSeason)subtitle+=` · ${tr(locale,'seasonNumber',{n:state.seasonNumber||1})}`;if(state.seasonStatus==='closed')subtitle+=' · '+t('finalRank');}
  const trustPoints=pointsOf(state),supportAmount=tr(locale,'pointsValue',{n:shortPoints(trustPoints,locale)}),exactPoints=tr(locale,'pointsValue',{n:formatPoints(trustPoints,locale)}),supporters=Math.max(0,Number(state.supporterCount)||0),topSupporters=Array.isArray(state.topSupporters)?state.topSupporters.slice(0,5):[];
  if(id==='quality')subtitle=state.owner?`${owner} · ${exactPoints}${state.rank?' · '+t('trustPosition')+' #'+state.rank:''}`:t('svgBagReady');
  if(id==='genesis')subtitle=state.owner?`${t('svgOwner')} ${state.edition} ${t('svgOf')} 10 · ${owner}`:tr(locale,'svgGenesisCollection',{n:state.sold||0});

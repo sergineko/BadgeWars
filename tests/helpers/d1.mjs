@@ -1,11 +1,11 @@
 import {TERMS_VERSION} from '../../public/terms.js';
-export const consent={accepted:true,executionRequested:true,withdrawalAcknowledged:true,termsVersion:TERMS_VERSION};
+export const consent={accepted:true,executionRequested:true,withdrawalAcknowledged:true,termsVersion:TERMS_VERSION,seasonId:'apex-1'};
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
-export function createD1(path=':memory:'){
+export function createD1(path=':memory:',maxMigration=Infinity){
  const sqlite=new DatabaseSync(path);sqlite.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
  const db={sqlite,withSession(){return this;},prepare(sql){return {sql,args:[],bind(...args){return {...this,args};},_execute(){const s=sqlite.prepare(this.sql);if(s.columns().length)return {success:true,results:s.all(...this.args),meta:{changes:0}};const r=s.run(...this.args);return {success:true,results:[],meta:{changes:Number(r.changes)}};},async first(column){const row=this._execute().results[0];return column?row?.[column]??null:row??null;},async all(){return this._execute();},async run(){return this._execute();}};},async batch(statements){sqlite.exec('BEGIN IMMEDIATE');try{const result=statements.map(s=>s._execute());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}},async exec(sql){sqlite.exec(sql);},close(){sqlite.close();}};
- for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())sqlite.exec(readFileSync('migrations/'+file,'utf8'));
+ for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&Number(f.slice(0,4))<=maxMigration).sort()){sqlite.exec('BEGIN');try{sqlite.exec(readFileSync('migrations/'+file,'utf8'));sqlite.exec('COMMIT');}catch(error){sqlite.exec('ROLLBACK');throw error;}}
  return db;
 }
 export async function seedUser(db,{id=crypto.randomUUID(),credits=0,name='Collector'}={}){

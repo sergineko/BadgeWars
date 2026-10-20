@@ -8,7 +8,7 @@ export function collectibleSvg({id,state,uid,c,label,owner,displayAmount,support
  const star=(x,y,r=8,color='#fff')=>`<path d="M${x} ${y-r}Q${x} ${y} ${x+r} ${y}Q${x} ${y} ${x} ${y+r}Q${x} ${y} ${x-r} ${y}Q${x} ${y} ${x} ${y-r}Z" fill="${color}"/>`;
  let body='';
  if(id==='flex'){
-  const rank=state.owner?'#'+String(state.rank||1).padStart(2,'0'):'—';
+  const rank=state.owner&&(state.seasonStatus!=='closed'||state.rank)?'#'+String(state.rank||1).padStart(2,'0'):'—';
   body=`<rect x="17" y="24" width="566" height="242" rx="27" fill="#090510"/>
    <rect x="12" y="12" width="576" height="242" rx="27" fill="${p('holo')}" stroke="#e1ccff" stroke-width="1.5"/>
    <rect x="21" y="21" width="558" height="224" rx="21" fill="${p('purple')}" stroke="#e2d4ff" stroke-opacity=".35"/>
@@ -19,8 +19,8 @@ export function collectibleSvg({id,state,uid,c,label,owner,displayAmount,support
    <path d="M71 133L61 87l29 22 20-40 20 40 29-22-10 46Z" fill="${p('crown')}" stroke="#f4e5ff" stroke-width="2"/>
    <path d="M75 143h70m-61 10h52" stroke="#ddb2ff" stroke-width="3" stroke-linecap="round"/><path d="M90 110l20 20 20-20" fill="none" stroke="#fff" stroke-opacity=".65"/>
    ${star(62,54,10,'#dfff9d')}${star(164,170,8,'#eacfff')}${star(555,49,9,'#f9d5ff')}
-   ${mono(207,51,t('flexTag'),9,'#dfc6ff','letter-spacing="3"')}${text(204,91,'THE APEX FLEX',30,'#fff6ff','font-weight="800" letter-spacing="-.8"')}
-   ${text(207,116,t(state.rank>1?'svgOvertaken':state.owner?'svgCurrent':'svgSupporterShort'),12,'#d3b9e9')}
+   ${mono(207,51,(state.showSeason?tr(locale,'seasonNumber',{n:state.seasonNumber||1}).toUpperCase()+' / ':'')+t('flexTag'),9,'#dfc6ff','letter-spacing="2"')}${text(204,91,'THE APEX FLEX',30,'#fff6ff','font-weight="800" letter-spacing="-.8"')}
+   ${text(207,116,t(state.seasonStatus==='closed'?'finalRank':state.rank>1?'svgOvertaken':state.owner?'svgCurrent':'svgSupporterShort'),12,'#d3b9e9')}
    <rect x="205" y="136" width="88" height="48" rx="10" fill="#dfff94"/>
    ${mono(218,150,t('svgRank').toUpperCase(),7,'#293214','letter-spacing="1"')}${text(217,176,rank,fit(rank,65,25),'#20280d','font-weight="800"')}
    ${mono(313,148,t(state.owner?'svgPaid':'nextPrice').toUpperCase(),8,'#cfb5e3','letter-spacing="1.5"')}${text(313,179,displayAmount,fit(displayAmount,240,31),'#f9edff','font-weight="700" letter-spacing="-1"')}
@@ -55,11 +55,11 @@ export function collectibleSvg({id,state,uid,c,label,owner,displayAmount,support
    <rect x="22" y="63" width="556" height="179" rx="9" fill="#0d2821"/>
    <path d="M22 209h556" stroke="#b9efbd" stroke-opacity=".2"/><path d="M370 64v144" stroke="#b9efbd" stroke-opacity=".2"/>
    ${mono(41,88,'~/'+t('svgBuild'),9,'#82ba95','letter-spacing="1"')}${text(40,124,'BUILD FUNDED',29,'#e0ffcf','font-weight="800" letter-spacing="-1"')}
-   ${mono(42,150,'> npm run keep-building',11,'#8de6b4')}${mono(42,174,'✓ '+t('fundedCategory'),10,'#b7d3bb')}
+   ${mono(42,150,'> npm run keep-building',11,'#8de6b4')}${mono(42,174,'</> '+t('developerBadge'),10,'#b7d3bb')}
    <path d="M282 83l16-8 15 8v18l-15 9-16-9Z" fill="#a6ef8c" opacity=".15"/>
    <path d="M392 86h164v102H392Z" fill="${p('green')}"/>
    <path d="M408 111l-9 9 9 9m29-18 9 9-9 9m-12-23-5 28" fill="none" stroke="#17452b" stroke-width="2.5" stroke-linecap="round"/>
-   ${mono(454,124,'BUILD',9,'#1f4b30','letter-spacing="2"')}${text(474,169,displayAmount,fit(displayAmount,145,28),'#163823','font-weight="800" text-anchor="middle"')}
+   ${mono(454,124,'BUILD',9,'#1f4b30','letter-spacing="2"')}${text(474,169,'DEVELOPER',19,'#163823','font-weight="800" text-anchor="middle"')}
    <circle cx="44" cy="225" r="3" fill="#baff94"/>${text(56,230,owner,fit(owner,451,14),'#d5edcf','font-weight="600"')}${mono(555,229,'</>',13,'#8fae95','text-anchor="end"')}`;
  }else{
   const tier=trustTier(state),rank=state.owner&&Number.isInteger(state.rank)&&state.rank>0?'#'+String(state.rank).padStart(2,'0'):'—';

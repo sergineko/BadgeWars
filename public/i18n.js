@@ -1,4 +1,110 @@
 const copy={
+ "hallSingleNote":["Principales posiciones de Apex Flex. Cada modalidad mantiene su propio listado.","Top Apex Flex positions. Each badge has its own listing."],
+ "rankingClosed":["Clasificación cerrada","Leaderboard closed"],
+ "rankingEnds":["Cierre de la clasificación","Leaderboard closes"],
+ "flexSingleDescription":["Pon tu perfil en lo más alto. Empieza desde 1 BC y supera el nivel del líder para alcanzar el primer puesto.","Put your profile in the spotlight. Start from 1 BC and beat the leader’s level to take first place."],
+ "rankingSingleIntro":["Consulta la clasificación de Apex Flex, los niveles de Bait, el apoyo de la comunidad, los desarrolladores y las ediciones Genesis.","Explore Apex Flex standings, Bait levels, community support, developers and Genesis editions."],
+ "flexSingleRankingNote":["Una clasificación abierta desde 1 BC. Cada mejora consume solo la diferencia respecto al nivel que ya tienes.","One open leaderboard starting at 1 BC. Each upgrade costs only the difference from your existing level."],
+ "collectionSingleIntro":["Una ficha por badge. Renovar actualiza su nivel y posición, sin duplicarlo en tu colección.","One entry per badge. Renewing updates its level and position without duplicating it in your collection."],
+ "flexSingleTerms":["El coste es la diferencia respecto a tu nivel actual. Mientras la clasificación esté abierta, otra persona puede superarte. Consulta las reglas de cierre y conservación de tu badge antes de confirmar.","The cost is the difference from your current level. Others can overtake you while the leaderboard is open. Read the closing and badge-retention rules before confirming."],
+ "fundedListingHelp":["Listado por fecha de adquisición. Solo se muestran titulares activos.","Listed by acquisition date. Only active holders are shown."],
+ "flexLeaderboardNote":["Cada temporada tiene su propia clasificación y diseño. Consulta los resultados actuales o los definitivos de temporadas anteriores.","Each season has its own leaderboard and design. Browse current standings or the locked results of previous seasons."],
+ "flexSeasonTerms": [
+  "El coste es la diferencia respecto a tu nivel en esta temporada. El badge conserva su posición final al cierre; los niveles no pasan a otra temporada.",
+  "The cost is the difference from your level in this season. The badge retains its final rank at closing; levels do not carry into another season."
+ ],
+ "fundedTerms": [
+  "Compra única de 50 BC. Un badge personal por cuenta, sin pujas ni renovaciones. Es una identificación voluntaria como desarrollador, no una acreditación profesional.",
+  "One-time purchase of 50 BC. One personal badge per account, without bids or renewals. It is a self-declared developer identity, not a professional qualification."
+ ],
+ "fundedDirectoryNote": [
+  "Todos los titulares y su fecha de adquisición. Sin posiciones, importes ni competición.",
+  "All holders and their acquisition dates. No ranks, amounts or competition."
+ ],
+ "developerDirectory": [
+  "PERSONAS QUE CONSTRUYEN",
+  "PEOPLE WHO BUILD"
+ ],
+ "acquiredAt": [
+  "Adquirido el",
+  "Acquired on"
+ ],
+ "viewDevelopers": [
+  "Ver desarrolladores",
+  "View developers"
+ ],
+ "fixedPrice": [
+  "Precio fijo",
+  "Fixed price"
+ ],
+ "unlimited": [
+  "Sin límite de unidades",
+  "Unlimited supply"
+ ],
+ "svgDeveloper": [
+  "Desarrollador",
+  "Developer"
+ ],
+ "developerBadge": [
+  "Badge de desarrollador",
+  "Developer badge"
+ ],
+ "developer": [
+  "Desarrollador",
+  "Developer"
+ ],
+ "developers": [
+  "Desarrolladores",
+  "Developers"
+ ],
+ "finalRank": [
+  "Posición final",
+  "Final rank"
+ ],
+ "currentSeason": [
+  "Temporada actual",
+  "Current season"
+ ],
+ "seasonUnavailable": [
+  "Temporada no disponible.",
+  "Season unavailable."
+ ],
+ "seasonCountdown": [
+  "{d} d · {h}:{m}:{s}",
+  "{d} d · {h}:{m}:{s}"
+ ],
+ "seasonFrozenNote": [
+  "Clasificación final bloqueada. Sus badges y URLs siguen disponibles en la colección de cada titular.",
+  "Final leaderboard locked. Its badges and URLs remain available in each holder’s collection."
+ ],
+ "seasonDeadlineNote": [
+  "El cierre se aplica con la hora del servidor. Las operaciones posteriores se rechazan sin gastar BC.",
+  "The server clock determines closing. Later actions are rejected without spending BC."
+ ],
+ "seasonEnds": [
+  "Fin de temporada",
+  "Season ends"
+ ],
+ "seasonNoDeadline": [
+  "Sin fecha de cierre anunciada. Tu posición puede cambiar mientras esté abierta.",
+  "No closing date announced. Your rank can change while the season is open."
+ ],
+ "seasonClosed": [
+  "Temporada cerrada",
+  "Season closed"
+ ],
+ "seasonOpen": [
+  "Abierta",
+  "Open"
+ ],
+ "seasonSelect": [
+  "Temporada",
+  "Season"
+ ],
+ "seasonNumber": [
+  "Temporada {n}",
+  "Season {n}"
+ ],
  "reviewConditions": [
   "Qué ocurre durante una revisión",
   "What happens during a review"
@@ -220,8 +326,8 @@ const copy={
   "PLEASE, DON’T"
  ],
  "fundedTag": [
-  "APOYA EL BUILD",
-  "BACK THE BUILD"
+  "PARA QUIENES CONSTRUYEN",
+  "FOR PEOPLE WHO BUILD"
  ],
  "qualityTag": [
   "EL APOYO SE NOTA",
@@ -408,8 +514,8 @@ const copy={
   "Illustrative examples · Active BC levels."
  ],
  "hallNote": [
-  "Mayores niveles activos en BC. Genesis y Trust Bag tienen su propio espacio.",
-  "Highest active BC levels. Genesis and Trust Bag have their own space."
+  "Principales posiciones de la temporada actual de Apex Flex. Cada modalidad mantiene su propio listado.",
+  "Top positions in the current Apex Flex season. Each badge has its own listing."
  ],
  "emptyRanking": [
   "La historia empieza con la primera puja.",
@@ -480,8 +586,8 @@ const copy={
   "Ego, in order"
  ],
  "rankingIntro": [
-  "Cinco badges, cinco clasificaciones independientes. Descubre quién lidera cada batalla y quién forma parte de Genesis.",
-  "Five badges, five independent leaderboards. Discover who leads each battle and who belongs to Genesis."
+  "Consulta cada badge por separado: temporadas de Apex Flex, niveles, apoyo, desarrolladores y ediciones Genesis.",
+  "Explore each badge separately: Apex Flex seasons, levels, support, developers and Genesis editions."
  ],
  "search": [
   "Buscar por alias",
@@ -576,8 +682,8 @@ const copy={
   "Your badges. Up to date"
  ],
  "collectionIntro": [
-  "Una ficha por badge. Al renovar, se actualizan su importe y posición sin duplicarse en tu colección.",
-  "One entry per badge. Renewing updates its amount and position without duplicating it in your collection."
+  "Una ficha por badge y por cada temporada de Apex Flex adquirida. Renovar actualiza esa ficha; las temporadas finalizadas se conservan.",
+  "One entry per badge and per acquired Apex Flex season. Renewing updates that entry; completed seasons are retained."
  ],
  "signInTitle": [
   "Tu colección te espera.",
@@ -831,8 +937,8 @@ const copy={
   "Provocation"
  ],
  "fundedCategory": [
-  "Open source",
-  "Open source"
+  "Desarrollador",
+  "Developer"
  ],
  "qualityCategory": [
   "Fiabilidad",
@@ -843,16 +949,16 @@ const copy={
   "Limited edition"
  ],
  "flexDescription": [
-  "El primer puesto no se hereda. Se compra. Hasta que alguien pague más.",
-  "You don’t inherit first place. You buy it. Until someone pays more."
+  "Compite desde 1 BC en la temporada actual. Al cerrarse, tu posición queda fijada en su badge; una nueva temporada tiene su propio diseño y clasificación.",
+  "Compete from 1 BC in the current season. At closing, your position is locked into its badge; a new season has its own design and leaderboard."
  ],
  "baitDescription": [
   "Un badge perfectamente intacto. Sería una pena que alguien lo arruinara.",
   "A perfectly untouched badge. It would be a shame if someone ruined it."
  ],
  "fundedDescription": [
-  "Patrocinio visual para tu README. El pago sostiene BadgeWars; no se envía al repositorio.",
-  "Visual sponsorship for your README. Payment funds BadgeWars; it is not sent to the repository."
+  "Tu badge personal de desarrollador. 50 BC, una sola compra y sin límite de propietarios. Nadie puede quitártelo pagando más.",
+  "Your personal developer badge. 50 BC, one purchase and unlimited holders. Nobody can take it by paying more."
  ],
  "qualityDescription": [
   "Puntos de apoyo pagado de la comunidad, sin pagos al titular. Más puntos, mejor puesto; no es una auditoría técnica.",
@@ -951,8 +1057,8 @@ const copy={
   "1,000 BC · NO REISSUES"
  ],
  "competitiveNote": [
-  "Puja abierta: un nuevo pago puede cambiar al líder. Genesis y Trust Bag tienen sus propias reglas.",
-  "Open bidding: a new payment can change the leader. Genesis and Trust Bag follow their own rules."
+  "Apex Flex y Don’t Click This compiten por niveles. Build Funded es personal y fijo; Trust Bag crece con apoyo y Genesis tiene diez ediciones.",
+  "Apex Flex and Don’t Click This compete on levels. Build Funded is personal and fixed; Trust Bag grows with support and Genesis has ten editions."
  ],
  "collectors": [
   "Coleccionistas",

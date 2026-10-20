@@ -29,7 +29,7 @@ test('suspension, payment freeze or debt replaces cached active SVGs with an ine
   for(const url of urls){const r=await worker.fetch(new Request(url),env,ctx);await drain();assert.equal(r.status,200);assert.equal(r.headers.get('Cache-Control'),'no-store');tags.set(url,r.headers.get('ETag'));await r.text();}
   assert.ok(cache.size>0);
   const link=origin+'/b/'+states.flex.entries[0].id;
-  const activeLink=await worker.fetch(new Request(link),env,ctx);assert.equal(activeLink.status,302);assert.equal(activeLink.headers.get('Location'),origin+'/badge/flex');
+  const activeLink=await worker.fetch(new Request(link),env,ctx);assert.equal(activeLink.status,302);assert.equal(activeLink.headers.get('Location'),origin+'/leaderboard/flex');
   for(const mutation of ["UPDATE bw_user_badges SET status='suspended'",'UPDATE bw_wallets SET frozen=1','UPDATE bw_wallets SET debt=1']){
    DB.sqlite.exec("UPDATE bw_user_badges SET status='active'; UPDATE bw_wallets SET frozen=0,debt=0;"+mutation);
    for(const url of urls)for(const method of ['GET','HEAD']){
