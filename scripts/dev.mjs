@@ -9,7 +9,7 @@ import {resolve,extname} from 'node:path';
 import {badgeSvg,catalog} from '../public/badges.js';
 import {demoArena} from '../public/demo.js';
 const root=resolve('public');
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.json':'application/json; charset=utf-8','.txt':'text/plain; charset=utf-8','.xml':'application/xml; charset=utf-8','.ico':'image/x-icon','.png':'image/png'};
 createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost:8787');
@@ -25,7 +25,8 @@ createServer(async(req,res)=>{
    res.writeHead(200,{'Content-Type':'image/svg+xml','Access-Control-Allow-Origin':'*'});res.end(badgeSvg(id,state,badgeUrl.searchParams.get('style')==='compact',badgeUrl.searchParams.get('lang')||'en'));return;
   }
   if(legalRoutes.includes(url.pathname)){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(legalPageHtml(await readFile(resolve(root,'index.html'),'utf8'),url.pathname));return;}
-  const path=resolve(root,'.'+decodeURIComponent(['/','/leaderboard','/collection',...legalRoutes].includes(routeState(url.href).page)?'/index.html':url.pathname));
+  const route=routeState(url.href),prerendered=['/collection','/leaderboard/flex','/leaderboard/bait','/leaderboard/funded','/leaderboard/trust','/leaderboard/genesis'].includes(route.path);
+  const path=resolve(root,'.'+decodeURIComponent(prerendered?route.path+'/index.html':['/','/leaderboard','/collection',...legalRoutes].includes(route.page)?'/index.html':url.pathname));
   if(!path.startsWith(root+'\\')&&!path.startsWith(root+'/'))throw Error();
   const file=await readFile(path);res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream'});res.end(file);
  }catch{const url=new URL(req.url,'http://localhost:8787');if(!extname(url.pathname)&&!url.pathname.startsWith('/api/')){res.writeHead(404,{'Content-Type':'text/html; charset=utf-8'});res.end(await readFile(resolve(root,'index.html')));}else{res.writeHead(404);res.end('Not found');}}

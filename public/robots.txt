@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Allow: /api/arena
+Disallow: /collection
+Disallow: /account/
+Disallow: /support/
+Disallow: /badge/
+
+Sitemap: https://badgewars.com/sitemap.xml

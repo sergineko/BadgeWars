@@ -24,6 +24,10 @@ pnpm exec wrangler deploy --dry-run --outdir .wrangler/build
 
 `readiness` devuelve código 2 cuando falta configuración. No imprime secretos ni verifica recursos remotos. Una compilación o prueba local correcta no activa la tienda.
 
+`pnpm build` genera el HTML inicial de portada, cinco listados y colección desde las mismas vistas que utiliza el cliente, y agrupa el CSS en `public/site.css`. Se ejecuta también antes del despliegue. Edita las vistas y estilos fuente, no los archivos HTML/CSS generados. Las fuentes WOFF2 están incluidas con sus licencias; Python solo hace falta para regenerarlas opcionalmente con `scripts/convert-fonts.py` (fontTools y brotli).
+
+La [revisión de PageSpeed](docs/performance-audit.md) recoge las mediciones, los cambios de accesibilidad y los archivos públicos para buscadores y agentes.
+
 ## Modelo actual
 
 - Un saldo de BadgeCredits (BC) para funciones del software: **1 BC = 1 EUR de precio base**, con pago en las monedas admitidas por Dodo mediante Adaptive Currency. Recargas enteras desde 5 BC; conversión, comisiones, impuestos y total mostrados por Dodo Payments. Sin valor monetario externo, canje por efectivo, cashback, retiradas, transferencias ni pagos a titulares. Derechos obligatorios protegidos.

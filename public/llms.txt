@@ -1,0 +1,34 @@
+# BadgeWars
+
+> BadgeWars is software for personal profile customization through dynamic, embeddable SVG badges and an API. The public website is available in Spanish and English.
+
+BC are closed-loop software credits. The price reference is 1 BC = 1 EUR, before applicable taxes; checkout may offer conversion into supported local currencies. The minimum top-up is 5 BC. Credits have no monetary value outside BadgeWars, are not transferable, and cannot be redeemed for cash. Mandatory consumer rights apply. Payment availability is shown inside the authenticated account; this document does not enable purchases.
+
+## Badges and public listings
+
+- [The Apex Flex](https://badgewars.com/leaderboard/flex): competitive positions determined by BC spent; entry starts at 1 BC. Only a confirmed, atomic purchase updates the rank. A concurrent rejected purchase does not spend credits. The initial ranking is open without an announced end date; future closed rankings retain their final positions and badges.
+- [Don't Click This](https://badgewars.com/leaderboard/bait): a playful profile badge whose state and holder change through paid interactions.
+- [Build Funded](https://badgewars.com/leaderboard/funded): unlimited personal developer badges for a fixed activation cost. The directory lists their owners and acquisition dates; ownership does not transfer between users.
+- [Trust Bag](https://badgewars.com/leaderboard/trust): community support increases points without a cap. The SVG shows the current reliability rank and visual tier. Points reflect paid support, not independent verification of professional quality. Contribution details are private; an owner may show up to five leading contributors.
+- [Genesis](https://badgewars.com/leaderboard/genesis): a fixed edition of ten personal badges, with every holder listed separately. The activation price is 1,000 BC.
+
+## Accounts and embeds
+
+- [Badge catalog](https://badgewars.com/): descriptions, current public states and navigation.
+- [Personal collection](https://badgewars.com/collection): Google or GitHub login is required to obtain personal HTML, Markdown and SVG embed codes. Do not request another user's private collection or import code.
+- [Public state API](https://badgewars.com/api/arena): read-only published badge state and public listings. Data can be cached; no wallet or private contribution details are included.
+
+Embeds load a personal SVG dynamically. Suspension or payment review disables the active badge and shows a neutral account-status design linking back to the site. Do not present suspended badges as active. Authentication, purchases and support actions require the user's own session and confirmation; no anonymous purchase or account-management agent tools are provided.
+
+## Rules and support
+
+- [Rules and terms](https://badgewars.com/terms): badge mechanics, credits, ownership, account review and mandatory rights.
+- [Refund policy](https://badgewars.com/refunds): top-up incidents, reversals, partial refunds, payment review, suspension and reactivation. No cash redemption of credits; statutory rights are preserved.
+- [Privacy](https://badgewars.com/privacy): personal data and authentication.
+- [Legal notice](https://badgewars.com/legal): platform operator and Dodo Payments Merchant of Record roles.
+- [Cookies and local storage](https://badgewars.com/cookies): browser storage and preferences.
+- [Support](mailto:support@badgewars.com): account and top-up incidents.
+
+## Español
+
+BadgeWars ofrece badges SVG personales actualizables por API. La referencia es 1 BC = 1 EUR antes de impuestos, con recarga mínima de 5 BC y posible conversión de moneda en el checkout. Los BC carecen de valor monetario externo y no se canjean por efectivo. Consulta las reglas en español y las clasificaciones públicas mediante los enlaces anteriores. Los códigos personales solo se facilitan en el área del titular. Los derechos legales obligatorios se mantienen.

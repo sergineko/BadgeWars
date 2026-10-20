@@ -1,0 +1,19 @@
+{
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "identifier": "urn:air:badgewars.com:docs:guide",
+      "displayName": "BadgeWars public guide and navigation",
+      "type": "text/plain",
+      "url": "https://badgewars.com/llms.txt",
+      "representativeQueries": ["How do BadgeWars dynamic SVG badges work?", "Where are the BadgeWars rules and independent badge leaderboards?"]
+    },
+    {
+      "identifier": "urn:air:badgewars.com:api:public-arena",
+      "displayName": "BadgeWars public badge states and listings (read only)",
+      "type": "application/json",
+      "url": "https://badgewars.com/api/arena",
+      "representativeQueries": ["What is the current public Apex Flex ranking?", "Which Genesis editions have public holders?"]
+    }
+  ]
+}

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build-site.mjs",
+    "dev": "node scripts/build-site.mjs && node scripts/dev.mjs",
     "test": "node --test",
     "deploy": "wrangler deploy",
     "check": "node scripts/check.mjs",

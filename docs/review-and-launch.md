@@ -16,6 +16,8 @@ Estado revisado el **20 de octubre de 2026**. El trabajo pendiente se agrupa en 
 
 **Actualización de badges:** Build Funded personal y fijo a 50 BC, sin límite de unidades; Apex Flex con cierre e historial independientes preparados. Se publica una sola clasificación abierta y sin etiquetas de temporada hasta que exista otra. [Reglas, pruebas y operación](badge-seasons.md).
 
+**Calidad web, 21/10/2026:** correcciones de PageSpeed publicadas. Portada: rendimiento 97 móvil / 100 escritorio, accesibilidad y SEO 100, navegación agéntica 4/4 y CLS 0. No añade un bloque de lanzamiento ni modifica la pausa de cobros. [Resultados, alcance y mantenimiento](performance-audit.md).
+
 **Ya cerrado:** dominio/HTTPS, infraestructura D1/KV/Workers, circuito principal de pagos en test, facturas/emails/portal en test y Turnstile de producción. Los badges, rankings y navegación están implementados; B incluye también la inserción comprobada en una web HTTPS y GitHub.
 
 Orden de trabajo: B está completado en test y C está preparado y comprobado. La adaptación documental de D ya está publicada; las gestiones del titular quedan fuera del trabajo técnico actual. Dodo ya ha aprobado la cuenta; E permanece pausado por decisión del titular. A ya ofrece acceso público social; el acceso por contraseña puede quedar para una segunda fase manteniendo Workers Free. [Secuencia breve para lanzar](dodo-live-activation.md#activación-cuando-lo-indique-el-titular).

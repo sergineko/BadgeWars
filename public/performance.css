@@ -1,0 +1,10 @@
+/* A stable first paint uses the same markup as the interactive view. */
+.skip-link{position:fixed;top:8px;left:8px;z-index:100;transform:translateY(-160%);background:var(--lime);color:#15191b;padding:12px 18px;border-radius:8px;font-weight:700}
+.skip-link:focus{transform:none}
+main:focus{outline:none}
+.noscript-note{max-width:1000px;margin:24px auto;padding:20px;line-height:1.8;color:#c5bed3}
+.how .eyebrow{color:#374a2e}
+.how li p{color:#3e5135}
+.hero-copy>p{min-height:3.6em}
+@media(max-width:760px){.hero-copy>p{min-height:5.4em}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
