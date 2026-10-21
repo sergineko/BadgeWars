@@ -35,7 +35,7 @@ Comprobado en producción: `/api/payments/status` informa `live_mode`, `topupsEn
 
 No realizar estos pasos hasta que el titular dé por resuelta su situación y autorice expresamente lanzar cobros.
 
-**Comprobación nueva del proveedor:** la factura adaptativa USD suma 5,60 en la línea y 5,62 en subtotal/total, con impuesto cero. Pago y total coinciden; falta que Dodo aclare o corrija los dos centavos no desglosados. [Hallazgo y reproducción](dodo-fx-verification.md). No se presenta este PDF como plenamente reconciliado. El justificante privado de BadgeWars identifica explícitamente el precio de referencia y la moneda/importe real cobrado, y no se presenta como factura fiscal.
+**Comprobación del proveedor:** la factura adaptativa USD suma 5,60 en la línea y 5,62 en subtotal/total, con impuesto cero. El 21/10/2026 se reprodujo también en el checkout directo de Dodo: subtotal 5,60, impuesto cero y total 5,62, antes de pagar. Consulta enviada al soporte privado, con el PDF original; su asistente indicó derivación al equipo humano. Falta su aclaración o corrección, sin número de expediente ni respuesta técnica todavía. [Hallazgo y reproducción](dodo-fx-verification.md). No se presenta el PDF como plenamente reconciliado ni se ha completado un nuevo pago. El justificante privado de BadgeWars identifica explícitamente el precio de referencia y la moneda/importe real cobrado, y no se presenta como factura fiscal.
 
 La guía de Cloudflare también está [revisada y documentada](cloudflare-domain-setup.md), con las opciones gratuitas compatibles y el modo Completo conservado por decisión del titular.
 

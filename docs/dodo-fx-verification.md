@@ -35,6 +35,19 @@ Revisión visual del PDF original del pago USD: línea **5 × USD 1,12 = USD 5,6
 
 La documentación oficial indica redondeos internos y conversión sobre los importes, pero no demuestra que esos dos centavos concretos sean una comisión. La diferencia es compatible con convertir/redondear el total y el unitario por separado: **es una inferencia, pendiente de aclaración por Dodo**. No se ha editado su factura ni inventado un concepto fiscal. BadgeWars muestra la referencia EUR, conserva el total real informado por Dodo y acredita solo los BC elegidos. No reconstruye una factura multiplicando precios unitarios convertidos.
 
-Antes de la primera venta real, conviene que Dodo confirme o corrija el desglose de este supuesto adaptativo. El expediente de reproducción queda preparado localmente con las referencias de test; no se ha enviado una comunicación de soporte sin autorización del titular.
+Antes de la primera venta real, queda que Dodo confirme o corrija el desglose de este supuesto adaptativo. El titular autorizó la consulta y se envió a su soporte privado el **21 de octubre de 2026**, con las referencias de test y el PDF original adjunto. El asistente de soporte indicó que lo pasa al equipo humano; todavía no hay respuesta técnica, corrección ni número de expediente comunicado. Se solicitó respuesta a `support@badgewars.com`.
+
+## Comparación con el checkout directo · 21/10/2026
+
+El flujo de BadgeWars ya utiliza `checkoutSessions.create` y redirige al checkout alojado por Dodo; la aplicación no calcula ni envía un importe convertido en USD. Se comparó con el [enlace estático oficial](https://docs.dodopayments.com/developer-resources/integration-guide#static-payment-links), abriendo `/buy/{producto de test}` con cantidad 5, país US y moneda USD, sin petición desde el servidor de BadgeWars.
+
+| Circuito observado | Detalle de los 5 créditos | Subtotal | Impuestos | Total | Alcance |
+|---|---|---|---|---|---|
+| Factura original de la sesión creada por API | 5,60 USD | 5,62 USD | 0,00 USD | 5,62 USD | Pago simulado anterior y PDF original comprobados. |
+| Resumen del checkout estático de Dodo | 5,60 USD | 5,60 USD | 0,00 USD | 5,62 USD | Diferencia visible antes de introducir datos del comprador o confirmar el pago. |
+
+**El enlace directo también reproduce el desfase de dos centavos en la interfaz de Dodo.** No se completó otra compra ni se generó una factura nueva: esta comprobación acredita el problema del resumen del checkout, no el contenido de una segunda factura. Cambiar simplemente al enlace estático no elimina el problema observado.
+
+Se añadió la reproducción al caso de soporte y se preguntó por la causa, su posible alcance en Live, el criterio de `retrieveLineItems` y una solución respaldada por Dodo. También se consultó si representar un pack como una única unidad evitaría un posible redondeo por unidad; **no está confirmado ni implementado como solución**. Los documentos, mensajes y captura del checkout quedan en archivos locales ignorados. No se han enviado credenciales ni datos bancarios. El circuito autenticado de recargas y la pausa Live siguen vigentes.
 
 [Activación y pendientes](dodo-live-activation.md). [Documentación oficial de Adaptive Currency](https://docs.dodopayments.com/features/adaptive-currency).
