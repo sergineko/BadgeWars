@@ -138,18 +138,25 @@ body>header{position:sticky;top:0;z-index:50;background:rgb(12 13 18 / .92);back
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 /* footer.css */
-.site-footer{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);align-items:start;gap:32px 64px;padding:36px 5%;font-size:12px;line-height:1.7}
-.site-footer .footer-about,.site-footer .footer-details{min-width:0}
-.site-footer .footer-brand{display:inline-flex;flex-shrink:0;flex-wrap:nowrap;gap:8px;white-space:nowrap;font-size:23px;line-height:1.2;margin-bottom:14px;letter-spacing:-1px}
+.site-footer{display:block;padding:40px 5% 24px;font-size:12px;line-height:1.7}
+.footer-main{display:grid;grid-template-columns:minmax(220px,1fr) auto;align-items:start;gap:32px 64px;padding-bottom:32px}
+.site-footer .footer-about,.site-footer .footer-links{min-width:0}
+.site-footer .footer-brand{display:inline-flex;flex-shrink:0;flex-wrap:nowrap;gap:8px;white-space:nowrap;font-size:25px;line-height:1.2;margin-bottom:12px;letter-spacing:-1px}
 .site-footer .footer-brand .brand-icon{font-size:31px;margin:0;line-height:1}
 .site-footer .brand>.footer-wordmark{color:#ded8e8}.site-footer .footer-wordmark b{color:var(--accent);font-weight:inherit}
-.site-footer p{margin:0;color:#9b92a7;font-size:12px;line-height:1.8}
-.site-footer nav.legal-footer{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px 22px;padding:0;margin:0 0 18px;background:none;border:0;border-radius:0}
-.site-footer .legal-footer a.text-link{display:inline-flex;white-space:nowrap;padding:0;border-radius:0;color:#c2b8cf;font-size:12px;line-height:1.7}
-.site-footer .legal-footer a:hover{color:var(--accent)}.site-footer .legal-footer a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
-.site-footer .footer-payment{text-align:right;font-size:11px;color:#91889c}
-.site-footer .footer-credit{margin-top:14px;font-size:11px;color:#b8adc5}.footer-credit a{color:#d5baff;text-decoration:underline;text-underline-offset:3px}.footer-credit a:hover{color:#e7d8ff}.footer-rights{display:block;margin-top:2px}
-@media(max-width:800px){.site-footer{grid-template-columns:minmax(0,1fr);gap:25px;padding:30px 5%}.site-footer .footer-about p{max-width:380px}.site-footer nav.legal-footer{justify-content:flex-start;margin-bottom:14px;gap:12px 20px}.site-footer .footer-payment{text-align:left}}
+.site-footer p{margin:0;color:#aaa1b5;font-size:12px;line-height:1.8}
+.site-footer .footer-about>p{max-width:34ch}
+.site-footer .footer-heading{margin-bottom:10px;color:#9e91af;font-size:10px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase}
+.site-footer nav.legal-footer{display:grid;grid-template-columns:repeat(3,max-content);align-items:start;justify-content:start;gap:6px 26px;padding:0;margin:0;background:none;border:0;border-radius:0}
+.site-footer .legal-footer a.text-link{display:inline-flex;align-items:center;min-height:32px;white-space:normal;padding:3px 0;border-radius:0;color:#c7bed1;font-size:12px;line-height:1.7}
+.site-footer a:hover{color:var(--accent)}.site-footer a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+.footer-bottom{display:flex;align-items:flex-start;justify-content:space-between;gap:16px 32px;padding-top:20px;border-top:1px solid #ffffff12}
+.site-footer .footer-credit,.site-footer .footer-payment{font-size:11px;line-height:1.8}
+.footer-credit>span{display:block}.footer-credit a{color:#d5baff;text-decoration:underline;text-underline-offset:3px}.footer-credit a:hover{color:#e7d8ff}
+.site-footer .footer-rights{color:#9e95a8}
+.site-footer .footer-payment{max-width:340px;text-align:right}
+@media(max-width:1000px){.footer-main{column-gap:32px}.site-footer nav.legal-footer{grid-template-columns:repeat(2,max-content);column-gap:24px}}
+@media(max-width:700px){.site-footer{padding:30px 5% 22px}.footer-main{grid-template-columns:minmax(0,1fr);gap:28px;padding-bottom:24px}.site-footer .footer-about>p{max-width:none}.site-footer nav.legal-footer{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px}.site-footer .legal-footer a.text-link{min-height:40px}.footer-bottom{flex-direction:column;gap:14px;padding-top:20px}.site-footer .footer-payment{max-width:none;text-align:left}}
 
 /* performance.css */
 /* A stable first paint uses the same markup as the interactive view. */
