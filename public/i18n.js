@@ -1,4 +1,6 @@
 const copy={
+ "createdBy":["Creado por","Created by"],
+ "rightsReserved":["Todos los derechos reservados.","All rights reserved."],
  "profileSettings":["TU PERFIL PÚBLICO","YOUR PUBLIC PROFILE"],
  "yourPublicAlias":["Un alias. Todos tus badges.","One handle. All your badges."],
  "aliasNotSet":["Sin definir","Not set yet"],

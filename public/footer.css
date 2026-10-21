@@ -8,4 +8,5 @@
 .site-footer .legal-footer a.text-link{display:inline-flex;white-space:nowrap;padding:0;border-radius:0;color:#c2b8cf;font-size:12px;line-height:1.7}
 .site-footer .legal-footer a:hover{color:var(--accent)}.site-footer .legal-footer a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
 .site-footer .footer-payment{text-align:right;font-size:11px;color:#91889c}
+.site-footer .footer-credit{margin-top:14px;font-size:11px;color:#b8adc5}.footer-credit a{color:#d5baff;text-decoration:underline;text-underline-offset:3px}.footer-credit a:hover{color:#e7d8ff}.footer-rights{display:block;margin-top:2px}
 @media(max-width:800px){.site-footer{grid-template-columns:minmax(0,1fr);gap:25px;padding:30px 5%}.site-footer .footer-about p{max-width:380px}.site-footer nav.legal-footer{justify-content:flex-start;margin-bottom:14px;gap:12px 20px}.site-footer .footer-payment{text-align:left}}
