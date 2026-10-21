@@ -1,0 +1,5 @@
+/* Explicit geometry keeps decorative marks identical across desktop and iOS. */
+svg.decor-icon{display:inline-block;position:static;inset:auto;width:1em;height:1em;max-width:none;flex-shrink:0;vertical-align:-.125em;pointer-events:none}
+.stage-spark .decor-icon,.closing>span .decor-icon{display:block;vertical-align:initial}
+img.brand-mark{display:block;width:1em;height:1em;max-width:none;flex-shrink:0;object-fit:contain}
+.gate-mark .brand-mark{margin-inline:auto}

@@ -161,6 +161,13 @@ body>header{position:sticky;top:0;z-index:50;background:rgb(12 13 18 / .92);back
 @media(max-width:1000px){.footer-main{column-gap:32px}.site-footer nav.legal-footer{grid-template-columns:repeat(2,max-content);column-gap:24px}}
 @media(max-width:700px){.site-footer{padding:30px 5% 22px}.footer-main{grid-template-columns:minmax(0,1fr);gap:28px;padding-bottom:24px}.site-footer .footer-about>p{max-width:none}.site-footer nav.legal-footer{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px}.site-footer .legal-footer a.text-link{min-height:40px}.footer-bottom{flex-direction:column;gap:14px;padding-top:20px}.site-footer .footer-payment{max-width:none;text-align:left}}
 
+/* icons.css */
+/* Explicit geometry keeps decorative marks identical across desktop and iOS. */
+svg.decor-icon{display:inline-block;position:static;inset:auto;width:1em;height:1em;max-width:none;flex-shrink:0;vertical-align:-.125em;pointer-events:none}
+.stage-spark .decor-icon,.closing>span .decor-icon{display:block;vertical-align:initial}
+img.brand-mark{display:block;width:1em;height:1em;max-width:none;flex-shrink:0;object-fit:contain}
+.gate-mark .brand-mark{margin-inline:auto}
+
 /* performance.css */
 /* A stable first paint uses the same markup as the interactive view. */
 .skip-link{position:fixed;top:8px;left:8px;z-index:100;transform:translateY(-160%);background:var(--lime);color:#15191b;padding:12px 18px;border-radius:8px;font-weight:700}
