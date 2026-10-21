@@ -24,7 +24,7 @@ for(const path of routes){
  const html=template.replace(/\{\{(\w+)\}\}/g,(_,key)=>content[key]);
  const file=path==='/'?'public/index.html':`public${path}/index.html`;await mkdir(file.slice(0,file.lastIndexOf('/')),{recursive:true});await writeFile(file,html);
 }
-const files=['fonts/fonts.css','style.css','points.css','modern.css','legal.css','ranking.css','navigation.css','footer.css','performance.css'];
+const files=['fonts/fonts.css','style.css','points.css','modern.css','legal.css','ranking.css','navigation.css','footer.css','performance.css','alias.css'];
 const css=await Promise.all(files.map(async file=>`/* ${file} */\n`+(await readFile('public/'+file,'utf8')).replace(/@import url\('\/fonts\/fonts.css'\);\s*/,'')));
 await writeFile('public/site.css',css.join('\n'));
 await writeFile('public/.well-known/ai-catalog.json',await readFile('public/.well-known/ard.json'));

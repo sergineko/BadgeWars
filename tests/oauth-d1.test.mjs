@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createD1} from './helpers/d1.mjs';
 import {authRoute,identity,unseal,hash} from '../src/auth.mjs';
+import {changeAlias} from '../src/public-alias.mjs';
 const setup=()=>({DB:createD1(),APP_URL:'https://badges.example',AUTH_COOKIE_SECRET:'a-long-32-byte-cookie-secret-for-tests',AUTH_PROVIDERS:'google,github',GOOGLE_CLIENT_ID:'google-id',GOOGLE_CLIENT_SECRET:'google-secret',GITHUB_CLIENT_ID:'github-id',GITHUB_CLIENT_SECRET:'github-secret'});
 const flowCookie=response=>response.headers.getSetCookie().find(c=>c.startsWith('bw_oauth=')).split(';')[0];
 function callback(start,env){const redirect=new URL(start.headers.get('Location'));return env.APP_URL+'/api/auth/callback/'+(redirect.hostname==='github.com'?'github':'google')+'?code=verified-code&state='+redirect.searchParams.get('state');}
@@ -30,6 +31,10 @@ test('verified social identity creates a D1 wallet and opaque session; replay an
   const stored=env.DB.sqlite.prepare('SELECT token_hash FROM bw_sessions').get();assert.equal(stored.token_hash,await hash(session.slice(11)));assert.equal(env.DB.sqlite.prepare('SELECT balance FROM bw_wallets').get().balance,0);
   assert.equal(env.DB.sqlite.prepare('SELECT count(*) AS n FROM bw_oauth_states').get().n,0);
   const replay=await authRoute(req,env);assert.ok(replay.headers.get('Location').endsWith('/collection/sign-in-error'));assert.equal(calls,2);
+  await changeAlias(env.DB,result.user.id,'PublicCollector');
+  const repeatStart=await authRoute(new Request(env.APP_URL+'/api/auth/start?provider=github'),env);
+  await authRoute(new Request(callback(repeatStart,env),{headers:{Cookie:flowCookie(repeatStart)}}),env);
+  assert.equal((await identity(new Request(env.APP_URL,{headers:{Cookie:session}}),env)).user.alias,'PublicCollector');
   await authRoute(new Request(env.APP_URL+'/api/auth/logout',{method:'POST',headers:{Cookie:session,Origin:env.APP_URL}}),env);assert.equal((await identity(new Request(env.APP_URL,{headers:{Cookie:session}}),env)).user,null);
  }finally{globalThis.fetch=original;env.DB.close();}
 });

@@ -30,7 +30,7 @@ test('dynamic SVG endpoints use KV and canonical edge cache, support conditional
  const env={BADGES:{get:async()=>{reads++;return state;}}};const ctx={waitUntil:task=>tasks.push(task)};
  try{
   const first=await worker.fetch(new Request('https://badges.example/badges/flex.svg?lang=en'),env,ctx);await Promise.all(tasks);
-  assert.equal(first.status,200);assert.equal(first.headers.get('Access-Control-Allow-Origin'),'*');assert.ok(first.headers.get('ETag').startsWith('W/"v6-'));assert.ok((await first.text()).includes('THE APEX FLEX'));
+  assert.equal(first.status,200);assert.equal(first.headers.get('Access-Control-Allow-Origin'),'*');assert.ok(first.headers.get('ETag').startsWith('W/"v7-'));assert.ok((await first.text()).includes('THE APEX FLEX'));
   const cached=await worker.fetch(new Request('https://badges.example/badges/flex.svg'),env,ctx);assert.equal(cached.status,200);assert.equal(reads,1);
   const head=await worker.fetch(new Request('https://badges.example/badges/flex.svg',{method:'HEAD'}),env,ctx);assert.equal(head.status,200);assert.equal(await head.text(),'');
   const unchanged=await worker.fetch(new Request('https://badges.example/badges/flex.svg',{headers:{'If-None-Match':cached.headers.get('ETag')}}),env,ctx);assert.equal(unchanged.status,304);assert.equal(await unchanged.text(),'');

@@ -16,6 +16,9 @@ BC are closed-loop software credits. The price reference is 1 BC = 1 EUR, before
 
 - [Badge catalog](https://badgewars.com/): descriptions, current public states and navigation.
 - [Personal collection](https://badgewars.com/collection): Google or GitHub login is required to obtain personal HTML, Markdown and SVG embed codes. Do not request another user's private collection or import code.
+
+Each account sets its public handle in My badges before acquiring badges or contributing. Handles use 2–24 Latin letters, numbers or underscores, are unique without regard to letter case, and are locked for 14 days after being set or changed. A change applies to that account's public badges and contributions without changing its personal links, levels or final closed ranks.
+
 - [Public state API](https://badgewars.com/api/arena): read-only published badge state and public listings. Data can be cached; no wallet or private contribution details are included.
 
 Embeds load a personal SVG dynamically. Suspension or payment review disables the active badge and shows a neutral account-status design linking back to the site. Do not present suspended badges as active. Authentication, purchases and support actions require the user's own session and confirmation; no anonymous purchase or account-management agent tools are provided.

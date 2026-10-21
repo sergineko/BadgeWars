@@ -3,7 +3,7 @@ import {badgeUrl} from './badge-url.mjs';
 import {first} from './db.mjs';
 import {resilientEmbed} from '../public/embed-fallback.js';
 export async function personalEmbed(db,userId,holderId,appUrl,{style='',locale='en',format='md'}={}){
- const row=await first(db,`SELECT b.id,b.badge,b.owner FROM bw_user_badges b JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=? AND b.user_id=? AND b.status='active' AND w.frozen=0 AND w.debt=0`,[holderId,userId]);
+ const row=await first(db,`SELECT b.id,b.badge,coalesce(a.public_alias,b.owner) AS owner FROM bw_user_badges b JOIN bw_users a ON a.id=b.user_id JOIN bw_wallets w ON w.user_id=b.user_id WHERE b.id=? AND b.user_id=? AND b.status='active' AND w.frozen=0 AND w.debt=0`,[holderId,userId]);
  if(!row)return null;
  const badge=catalog.find(b=>b.id===row.badge),image=new URL(badgeUrl(row.badge,row.id,locale,style),appUrl),target=new URL(`/b/${row.id}`,appUrl);
  const alt=`${badge.name} · @${row.owner}`;

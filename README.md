@@ -28,6 +28,8 @@ pnpm exec wrangler deploy --dry-run --outdir .wrangler/build
 
 La [revisión de PageSpeed](docs/performance-audit.md) recoge las mediciones, los cambios de accesibilidad y los archivos públicos para buscadores y agentes.
 
+El [alias público por cuenta](docs/public-aliases.md) se gestiona desde Mis badges, es único sin distinguir mayúsculas y permite un cambio cada 14 días. Se aplica a badges, clasificaciones y aportaciones, conservando enlaces y resultados.
+
 ## Modelo actual
 
 - Un saldo de BadgeCredits (BC) para funciones del software: **1 BC = 1 EUR de precio base**, con pago en las monedas admitidas por Dodo mediante Adaptive Currency. Recargas enteras desde 5 BC; conversión, comisiones, impuestos y total mostrados por Dodo Payments. Sin valor monetario externo, canje por efectivo, cashback, retiradas, transferencias ni pagos a titulares. Derechos obligatorios protegidos.

@@ -33,6 +33,7 @@ test('private inventory and embed generation require the session owner; visibili
 
 test('spending checks current consent and safe input before the atomic wallet mutation',async()=>{
  const ctx=await setup();try{
+  assert.equal((await call(ctx,'/api/me/profile','POST',{alias:'mine'})).status,200);
   const input={badge:'bait',owner:'mine',amount:500},headers={'Idempotency-Key':crypto.randomUUID()};
   assert.equal((await call(ctx,'/api/wallet/spend','POST',input,headers)).status,400);assert.equal(ctx.env.DB.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(ctx.user).balance,200);
   const result=await call(ctx,'/api/wallet/spend','POST',{...input,...consent},headers);assert.equal(result.status,200);assert.equal((await result.json()).balance,195);

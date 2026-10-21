@@ -4,7 +4,7 @@ Esta versión utiliza D1, KV, Workers Assets, Cron y Turnstile. No requiere Supa
 
 ## Plan de lanzamiento: cinco bloques
 
-Estado revisado el **20 de octubre de 2026**. El trabajo pendiente se agrupa en estos **cinco bloques estables**. Las pruebas, configuraciones y dependencias de cada bloque son su detalle de cierre, no nuevos puntos de la lista. Los identificadores L01–L14 se conservan debajo para mantener las referencias anteriores.
+Estado revisado el **21 de octubre de 2026**. El trabajo pendiente se agrupa en estos **cinco bloques estables**. Las pruebas, configuraciones y dependencias de cada bloque son su detalle de cierre, no nuevos puntos de la lista. Los identificadores L01–L14 se conservan debajo para mantener las referencias anteriores.
 
 | Bloque | Trabajo que incluye | Cuándo se puede cerrar |
 |---|---|---|
@@ -17,6 +17,8 @@ Estado revisado el **20 de octubre de 2026**. El trabajo pendiente se agrupa en 
 **Actualización de badges:** Build Funded personal y fijo a 50 BC, sin límite de unidades; Apex Flex con cierre e historial independientes preparados. Se publica una sola clasificación abierta y sin etiquetas de temporada hasta que exista otra. [Reglas, pruebas y operación](badge-seasons.md).
 
 **Calidad web, 21/10/2026:** correcciones de PageSpeed publicadas. Portada: rendimiento 97 móvil / 100 escritorio, accesibilidad y SEO 100, navegación agéntica 4/4 y CLS 0. No añade un bloque de lanzamiento ni modifica la pausa de cobros. [Resultados, alcance y mantenimiento](performance-audit.md).
+
+**Identidad pública, 21/10/2026:** alias único por cuenta editable desde Mis badges, con bloqueo de 14 días tras definirlo o cambiarlo. Se aplica a los cinco SVG, listados y contribuidores sin alterar saldos ni resultados cerrados. Migración 0016 publicada; 107 pruebas correctas. [Funcionamiento y verificación](public-aliases.md).
 
 **Ya cerrado:** dominio/HTTPS, infraestructura D1/KV/Workers, circuito principal de pagos en test, facturas/emails/portal en test y Turnstile de producción. Los badges, rankings y navegación están implementados; B incluye también la inserción comprobada en una web HTTPS y GitHub.
 

@@ -122,6 +122,9 @@ test('the populated migration preserves holder IDs, Trust Bag contributors, acti
   assert.equal(db.sqlite.prepare('SELECT balance FROM bw_wallets WHERE user_id=?').get(user).balance,99);assert.deepEqual(db.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
   assert.equal((await buy(db,user,'flex',2,'apex-1',legacyAction)).balance,99);
   assert.equal(db.sqlite.prepare('SELECT terms_version FROM bw_actions WHERE id=?').get(legacyAction).terms_version,'2026-10-19-r9');
-  await buy(db,user,'flex',3);assert.equal((await inventory(db,user)).items.find(p=>p.badgeId==='flex').id,flex);
+  await buy(db,user,'flex',3);
+  db.sqlite.exec(readFileSync('migrations/0015_eur_reference.sql','utf8'));
+  db.sqlite.exec(readFileSync('migrations/0016_public_alias.sql','utf8'));
+  assert.equal((await inventory(db,user)).items.find(p=>p.badgeId==='flex').id,flex);
  }finally{db.close();}
 });

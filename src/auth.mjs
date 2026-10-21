@@ -3,6 +3,7 @@ import {syncAvatar} from './inventory.mjs';
 import {uuid} from './collection.mjs';
 import {profileImage} from '../public/profile.js';
 import {emailReady} from './email-config.mjs';
+import {aliasProfile} from './public-alias.mjs';
 const encode=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const decode=text=>Uint8Array.from(atob(text.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 async function key(secret){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret)),{name:'AES-GCM'},false,['encrypt','decrypt']);}
@@ -26,8 +27,8 @@ export async function hash(value){return [...new Uint8Array(await crypto.subtle.
 const random=()=>encode(crypto.getRandomValues(new Uint8Array(32)));
 export async function identity(request,env){
  const token=readCookie(request,'bw_session');if(!token||!configured(env))return {user:null,cookies:[]};
- const user=await first(primary(env),'SELECT u.id,u.name,u.avatar_url AS avatarUrl FROM bw_sessions s JOIN bw_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?',[await hash(token),Date.now()]);
- return {user:user||null,cookies:user?[]:[cookie('bw_session','',env,0)]};
+ const user=await first(primary(env),'SELECT u.id,u.name,u.avatar_url AS avatarUrl,u.public_alias AS alias,u.alias_changed_at*1000 AS aliasChangedAt FROM bw_sessions s JOIN bw_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?',[await hash(token),Date.now()]);
+ return {user:user?{...user,...aliasProfile(user)}:null,cookies:user?[]:[cookie('bw_session','',env,0)]};
 }
 async function providerProfile(provider,code,flow,env){
  const upper=provider.toUpperCase(),redirect=new URL('/api/auth/callback/'+provider,env.APP_URL).href;
