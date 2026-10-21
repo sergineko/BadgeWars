@@ -6,6 +6,9 @@
 /fonts/*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
+/social/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /llms.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=300

@@ -13,8 +13,8 @@ export function legalPageHtml(template,path,env={}){
  const body=`<section class="page-heading"><h1>${e(titles[path].join(' / '))}</h1><p>BadgeWars · ${e(TERMS_VERSION)}</p></section><nav class="legal-nav">${nav}</nav><article class="terms-page"><section class="terms-operator"><h2>SergioTech.es / BadgeWars</h2><p>${e(owner.name)}<br>${e(owner.address)} · ${e(owner.country)}<br>NIF: ${e(owner.taxId)}<br><a href="mailto:${e(owner.email)}">${e(owner.email)}</a></p><p>Merchant of Record: ${e(paymentSeller.name)} · <a href="${e(paymentSeller.terms)}">Buyer terms</a> · <a href="${e(paymentSeller.privacy)}">Privacy</a></p></section><div class="terms-content" lang="es"><h2>Español</h2>${sections('es')}</div><div class="terms-content" lang="en"><h2>English</h2>${sections('en')}</div></article>`;
  const info=pageInfo(path),t=(key,values)=>translate('es',key,values);
  return template.replace(/<title>.*?<\/title>/,`<title>${e(info.title)}</title>`)
-  .replace(/(<meta (?:name="description"|property="og:description") content=")[^"]*/g,(_,start)=>start+e(info.description))
-  .replace(/(<meta property="og:title" content=")[^"]*/,(_,start)=>start+e(info.title))
+  .replace(/(<meta (?:name="(?:description|twitter:description)"|property="og:description") content=")[^"]*/g,(_,start)=>start+e(info.description))
+  .replace(/(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*/g,(_,start)=>start+e(info.title))
   .replace(/(<(?:link rel="canonical" href|meta property="og:url" content)=")[^"]*/g,(_,start)=>start+e(info.canonical))
   .replace(/<main\b[^>]*>[\s\S]*?<\/main>/,`<main id="main-content" tabindex="-1">${body}</main>`)
   .replace(/<header>[\s\S]*?<\/header>/,`<header>${headerHtml({page:path,locale:'es',user:null,t,href:cleanHref})}</header>`)

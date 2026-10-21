@@ -9,7 +9,7 @@ import {resolve,extname} from 'node:path';
 import {badgeSvg,catalog} from '../public/badges.js';
 import {demoArena} from '../public/demo.js';
 const root=resolve('public');
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.json':'application/json; charset=utf-8','.txt':'text/plain; charset=utf-8','.xml':'application/xml; charset=utf-8','.ico':'image/x-icon','.png':'image/png'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.json':'application/json; charset=utf-8','.txt':'text/plain; charset=utf-8','.xml':'application/xml; charset=utf-8','.ico':'image/x-icon','.png':'image/png','.jpg':'image/jpeg'};
 createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost:8787');

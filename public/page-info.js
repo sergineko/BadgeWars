@@ -17,6 +17,7 @@ export function updatePageInfo(path,locale){
  for(const [selector,value,attribute] of [
   ['meta[name="description"]',info.description,'content'],['meta[name="robots"]',info.robots,'content'],
   ['link[rel="canonical"]',info.canonical,'href'],['meta[property="og:title"]',info.title,'content'],
-  ['meta[property="og:description"]',info.description,'content'],['meta[property="og:url"]',info.canonical,'content']
+  ['meta[property="og:description"]',info.description,'content'],['meta[property="og:url"]',info.canonical,'content'],
+  ['meta[name="twitter:title"]',info.title,'content'],['meta[name="twitter:description"]',info.description,'content']
  ])document.querySelector(selector)?.setAttribute(attribute,value);
 }
